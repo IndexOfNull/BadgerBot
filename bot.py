@@ -6,6 +6,10 @@ from sqlalchemy.orm import sessionmaker
 
 import asyncio
 
+modules = [
+    "mods.profile"
+] #What cogs to load
+
 class BuddyBot(commands.Bot):
 
     def __init__(self, *args, **kwargs):
@@ -33,6 +37,19 @@ class BuddyBot(commands.Bot):
         await self.invoke(ctx)
 
     async def on_ready(self):
+        #Load cogs
+        finalstr = ""
+        for cog in modules: #Iterate through all the cogs and load them
+            try:
+                self.load_extension(cog)
+            except Exception as e:
+                finalstr += "Module: {0}\n{1}: {2}\n".format(cog,type(e).__name__,e)
+        if finalstr != "": #Print cog errors if any have occured
+            finalstr = finalstr[:-1]
+            print('\n======COG ERRORS======')
+            print(finalstr)
+            print("======================\n\nWARNING: Some cogs failed to load! Some things may not function properly.\n")
+        #Print a nice hello message
         print("---[Ready]---")
         print("Logged in as:", self.user)
         print("Developer mode is " + ("ENABLED" if self.dev_mode else "DISABLED"))

@@ -4,7 +4,7 @@ import os
 import argparse
 
 parser = argparse.ArgumentParser(description="Run BadgerBot")
-parser.add_argument("--generate-config", default=False, action="store_true")
+parser.add_argument("--generate-config", default=False, action="store_true", help="generates the config file if it doesn't exist")
 
 args = parser.parse_args()
 
