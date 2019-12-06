@@ -42,6 +42,8 @@ class BuddyBot(commands.Bot):
         for cog in modules: #Iterate through all the cogs and load them
             try:
                 self.load_extension(cog)
+            except commands.ExtensionAlreadyLoaded:
+                pass
             except Exception as e:
                 finalstr += "Module: {0}\n{1}: {2}\n".format(cog,type(e).__name__,e)
         if finalstr != "": #Print cog errors if any have occured

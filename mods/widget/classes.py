@@ -11,7 +11,7 @@ class WidgetBase():
     def __init__(self, db, manager, **kwargs):
         self.db = db
         self.render_manager = manager
-        self.build_tables = kwargs.pop("build_tables", False)
+        self.build_tables = kwargs.pop("create_tables", False)
 
     def render_image(self, theme): #Render for the profile screen
         raise NotImplementedError()
@@ -43,10 +43,10 @@ class RenderManager():
         self.themes = []
         self.widgets = []
         self.db = db
-        self.build_tables = kwargs.pop("build_tables", False) #Should we build tables based on the schema?
+        self.build_tables = kwargs.pop("create_tables", False) #Should we build tables based on the schema?
         
     def register_widget(self, widget):
-        w = widget(self.db, self, build_tables=self.build_tables)
+        w = widget(self.db, self, create_tables=self.build_tables)
         self.widgets.append(w)
         return w
 
