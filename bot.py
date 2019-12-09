@@ -6,6 +6,8 @@ from sqlalchemy.orm import sessionmaker
 
 import asyncio
 
+from utils import classes
+
 modules = [
     "mods.profile"
 ] #What cogs to load
@@ -14,7 +16,8 @@ class BuddyBot(commands.Bot):
 
     def __init__(self, *args, **kwargs):
         command_prefix = commands.when_mentioned_or(";")
-        super().__init__(command_prefix = command_prefix, *args, **kwargs)
+        help_command = classes.CustomHelpCommand()
+        super().__init__(command_prefix = command_prefix, help_command = help_command, *args, **kwargs)
         self.token = kwargs.pop("token")
         self.owner = None #Retrieved later in on_ready
         self.db_engine_uri = kwargs.pop("db_engine_uri")
@@ -22,15 +25,7 @@ class BuddyBot(commands.Bot):
         self.db_engine = create_engine(self.db_engine_uri)
         Session = sessionmaker(bind=self.db_engine)
         self.db = Session()
-
-    """async def command_help(self, ctx):
-        if ctx.invoked_subcommand:
-            cmd = ctx.invoked_subcommand
-        else:
-            cmd = ctx.command
-        pages = await self.formatter.format_help_for(ctx, cmd)
-        for page in pages:
-            await ctx.channel.send"""
+        self.remove_command('help')
 
     async def on_message(self, message):
         ctx = await self.get_context(message) #We can use this to subclass by adding the 'cls' kwarg
@@ -56,6 +51,25 @@ class BuddyBot(commands.Bot):
         print("Logged in as:", self.user)
         print("Developer mode is " + ("ENABLED" if self.dev_mode else "DISABLED"))
         print("-------------")
+
+    async def on_command_error(self, ctx, e):
+        if isinstance(e, commands.BadArgument) or isinstance(e, commands.MissingRequiredArgument):
+            await ctx.send_help(ctx.command)
+        elif isinstance(e, commands.CommandNotFound):
+            await ctx.send(":mag_right: That command doesn't exist.")
+        elif isinstance(e, commands.CommandOnCooldown):
+            #Make this more comprehensive (e.retry_after)
+            await ctx.send(":timer: That command is on cooldown.")
+        elif isinstance(e, commands.BotMissingPermissions):
+            #Make this more comprehensive (e.missing_perms)
+            await ctx.send(":closed_lock_with_key: I don't have the necessary permissions to run your command.")
+        elif isinstance(e, commands.BotMissingRole):
+            #Make this more comprehensie (e.missing_role)
+            await ctx.send(":no_entry: I don't have the necessary roles to run your command.")
+        elif isinstance(e, commands.NoPrivateMessage):
+            await ctx.send(":speech_balloon: Your command can only be used in servers.")
+        else:
+            await ctx.send("`Unhandled Error: " + str(e) + "`")
 
     def run(self):
         super().run(self.token)

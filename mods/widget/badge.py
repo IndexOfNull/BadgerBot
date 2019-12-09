@@ -64,7 +64,7 @@ class BadgeWidget(WidgetBase):
             result = self.db.query(BadgeWinner).filter_by(server_id=server_id, discord_id=discord_id, badge_id=badge_id).delete()
             self.db.commit()
             return result
-        except exc.IntegrityError:
+        except: #Maybe add exc.IntegrityError
             self.db.rollback()
             return False
 
@@ -80,7 +80,7 @@ class BadgeWidget(WidgetBase):
             result = self.db.query(BadgeEntry).filter_by(server_id=server_id, id = id).delete() #This calls directly to the database, 
             self.db.commit()
             return result
-        except exc.IntegrityError:
+        except: #Maybe add exc.IntegrityError
             self.db.rollback()
             return False
 
@@ -90,6 +90,6 @@ class BadgeWidget(WidgetBase):
             self.db.add(badge)
             self.db.commit()
             return True
-        except exc.IntegrityError:
+        except:  #Maybe add exc.IntegrityError
             self.db.rollback()
             return False
