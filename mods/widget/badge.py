@@ -55,6 +55,22 @@ class BadgeWidget(WidgetBase):
             self.db.rollback()
             return False
 
+    def get_server_badges(self, server_id):
+        try:
+            rows = self.db.query(BadgeEntry).filter_by(server_id=server_id)
+            return rows
+        except:
+            self.db.rollback()
+            return None #This could be more informative
+
+    def get_user_badges(self, server_id, discord_id):
+        try:
+            rows = self.db.query(BadgeWinner).filter_by(server_id=server_id, discord_id=discord_id)
+            return rows
+        except:
+            self.db.rollback()
+            return None #This could be more informative
+
     def user_has_badge(self, server_id, discord_id, badge_id):
         try:
             result = self.db.query(BadgeWinner).filter_by(server_id=server_id, discord_id=discord_id, badge_id=badge_id).first()
