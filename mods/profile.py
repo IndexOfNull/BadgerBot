@@ -8,7 +8,7 @@ class ProfileCog(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.manager = RenderManager(self.bot.db, create_tables=True)
+        self.manager = RenderManager(self.bot.db, create_tables=bot.create_tables)
         self.badger = self.manager.register_widget(BadgeWidget)
 
     @commands.command(aliases = ['givebadge', 'give'])

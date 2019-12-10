@@ -22,6 +22,7 @@ class BuddyBot(commands.Bot):
         self.owner = None #Retrieved later in on_ready
         self.db_engine_uri = kwargs.pop("db_engine_uri")
         self.dev_mode = kwargs.pop("dev_mode", False)
+        self.create_tables = kwargs.pop("create_tables", False)
         self.db_engine = create_engine(self.db_engine_uri)
         Session = sessionmaker(bind=self.db_engine)
         self.db = Session()

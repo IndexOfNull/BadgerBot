@@ -45,10 +45,6 @@ class BadgeWidget(WidgetBase):
     def award_badge(self, server_id, discord_id, badge_id):
         try:
             winner = BadgeWinner(server_id=server_id, discord_id=discord_id, badge_id=badge_id)
-            result = self.db.query(BadgeWinner).filter_by(server_id=server_id, discord_id = discord_id)
-            for row in result:
-                print(row)
-                print(row.badge)
             self.db.add(winner)
             self.db.commit()
             return winner
