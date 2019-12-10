@@ -1,7 +1,5 @@
 test.py
 config.json
-Pipfile
-Pipfile.lock
 .vscode/*
 .DS_Store
 *.pyc
