@@ -48,47 +48,32 @@ class BadgeWidget(WidgetBase):
             self.db.add(winner)
             self.db.commit()
             return winner
-        except exc.IntegrityError:
+        except Exception as e: #May need to add exc.IntegrityError. I don't think that's possible with this though
             self.db.rollback()
-            return None
-        except Exception: #May need to add exc.IntegrityError. I don't think that's possible with this though
-            self.db.rollback()
-            return False
+            raise e
 
     def get_server_badges(self, server_id):
-        try:
-            rows = self.db.query(BadgeEntry).filter_by(server_id=server_id)
-            return rows
-        except:
-            self.db.rollback()
-            return None #This could be more informative
+        rows = self.db.query(BadgeEntry).filter_by(server_id=server_id)
+        return rows
 
     def get_user_badges(self, server_id, discord_id):
-        try:
-            rows = self.db.query(BadgeWinner).filter_by(server_id=server_id, discord_id=discord_id)
-            return rows
-        except:
-            self.db.rollback()
-            return None #This could be more informative
+        rows = self.db.query(BadgeWinner).filter_by(server_id=server_id, discord_id=discord_id)
+        return rows
 
     def user_has_badge(self, server_id, discord_id, badge_id):
-        try:
-            result = self.db.query(BadgeWinner).filter_by(server_id=server_id, discord_id=discord_id, badge_id=badge_id).first()
-            if result:
-                return True
-            return False
-        except:
-            self.db.rollback()
-            return None
+        result = self.db.query(BadgeWinner).filter_by(server_id=server_id, discord_id=discord_id, badge_id=badge_id).first()
+        if result:
+            return True
+        return False
 
     def revoke_badge(self, server_id, discord_id, badge_id):
         try:
             result = self.db.query(BadgeWinner).filter_by(server_id=server_id, discord_id=discord_id, badge_id=badge_id).delete()
             self.db.commit()
             return result
-        except: #Maybe add exc.IntegrityError
+        except Exception as e: #Maybe add exc.IntegrityError
             self.db.rollback()
-            return False
+            raise e
 
     def name_to_id(self, server_id, badge_name):
         rows = self.db.query(BadgeEntry).filter_by(server_id=server_id, name=badge_name).first()
@@ -102,9 +87,9 @@ class BadgeWidget(WidgetBase):
             result = self.db.query(BadgeEntry).filter_by(server_id=server_id, id = id).delete() #This calls directly to the database, 
             self.db.commit()
             return result
-        except: #Maybe add exc.IntegrityError
+        except Exception as e: #Maybe add exc.IntegrityError
             self.db.rollback()
-            return False
+            raise e
 
     def create_badge(self, server_id, name, text, **kwargs):
         try:
@@ -112,6 +97,6 @@ class BadgeWidget(WidgetBase):
             self.db.add(badge)
             self.db.commit()
             return True
-        except:  #Maybe add exc.IntegrityError
+        except Exception as e:  #Maybe add exc.IntegrityError
             self.db.rollback()
-            return False
+            raise e
