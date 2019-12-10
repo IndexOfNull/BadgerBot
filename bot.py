@@ -28,6 +28,8 @@ class BuddyBot(commands.Bot):
         self.remove_command('help')
 
     async def on_message(self, message):
+        if message.author.bot:
+            return
         ctx = await self.get_context(message) #We can use this to subclass by adding the 'cls' kwarg
         await self.invoke(ctx)
 
@@ -56,7 +58,8 @@ class BuddyBot(commands.Bot):
         if isinstance(e, commands.BadArgument) or isinstance(e, commands.MissingRequiredArgument):
             await ctx.send_help(ctx.command)
         elif isinstance(e, commands.CommandNotFound):
-            await ctx.send(":mag_right: That command doesn't exist.")
+            pass #I like this a bit more
+            #await ctx.send(":mag_right: That command doesn't exist.")
         elif isinstance(e, commands.CommandOnCooldown):
             #Make this more comprehensive (e.retry_after)
             await ctx.send(":timer: That command is on cooldown.")

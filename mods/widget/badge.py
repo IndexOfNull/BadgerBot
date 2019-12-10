@@ -55,9 +55,19 @@ class BadgeWidget(WidgetBase):
         except exc.IntegrityError:
             self.db.rollback()
             return None
-        except Exception as e: #May need to add exc.IntegrityError. I don't think that's possible with this though
+        except Exception: #May need to add exc.IntegrityError. I don't think that's possible with this though
             self.db.rollback()
             return False
+
+    def user_has_badge(self, server_id, discord_id, badge_id):
+        try:
+            result = self.db.query(BadgeWinner).filter_by(server_id=server_id, discord_id=discord_id, badge_id=badge_id).first()
+            if result:
+                return True
+            return False
+        except:
+            self.db.rollback()
+            return None
 
     def revoke_badge(self, server_id, discord_id, badge_id):
         try:
