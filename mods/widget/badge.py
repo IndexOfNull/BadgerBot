@@ -96,7 +96,7 @@ class BadgeWidget(WidgetBase):
             badge = BadgeEntry(server_id=server_id, name=name, text=text, **kwargs)
             self.db.add(badge)
             self.db.commit()
-            return True
+            return badge
         except Exception as e:  #Maybe add exc.IntegrityError
             self.db.rollback()
             raise e

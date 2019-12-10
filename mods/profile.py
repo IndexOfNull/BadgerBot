@@ -63,7 +63,7 @@ class ProfileCog(commands.Cog):
         badge_exists = self.badger.name_to_id(ctx.guild.id, name)
         if not badge_exists: #This should be None if there is no row matching our criteria
             badge_count = self.badger.get_server_badges(ctx.guild.id).count()
-            if badge_count <= 50: #Limit badges to 50
+            if badge_count < 50: #Limit badges to 50
                 result = self.badger.create_badge(ctx.guild.id, name, icon, description=description)
                 if result:
                     await ctx.send(":shield: Your badge has been created!")
@@ -90,9 +90,13 @@ class ProfileCog(commands.Cog):
     async def list(self, ctx):
         line = "{0.text} **{0.name}**: {0.description}\n"
         finalstr = "> __Badges__\n"
-        server_bades = self.badger.get_server_badges(ctx.guild.id)
-        for row in server_bades:
+        server_badges = self.badger.get_server_badges(ctx.guild.id)
+        count = 0
+        for row in server_badges:
+            count += 1
             finalstr += line.format(row)
+        if count == 0:
+            finalstr = ":white_sun_small_cloud: This server has no badges."
         await ctx.send(finalstr)
 
     #Maybe add an update command down the line.

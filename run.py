@@ -5,6 +5,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description="Run BadgerBot")
 parser.add_argument("--generate-config", default=False, action="store_true", help="generates the config file if it doesn't exist")
+parser.add_argument("--create-tables", "-c", default=False, action="store_true", help="creates required tables in the database")
 
 args = parser.parse_args()
 
@@ -27,6 +28,8 @@ if not os.path.exists("config.json"):
 
 with open("config.json") as f:
     config = json.loads(f.read())
+
+config['create_tables'] = args.create_tables
 
 buddy = BuddyBot(**config)
 
