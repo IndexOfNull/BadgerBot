@@ -9,7 +9,8 @@ import asyncio
 from utils import classes
 
 modules = [
-    "mods.profile"
+    "mods.profile",
+    "mods.tags"
 ] #What cogs to load
 
 class BuddyBot(commands.Bot):

@@ -14,9 +14,9 @@ class BadgeEntry(Base):
     __tablename__ = "badges"
     id = Column(SmallInteger, primary_key=True) #You know why this is here
     server_id = Column(BigInteger(), nullable=False)
-    name = Column(String(255), nullable=False)
+    name = Column(String(255, collation="utf8mb4_unicode_ci"), nullable=False)
     description = Column(Text(collation="utf8mb4_unicode_ci"), default="")
-    text = Column(String(255, collation="utf8mb4_unicode_ci"), nullable=False) #A piece of text. For use in rendering out to text. Also use utf8mb4 for full unicode support.
+    text = Column(String(128, collation="utf8mb4_unicode_ci"), nullable=False) #A piece of text. For use in rendering out to text. Also use utf8mb4 for full unicode support.
     created_on = Column(TIMESTAMP, default=datetime.datetime.now()) #a timestamp to keep track of when the row was added
     
     def __repr__(self):
