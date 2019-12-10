@@ -12,6 +12,7 @@ class ProfileCog(commands.Cog):
         self.badger = self.manager.register_widget(BadgeWidget)
 
     @commands.command(aliases = ['givebadge', 'give'])
+    @commands.guild_only()
     async def award(self, ctx, user:discord.Member, badge:str):
         badgeid = self.badger.name_to_id(ctx.guild.id, badge)
         if badgeid:
@@ -28,6 +29,7 @@ class ProfileCog(commands.Cog):
             await ctx.send(":grey_question: There doesn't appear to be a badge with that name.")
 
     @commands.command(aliases = ['strip'])
+    @commands.guild_only()
     async def revoke(self, ctx, user:discord.Member, badge):
         badgeid = self.badger.name_to_id(ctx.guild.id, badge)
         if badgeid:
@@ -43,13 +45,9 @@ class ProfileCog(commands.Cog):
         else:
             await ctx.send(":grey_question: There doesn't appear to be a badge with that name.")
 
-    @commands.group()
-    async def badge(self, ctx):
-        if not ctx.invoked_subcommand:
-            await ctx.send_help(ctx.command)
-
-    @badge.command(aliases = ["add"])
-    async def create(self, ctx, name:str, icon:str, *, description:str=""):
+    @commands.command(aliases = ["addbadge"])
+    @commands.guild_only()
+    async def createbadge(self, ctx, name:str, icon:str, *, description:str=""):
         #Impose some limits on the parameters
         if len(name) > 32:
             await ctx.send(":red_circle: The name for your badge is more than 32 characters. Please shorten it.")
@@ -74,8 +72,9 @@ class ProfileCog(commands.Cog):
         else:
             await ctx.send(":red_circle: That badge already exists!")
 
-    @badge.command(aliases = ["remove"])
-    async def delete(self, ctx, *, name:str):
+    @commands.command(aliases = ["removebadge", "rembadge", "delbadge", "rmbadge"])
+    @commands.guild_only()
+    async def deletebadge(self, ctx, *, name:str):
         badgeid = self.badger.name_to_id(ctx.guild.id, name)
         if badgeid: #If we got a valid id
             result = self.badger.remove_badge(ctx.guild.id, badgeid)
@@ -86,8 +85,9 @@ class ProfileCog(commands.Cog):
         else:
             await ctx.send(":grey_question: There doesn't appear to be a badge with that name.")
 
-    @badge.command()
-    async def list(self, ctx):
+    @commands.command(aliases = ["listbadges", "listbadge", "badgeslist", "badgelist"])
+    @commands.guild_only()
+    async def badges(self, ctx):
         line = "{0.text} **{0.name}**: {0.description}\n"
         finalstr = "> __Badges__\n"
         server_badges = self.badger.get_server_badges(ctx.guild.id)

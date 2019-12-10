@@ -58,6 +58,7 @@ class TagCog(commands.Cog):
             raise e
 
     @commands.command()
+    @commands.guild_only()
     async def tag(self, ctx, *, tag:str):
         tag = self.get_tags(ctx, name=tag).first()
         if not tag:
@@ -66,6 +67,7 @@ class TagCog(commands.Cog):
         await ctx.send(tag.content)
 
     @commands.command(aliases = ["maketag", "addtag"])
+    @commands.guild_only()
     async def createtag(self, ctx, name:str, *, content:str):
         #Check name and content length
         if len(name) > 100:
@@ -89,6 +91,7 @@ class TagCog(commands.Cog):
             await ctx.send(":red_circle: There is already a tag with that name.")
 
     @commands.command(aliases = ["deltag"])
+    @commands.guild_only()
     async def removetag(self, ctx, *, name:str):
         tag = self.get_tags(ctx, name=name).first()
         if not tag:
@@ -101,6 +104,7 @@ class TagCog(commands.Cog):
             await ctx.send(":red_circle: Something went wrong while deleting your tag.")
 
     @commands.command(aliases = ["taglist", "listtag", "tagslist", "listtags"])
+    @commands.guild_only()
     async def tags(self, ctx):
         line = "+ {0.name}\n"
         finalstr = "> __Tags__\n```diff\n"
@@ -116,6 +120,7 @@ class TagCog(commands.Cog):
         await ctx.send(finalstr)
 
     @commands.command(aliases = ["changetag"])
+    @commands.guild_only()
     async def updatetag(self, ctx, name:str, *, content:str):
         result = self.update_tag(ctx, name, content)
         if result:
