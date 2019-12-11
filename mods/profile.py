@@ -3,6 +3,7 @@ from discord.ext import commands
 
 from mods.widget.badge import BadgeWidget
 from mods.widget.classes import RenderManager
+from utils import checks
 
 class ProfileCog(commands.Cog):
 
@@ -13,6 +14,7 @@ class ProfileCog(commands.Cog):
 
     @commands.command(aliases = ['givebadge', 'give'])
     @commands.guild_only()
+    @checks.is_mod()
     async def award(self, ctx, user:discord.Member, badge:str):
         badgeid = self.badger.name_to_id(ctx.guild.id, badge)
         if badgeid:
@@ -30,6 +32,7 @@ class ProfileCog(commands.Cog):
 
     @commands.command(aliases = ['strip'])
     @commands.guild_only()
+    @checks.is_mod()
     async def revoke(self, ctx, user:discord.Member, badge):
         badgeid = self.badger.name_to_id(ctx.guild.id, badge)
         if badgeid:
@@ -47,6 +50,7 @@ class ProfileCog(commands.Cog):
 
     @commands.command(aliases = ["addbadge"])
     @commands.guild_only()
+    @checks.is_admin()
     async def createbadge(self, ctx, name:str, icon:str, *, description:str=""):
         #Impose some limits on the parameters
         if len(name) > 32:
@@ -74,6 +78,7 @@ class ProfileCog(commands.Cog):
 
     @commands.command(aliases = ["removebadge", "rembadge", "delbadge", "rmbadge"])
     @commands.guild_only()
+    @checks.is_admin()
     async def deletebadge(self, ctx, *, name:str):
         badgeid = self.badger.name_to_id(ctx.guild.id, name)
         if badgeid: #If we got a valid id

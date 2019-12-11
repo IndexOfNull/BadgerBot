@@ -5,6 +5,8 @@ from sqlalchemy import Column, Text, String, BigInteger, Integer
 
 import datetime
 
+from utils import checks
+
 Base = declarative_base()
 class TagEntry(Base):
     __tablename__ = "tags"
@@ -59,7 +61,7 @@ class TagCog(commands.Cog):
 
     @commands.command()
     @commands.guild_only()
-    async def tag(self, ctx, *, tag:str):
+    async def tag(self, ctx, *, tag:str): #Get the content of a tag
         tag = self.get_tags(ctx, name=tag).first()
         if not tag:
             await ctx.send(":grey_question: There doesn't appear to be a tag with that name.")
@@ -68,7 +70,8 @@ class TagCog(commands.Cog):
 
     @commands.command(aliases = ["maketag", "addtag"])
     @commands.guild_only()
-    async def createtag(self, ctx, name:str, *, content:str):
+    @checks.is_admin()
+    async def createtag(self, ctx, name:str, *, content:str): #Create a tag
         #Check name and content length
         if len(name) > 100:
             await ctx.send(":red_circle: Tag names cannot be over 100 characters. Please shorten it.")
@@ -92,7 +95,8 @@ class TagCog(commands.Cog):
 
     @commands.command(aliases = ["deltag"])
     @commands.guild_only()
-    async def removetag(self, ctx, *, name:str):
+    @checks.is_admin()
+    async def removetag(self, ctx, *, name:str): #Delete a tag
         tag = self.get_tags(ctx, name=name).first()
         if not tag:
             await ctx.send(":grey_question: There doesn't appear to be a tag with that name")
@@ -105,7 +109,7 @@ class TagCog(commands.Cog):
 
     @commands.command(aliases = ["taglist", "listtag", "tagslist", "listtags"])
     @commands.guild_only()
-    async def tags(self, ctx):
+    async def tags(self, ctx): #list the tags
         line = "+ {0.name}\n"
         finalstr = "> __Tags__\n```diff\n"
         server_tags = self.get_tags(ctx)
@@ -121,7 +125,8 @@ class TagCog(commands.Cog):
 
     @commands.command(aliases = ["changetag"])
     @commands.guild_only()
-    async def updatetag(self, ctx, name:str, *, content:str):
+    @checks.is_admin()
+    async def updatetag(self, ctx, name:str, *, content:str): #Change the content of tag
         result = self.update_tag(ctx, name, content)
         if result:
             await ctx.send(":envelope_with_arrow: Your tag has been updated successfully!")
