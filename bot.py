@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 
 import asyncio
 
-from utils import classes
+from utils import classes, data
 
 modules = [
     "mods.profile",
@@ -27,6 +27,7 @@ class BuddyBot(commands.Bot):
         self.db_engine = create_engine(self.db_engine_uri)
         Session = sessionmaker(bind=self.db_engine)
         self.db = Session()
+        self.datamanager = data.DataManager(self)
         self.remove_command('help')
 
     async def on_message(self, message):
