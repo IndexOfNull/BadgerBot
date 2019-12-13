@@ -27,8 +27,11 @@ class BuddyBot(commands.Bot):
         self.db_engine = create_engine(self.db_engine_uri)
         Session = sessionmaker(bind=self.db_engine)
         self.db = Session()
-        self.datamanager = data.DataManager(self)
         self.remove_command('help')
+        #Init datamanager and register options
+        self.datamanager = data.DataManager(self)
+        #self.datamanager.register_option("test", "1234")
+        #self.datamanager.register_option("lang", "en")
 
     async def on_message(self, message):
         if message.author.bot:

@@ -19,22 +19,38 @@ class OptionEntry(Base):
     data = Column(Text(), nullable=False)
     created_on = Column(TIMESTAMP, default=datetime.datetime.now()) #a timestamp to keep track of when the row was added
 
+class OptionNotRegistered(Exception): pass
+
 class DataManager():
 
     def __init__(self, bot):
         self.db = bot.db
         if bot.create_tables:
             Base.metadata.create_all(bot.db.bind)
+        self.server_options = {}
+
+    def register_option(self, name, default = None): #this is so we can keep integrity
+        self.server_options[name] = default
 
     def get_options(self, server_id, **filters):
+        process = filters.pop("process", True)
         try:
             rows = self.db.query(OptionEntry).filter_by(server_id=server_id, **filters).all()
+            rowkeys = [row.name for row in rows]
+            if process:
+                for key in self.server_options.keys():
+                    if not key in rowkeys:
+                        entry = OptionEntry(server_id=server_id, name=key, data=self.server_options[key])
+                        entry.fake = True #Let the rest of the program know that this was not pulled from the db.
+                        rows.append(entry)
             return rows
         except Exception as e:
             self.db.rollback()
             raise e
 
-    def set_option(self, server_id, option, value):
+    def set_option(self, server_id, option, value, bypass=False):
+        if not option in self.server_options and not bypass:
+            raise OptionNotRegistered(option + " is not registered. Be sure to register it or pass True for the bypass param.")
         try:
             row = OptionEntry(server_id=server_id, name=option, data=value)
             self.db.add(row)
