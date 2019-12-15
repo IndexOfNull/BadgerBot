@@ -34,6 +34,7 @@ class DataManager():
 
     def get_options(self, server_id, **filters):
         process = filters.pop("process", True)
+        basic = filters.pop("basic", False)
         try:
             rows = self.db.query(OptionEntry).filter_by(server_id=server_id, **filters).all()
             rowkeys = [row.name for row in rows]
@@ -43,7 +44,9 @@ class DataManager():
                         entry = OptionEntry(server_id=server_id, name=key, data=self.server_options[key])
                         entry.fake = True #Let the rest of the program know that this was not pulled from the db.
                         rows.append(entry)
-            return rows
+            if not basic:
+                return rows
+            return {row.name: row.data for row in rows}
         except Exception as e:
             self.db.rollback()
             raise e
