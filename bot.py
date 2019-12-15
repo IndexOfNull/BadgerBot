@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 import asyncio
 
 from utils import classes, data
+import utils.messages.manager
 
 modules = [
     "mods.profile",
@@ -28,15 +29,17 @@ class BuddyBot(commands.Bot):
         Session = sessionmaker(bind=self.db_engine)
         self.db = Session()
         self.remove_command('help')
+        #Messages
+        self.responses = utils.messages.manager.responses
         #Init datamanager and register options
         self.datamanager = data.DataManager(self)
-        #self.datamanager.register_option("test", "1234")
-        #self.datamanager.register_option("lang", "en")
+        self.datamanager.register_option("lang", "en")
+        self.datamanager.register_option("responses", "default")
 
     async def on_message(self, message):
         if message.author.bot:
             return
-        ctx = await self.get_context(message) #We can use this to subclass by adding the 'cls' kwarg
+        ctx = await self.get_context(message, cls=classes.CustomContext) #We can use this to subclass by adding the 'cls' kwarg
         await self.invoke(ctx)
 
     async def on_ready(self):
