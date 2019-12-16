@@ -64,7 +64,7 @@ class TagCog(commands.Cog):
     async def tag(self, ctx, *, tag:str): #Get the content of a tag
         tag = self.get_tags(ctx, name=tag).first()
         if not tag:
-            await ctx.send(":grey_question: There doesn't appear to be a tag with that name.")
+            await ctx.send(ctx.responses['tag_notfound'])
             return
         await ctx.send(tag.content)
 
@@ -74,24 +74,24 @@ class TagCog(commands.Cog):
     async def createtag(self, ctx, name:str, *, content:str): #Create a tag
         #Check name and content length
         if len(name) > 100:
-            await ctx.send(":red_circle: Tag names cannot be over 100 characters. Please shorten it.")
+            await ctx.send(ctx.responses['tag_lenlimits'].format("names", 100))
             return
         if len(content) > 500:
-            await ctx.send(":red_circle: A tag's contents cannot be over 500 characters. Please shorten it.")
+            await ctx.send(ctx.responses['tag_lenlimits'].format("contents", 500))
             return
         tag_count = self.get_tags(ctx).count()
         if tag_count >= 15: #limit to 15 tags
-            await ctx.send(":red_circle: Servers can only have up to 15 tags.")
+            await ctx.send(ctx.responses['tag_serverlimit'])
             return
         exists = self.get_tags(ctx, name=name).first()
         if not exists:
             result = self.add_tag(ctx, name, content)
             if result:
-                await ctx.send(":speech_balloon: Your tag has been created successfully.")
+                await ctx.send(ctx.responses['tag_created'])
             else:
-                await ctx.send(":red_circle: Something went wrong while creating your badge.")
+                await ctx.send(ctx.responses['tag_error'].format("creating"))
         else:
-            await ctx.send(":red_circle: There is already a tag with that name.")
+            await ctx.send(ctx.responses['tag_exists'])
 
     @commands.command(aliases = ["deltag"])
     @commands.guild_only()
@@ -99,13 +99,13 @@ class TagCog(commands.Cog):
     async def removetag(self, ctx, *, name:str): #Delete a tag
         tag = self.get_tags(ctx, name=name).first()
         if not tag:
-            await ctx.send(":grey_question: There doesn't appear to be a tag with that name")
+            await ctx.send(ctx.responses['tag_notfound'])
             return
         result = self.remove_tag(ctx, name)
         if result:
-            await ctx.send(":cloud_lightning: " + name + " has been zapped.")
+            await ctx.send(ctx.responses['zapped'].format(name))
         else:
-            await ctx.send(":red_circle: Something went wrong while deleting your tag.")
+            await ctx.send(ctx.responses['tag_error'].format("deleting"))
 
     @commands.command(aliases = ["taglist", "listtag", "tagslist", "listtags"])
     @commands.guild_only()
@@ -118,7 +118,7 @@ class TagCog(commands.Cog):
             count += 1
             finalstr += line.format(row)
         if count == 0:
-            finalstr = ":white_sun_small_cloud: This server has no tags."
+            finalstr = ctx.responses['tag_notags']
         else:
             finalstr += "```"
         await ctx.send(finalstr)
@@ -129,9 +129,9 @@ class TagCog(commands.Cog):
     async def updatetag(self, ctx, name:str, *, content:str): #Change the content of tag
         result = self.update_tag(ctx, name, content)
         if result:
-            await ctx.send(":envelope_with_arrow: Your tag has been updated successfully!")
+            await ctx.send(ctx.responses['tag_update'])
         else:
-            await ctx.send(":grey_quesiton: It doesn't look like there's a tag with that name.")
+            await ctx.send(ctx.responses['tag_notfound'])
 
 def setup(bot):
     bot.add_cog(TagCog(bot))

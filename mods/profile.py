@@ -22,13 +22,13 @@ class ProfileCog(commands.Cog):
             if not has_badge:
                 result = self.badger.award_badge(ctx.guild.id, user.id, badgeid)
                 if result:
-                    await ctx.send(":military_medal: " + user.mention + " has been awarded the \"" + badge + "\" badge.")
+                    await ctx.send(ctx.responses['badge_awarded'].format(user, badge))
                 else:
-                    await ctx.send(":neutral_face: Something went wrong while awarding the badge.")
+                    await ctx.send(ctx.responses['badge_error'].format("awarding"))
             else:
-                await ctx.send(":red_circle: That user already has that badge.")
+                await ctx.send(ctx.responses['badge_hasbadge'])
         else:
-            await ctx.send(":grey_question: There doesn't appear to be a badge with that name.")
+            await ctx.send(ctx.responses['badge_notfound'])
 
     @commands.command(aliases = ['strip'])
     @commands.guild_only()
@@ -40,13 +40,13 @@ class ProfileCog(commands.Cog):
             if has_badge:
                 result = self.badger.revoke_badge(ctx.guild.id, user.id, badgeid)
                 if result:
-                    await ctx.send(":cloud_lightning: " + user.mention + " has been stripped of their \"" + badge + "\" badge.")
+                    await ctx.send(ctx.responses['badge_revoked'].format(user, badge))
                 else:
-                    await ctx.send(":neutral_face: Something went wrong while revoking the badge.")
+                    await ctx.send(ctx.responses['badge_error'].format("revoking"))
             else:
-                await ctx.send(":red_circle: That user doesn't have that badge.")
+                await ctx.send(ctx.responses['badge_nothasbadge'])
         else:
-            await ctx.send(":grey_question: There doesn't appear to be a badge with that name.")
+            await ctx.send(ctx.responses['badge_notfound'])
 
     @commands.command(aliases = ["addbadge"])
     @commands.guild_only()
@@ -54,13 +54,13 @@ class ProfileCog(commands.Cog):
     async def createbadge(self, ctx, name:str, icon:str, *, description:str=""):
         #Impose some limits on the parameters
         if len(name) > 32:
-            await ctx.send(":red_circle: The name for your badge is more than 32 characters. Please shorten it.")
+            await ctx.send(ctx.responses['badge_limits'].format("name", 32))
             return
         if len(icon) > 32:
-            await ctx.send(":red_circle: The icon for your badge is more than 32 characters. Please shorten it")
+            await ctx.send(ctx.responses['badge_limits'].format("icon", 32))
             return
         if len(description) > 175:
-            await ctx.send(":red_circle: The description for your badge is more than 175 characters. Please shorten it.")
+            await ctx.send(ctx.responses['badge_limits'].format("description", 175))
             return
         badge_exists = self.badger.name_to_id(ctx.guild.id, name)
         if not badge_exists: #This should be None if there is no row matching our criteria
@@ -68,13 +68,13 @@ class ProfileCog(commands.Cog):
             if badge_count < 50: #Limit badges to 50
                 result = self.badger.create_badge(ctx.guild.id, name, icon, description=description)
                 if result:
-                    await ctx.send(":shield: Your badge has been created!")
+                    await ctx.send(ctx.responses['badge_created'])
                 else:
-                    await ctx.send(":neutral_face: Something went wrong while trying to create your badge.")
+                    await ctx.send(ctx.responses['badge_error'].format("creating"))
             else:
-                await ctx.send(":compression: You can only have up to 50 badges on your server.")
+                await ctx.send(ctx.responses['badge_maxbadgeslimit'])
         else:
-            await ctx.send(":red_circle: That badge already exists!")
+            await ctx.send(ctx.responses['badge_exists'])
 
     @commands.command(aliases = ["removebadge", "rembadge", "delbadge", "rmbadge"])
     @commands.guild_only()
@@ -84,11 +84,11 @@ class ProfileCog(commands.Cog):
         if badgeid: #If we got a valid id
             result = self.badger.remove_badge(ctx.guild.id, badgeid)
             if result:
-                await ctx.send(":sob: Goodbye, " + name)
+                await ctx.send(ctx.responses['zapped'].format(name))
             else:
-                await ctx.send(":neutral_face: Something went wrong while trying to remove your badge.")
+                await ctx.send(ctx.responses['badge_error'].format("removing"))
         else:
-            await ctx.send(":grey_question: There doesn't appear to be a badge with that name.")
+            await ctx.send(ctx.responses['badge_notfound'])
 
     @commands.command(aliases = ["listbadges", "listbadge", "badgeslist", "badgelist"])
     @commands.guild_only()
@@ -101,7 +101,7 @@ class ProfileCog(commands.Cog):
             count += 1
             finalstr += line.format(row)
         if count == 0:
-            finalstr = ":white_sun_small_cloud: This server has no badges."
+            finalstr = ctx.responses['badge_nobadges']
         await ctx.send(finalstr)
 
     #Maybe add an update command down the line.
