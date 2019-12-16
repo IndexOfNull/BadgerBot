@@ -20,7 +20,15 @@
             "tag_exists": ":red_circle: There is already a tag with that name.",
             "tag_notags": ":white_sun_small_cloud: This server has no tags.",
             "tag_update": ":envelope_with_arrow: Your tag has been updated successfully!",
-            "zapped": ":cloud_lightning: {0} has been zapped!"
+            "zapped": ":cloud_lightning: {0} has been zapped!",
+            "error_cooldown": ":timer: That command is on cooldown. Try again in {0}",
+            "error_serveronly": ":speech_balloon: Your command can only be used in servers.",
+            "error_dmonly": ":speech_balloon: Your command can only be used in DMs.",
+            "error_adminonly": ":closed_lock_with_key: You need admin privileges to run this command.",
+            "error_modonly": ":closed_lock_with_key: You need moderator privileges to run this command.",
+            "error_owneronly": ":no_entry: You must be the bot owner to run that command.",
+            "error_cmddisabled": ":no_entry: The command you are trying to execute is disabled.",
+            "error_nsfw": ":underage: That command must be used in an NSFW channel."
         }
     }
 }
