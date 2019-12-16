@@ -11,7 +11,8 @@ import utils.messages.manager
 
 modules = [
 	"mods.profile",
-	"mods.tags"
+	"mods.tags",
+	"mods.options"
 ] #What cogs to load
 
 class BuddyBot(commands.Bot):
@@ -20,6 +21,7 @@ class BuddyBot(commands.Bot):
 		command_prefix = commands.when_mentioned_or(";")
 		help_command = classes.CustomHelpCommand()
 		super().__init__(command_prefix = command_prefix, help_command = help_command, *args, **kwargs)
+		self.prefix = ";"
 		self.token = kwargs.pop("token")
 		self.owner = None #Retrieved later in on_ready
 		self.db_engine_uri = kwargs.pop("db_engine_uri")
@@ -35,12 +37,25 @@ class BuddyBot(commands.Bot):
 		self.datamanager = data.DataManager(self)
 		self.datamanager.register_option("lang", "en")
 		self.datamanager.register_option("responses", "default")
+		self.datamanager.register_option("prefix", self.prefix)
 
 	async def on_message(self, message):
 		if message.author.bot:
 			return
 		ctx = await self.get_context(message, cls=classes.CustomContext) #We can use this to subclass by adding the 'cls' kwarg
 		await self.invoke(ctx)
+
+	async def get_prefix(self, message):
+		prefix = self.datamanager.get_options(message.guild.id, name="prefix")
+		if prefix:
+			prefix = prefix[0].data
+			prefixes = [prefix]
+			start = message.content.split(" ")[0].strip() #get the first part before any spaces
+			if start == (prefix + "prefix") or start == (self.prefix + "prefix"):
+				prefixes.append(self.prefix)
+		else:
+			prefixes = [self.prefix]
+		return commands.when_mentioned_or(*prefixes)(self, message)
 
 	async def on_ready(self):
 		#Load cogs

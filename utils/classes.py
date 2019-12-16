@@ -13,11 +13,11 @@ class CustomContext(Context):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.soptions = self.bot.datamanager.get_options(self.guild.id, basic=True)
+        self.options = self.bot.datamanager.get_options(self.guild.id, basic=True)
         #Wow this is a mess
-        if self.soptions['lang'] in self.bot.responses:
-            if self.soptions['responses'] in self.bot.responses[self.soptions['lang']]:
-                self.responses = self.bot.responses[self.soptions['lang']][self.soptions['responses']]
+        if self.options['lang'] in self.bot.responses:
+            if self.options['responses'] in self.bot.responses[self.options['lang']]:
+                self.responses = self.bot.responses[self.options['lang']][self.options['responses']]
                 return
         #Default if for some reason the selected language or response set doesn't exist anymore
         self.responses = self.bot.responses['en']['default']
