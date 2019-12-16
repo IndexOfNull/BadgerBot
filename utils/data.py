@@ -33,27 +33,31 @@ class DataManager():
         self.server_options[name] = default
 
     def get_options(self, server_id, **filters):
-        process = filters.pop("process", True)
-        basic = filters.pop("basic", False)
-        hasfilters = filters != {}
-        rows = self.db.query(OptionEntry).filter_by(server_id=server_id, **filters).all()
-        rowkeys = [row.name for row in rows]
-        if process:
-            for key, value in self.server_options.items():
-                if hasfilters:
-                    cont = True
-                    for fname, fval in filters.items():
-                        if fname == key or fval == value:
-                            cont = False
-                    if cont:
-                        continue
-                if not key in rowkeys:
-                    entry = OptionEntry(server_id=server_id, name=key, data=value)
-                    entry.fake = True #Let the rest of the program know that this was not pulled from the db.
-                    rows.append(entry)
-        if not basic:
-            return rows
-        return {row.name: row.data for row in rows}
+        try:
+            process = filters.pop("process", True)
+            basic = filters.pop("basic", False)
+            hasfilters = filters != {}
+            rows = self.db.query(OptionEntry).filter_by(server_id=server_id, **filters).all()
+            rowkeys = [row.name for row in rows]
+            if process:
+                for key, value in self.server_options.items():
+                    if hasfilters:
+                        cont = True
+                        for fname, fval in filters.items():
+                            if fname == key or fval == value:
+                                cont = False
+                        if cont:
+                            continue
+                    if not key in rowkeys:
+                        entry = OptionEntry(server_id=server_id, name=key, data=value)
+                        entry.fake = True #Let the rest of the program know that this was not pulled from the db.
+                        rows.append(entry)
+            if not basic:
+                return rows
+            return {row.name: row.data for row in rows}
+        except Exception as e:
+            self.db.rollback()
+            raise e
 
     def set_option(self, server_id, option, value, bypass=False):
         if not option in self.server_options and not bypass:

@@ -102,9 +102,9 @@ class BuddyBot(commands.Bot):
 			await ctx.send(ctx.responses['error_serveronly'])
 		elif isinstance(e, commands.PrivateMessageOnly): #DM only
 			await ctx.send(ctx.responses['error_dmonly'])
-		elif isinstance(e, checks.is_admin): #Admin only
+		elif isinstance(e, checks.MissingAdmin): #Admin only
 			await ctx.send(ctx.responses['error_adminonly'])
-		elif isinstance(e, checks.is_mod): #Mod only
+		elif isinstance(e, checks.MissingModerator): #Mod only
 			await ctx.send(ctx.responses['error_modonly'])
 		elif isinstance(e, commands.DisabledCommand): #Disabled
 			await ctx.send(ctx.responses['error_cmddisabled'])
