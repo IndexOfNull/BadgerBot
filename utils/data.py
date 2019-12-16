@@ -16,7 +16,7 @@ class OptionEntry(Base):
     id = Column(Integer, primary_key=True)
     server_id = Column(BigInteger, nullable=False)
     name = Column(String(128), nullable=False) #names will be hardcoded in, so no special collation should be needed
-    data = Column(Text(), nullable=False)
+    data = Column(Text(collation="utf8mb4_unicode_ci"), nullable=False)
     created_on = Column(TIMESTAMP, default=datetime.datetime.now()) #a timestamp to keep track of when the row was added
 
 class OptionNotRegistered(Exception): pass
@@ -35,30 +35,38 @@ class DataManager():
     def get_options(self, server_id, **filters):
         process = filters.pop("process", True)
         basic = filters.pop("basic", False)
-        try:
-            rows = self.db.query(OptionEntry).filter_by(server_id=server_id, **filters).all()
-            rowkeys = [row.name for row in rows]
-            if process:
-                for key in self.server_options.keys():
-                    if not key in rowkeys:
-                        entry = OptionEntry(server_id=server_id, name=key, data=self.server_options[key])
-                        entry.fake = True #Let the rest of the program know that this was not pulled from the db.
-                        rows.append(entry)
-            if not basic:
-                return rows
-            return {row.name: row.data for row in rows}
-        except Exception as e:
-            self.db.rollback()
-            raise e
+        hasfilters = filters != {}
+        rows = self.db.query(OptionEntry).filter_by(server_id=server_id, **filters).all()
+        rowkeys = [row.name for row in rows]
+        if process:
+            for key, value in self.server_options.items():
+                if hasfilters:
+                    cont = True
+                    for fname, fval in filters.items():
+                        if fname == key or fval == value:
+                            cont = False
+                    if cont:
+                        continue
+                if not key in rowkeys:
+                    entry = OptionEntry(server_id=server_id, name=key, data=value)
+                    entry.fake = True #Let the rest of the program know that this was not pulled from the db.
+                    rows.append(entry)
+        if not basic:
+            return rows
+        return {row.name: row.data for row in rows}
 
     def set_option(self, server_id, option, value, bypass=False):
         if not option in self.server_options and not bypass:
             raise OptionNotRegistered(option + " is not registered. Be sure to register it or pass True for the bypass param.")
         try:
-            row = OptionEntry(server_id=server_id, name=option, data=value)
-            self.db.add(row)
+            entry = self.db.query(OptionEntry).filter_by(server_id=server_id, name=option).first()
+            if entry:
+                entry.data = value
+            else:
+                entry = OptionEntry(server_id=server_id, name=option, data=value)
+                self.db.add(entry)
             self.db.commit()
-            return row
+            return entry
         except Exception as e:
             self.db.rollback()
             raise e
