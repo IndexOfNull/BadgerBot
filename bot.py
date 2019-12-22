@@ -34,10 +34,10 @@ class BuddyBot(commands.Bot):
 		#Messages
 		self.responses = utils.messages.manager.responses
 
-
 	async def on_message(self, message):
 		if message.author.bot:
 			return
+		await self.wait_until_ready()
 		#discord.Message.options = self.datamanager.get_options(message.guild.id, basic=True)
 		ctx = await self.get_context(message, cls=classes.CustomContext) #We can use this to subclass by adding the 'cls' kwarg
 		if ctx.valid:
