@@ -13,6 +13,8 @@ class CustomContext(Context):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+                
+    def injectcustom(self):
         self.options = self.bot.datamanager.get_options(self.guild.id, basic=True)
         #Wow this is a mess
         if self.options['lang'] in self.bot.responses:
@@ -21,4 +23,3 @@ class CustomContext(Context):
                 return
         #Default if for some reason the selected language or response set doesn't exist anymore
         self.responses = self.bot.responses['en']['default']
-                

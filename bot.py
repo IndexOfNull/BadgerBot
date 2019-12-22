@@ -33,31 +33,32 @@ class BuddyBot(commands.Bot):
 		self.remove_command('help')
 		#Messages
 		self.responses = utils.messages.manager.responses
+
+
+	async def on_message(self, message):
+		if message.author.bot:
+			return
+		#discord.Message.options = self.datamanager.get_options(message.guild.id, basic=True)
+		ctx = await self.get_context(message, cls=classes.CustomContext) #We can use this to subclass by adding the 'cls' kwarg
+		if ctx.valid:
+			ctx.injectcustom()
+		await self.invoke(ctx)
+
+	async def get_prefix(self, message):
+		if not str(message.guild.id) in self.datamanager.prefixes.keys():
+			prefixes = [self.prefix]
+		else:
+			prefixes = [self.datamanager.prefixes[str(message.guild.id)]]
+		if message.content.split(" ")[0] == ";prefix":
+			prefixes.append(self.prefix)
+		return commands.when_mentioned_or(*prefixes)(self, message)
+
+	async def on_ready(self): #THIS MAY BE RUN MULTIPLE TIMES IF reconnect=True!
 		#Init datamanager and register options
 		self.datamanager = data.DataManager(self)
 		self.datamanager.register_option("lang", "en")
 		self.datamanager.register_option("responses", "default")
 		self.datamanager.register_option("prefix", self.prefix)
-
-	async def on_message(self, message):
-		if message.author.bot:
-			return
-		ctx = await self.get_context(message, cls=classes.CustomContext) #We can use this to subclass by adding the 'cls' kwarg
-		await self.invoke(ctx)
-
-	async def get_prefix(self, message):
-		prefix = self.datamanager.get_options(message.guild.id, name="prefix")
-		if prefix:
-			prefix = prefix[0].data
-			prefixes = [prefix]
-			start = message.content.split(" ")[0].strip() #get the first part before any spaces
-			if start == (prefix + "prefix") or start == (self.prefix + "prefix"):
-				prefixes.append(self.prefix)
-		else:
-			prefixes = [self.prefix]
-		return commands.when_mentioned_or(*prefixes)(self, message)
-
-	async def on_ready(self):
 		#Load cogs
 		finalstr = ""
 		for cog in modules: #Iterate through all the cogs and load them
@@ -119,7 +120,6 @@ class BuddyBot(commands.Bot):
 		if event == "on_message":
 			message = args[0]
 			await message.channel.send("Something went seriously wrong when processing your message. Something is probably wrong with the bot.")
-			return
 		await super().on_error(event, *args, **kwargs)
 
 	def run(self):

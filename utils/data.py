@@ -24,13 +24,29 @@ class OptionNotRegistered(Exception): pass
 class DataManager():
 
     def __init__(self, bot):
+        self.bot = bot
         self.db = bot.db
         if bot.create_tables:
             Base.metadata.create_all(bot.db.bind)
         self.server_options = {}
+        self.prefixes = {} #{server_id: prefix}, so we dont have to call on the database for every on_message
+        self.populate_prefix_table() #Initialize the prefix table
+        #The caveat to handling prefix detection this way is that we have to assume that we are the only ones touching the database. Refreshing this once and a while could be a good idea...
 
     def register_option(self, name, default = None): #this is so we can keep integrity
         self.server_options[name] = default
+
+    def populate_prefix_table(self):
+        try:
+            guild_ids = [g.id for g in self.bot.guilds] #Should also be compatible with commands.AutoShardedBot
+            rows = self.db.query(OptionEntry).filter_by(name="prefix").all()
+            for row in rows:
+                if row.server_id in guild_ids: #Are we looking at guilds applicable to our shard?
+                    self.prefixes[str(row.server_id)] = row.data
+            return
+        except Exception as e:
+            self.db.rollback()
+            raise e
 
     def get_options(self, server_id, **filters):
         try:

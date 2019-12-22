@@ -17,6 +17,7 @@ class OptionsCog(commands.Cog):
 				return
 			if not prefix == ctx.options['prefix']: #No need to bother if it's being set to the same thing
 				self.datamanager.set_option(ctx.guild.id, "prefix", prefix)
+				self.datamanager.prefixes[str(ctx.guild.id)] = prefix
 			await ctx.send(ctx.responses['prefix_set'].format(prefix))
 
 
