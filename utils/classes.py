@@ -15,11 +15,12 @@ class CustomContext(Context):
         super().__init__(*args, **kwargs)
                 
     def injectcustom(self):
-        self.options = self.bot.datamanager.get_options(self.guild.id, basic=True)
+        self.options = self.bot.datamanager.get_options(self.guild.id)
+        self.basic_options = {name: data for name, data in self.options.items()} #Converts {'optname': row} to {'optname': value}; this does not give direct access to the row object
         #Wow this is a mess
-        if self.options['lang'] in self.bot.responses:
-            if self.options['responses'] in self.bot.responses[self.options['lang']]:
-                self.responses = self.bot.responses[self.options['lang']][self.options['responses']]
+        if self.options['lang'].data in self.bot.responses:
+            if self.options['responses'].data in self.bot.responses[self.options['lang'].data]:
+                self.responses = self.bot.responses[self.options['lang'].data][self.options['responses'].data]
                 return
         #Default if for some reason the selected language or response set doesn't exist anymore
         self.responses = self.bot.responses['en']['default']

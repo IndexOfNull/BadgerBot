@@ -52,6 +52,7 @@ class DataManager():
         try:
             process = filters.pop("process", True)
             basic = filters.pop("basic", False)
+            rowsonly = filters.pop("rows_only", False)
             hasfilters = filters != {}
             rows = self.db.query(OptionEntry).filter_by(server_id=server_id, **filters).all()
             rowkeys = [row.name for row in rows]
@@ -68,14 +69,16 @@ class DataManager():
                         entry = OptionEntry(server_id=server_id, name=key, data=value)
                         entry.fake = True #Let the rest of the program know that this was not pulled from the db.
                         rows.append(entry)
-            if not basic:
+            if basic:
+                return {row.name: row.data for row in rows}
+            if rowsonly:
                 return rows
-            return {row.name: row.data for row in rows}
+            return {row.name: row for row in rows}
         except Exception as e:
             self.db.rollback()
             raise e
 
-    def set_option(self, server_id, option, value, bypass=False):
+    def set_option(self, server_id, option, value, bypass=False): #This is a bit less useful now that get_options can return direct row objects.
         if not option in self.server_options and not bypass:
             raise OptionNotRegistered(option + " is not registered. Be sure to register it or pass True for the bypass param.")
         try:
