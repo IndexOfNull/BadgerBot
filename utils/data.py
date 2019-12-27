@@ -3,7 +3,8 @@
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.types import TIMESTAMP
-from sqlalchemy import Column, Integer, BigInteger, String, Text
+from sqlalchemy import Column, Integer, BigInteger, String, Text, CHAR, or_
+
 
 import datetime
 
@@ -19,6 +20,15 @@ class OptionEntry(Base):
     data = Column(Text(collation="utf8mb4_unicode_ci"), nullable=False)
     created_on = Column(TIMESTAMP, default=datetime.datetime.now()) #a timestamp to keep track of when the row was added
 
+class BlacklistEntry(Base):
+    __tablename__ = "blacklists"
+    id = Column(Integer, primary_key=True)
+    server_id = Column(BigInteger, nullable=False)
+    target_type = Column(CHAR, nullable=False)
+    target_id = Column(BigInteger, nullable=True)
+    target_name = Column(String(40), nullable=True) #For commands or non-int targets
+    created_on = Column(TIMESTAMP, default=datetime.datetime.now())
+
 class OptionNotRegistered(Exception): pass
 
 class DataManager():
@@ -32,6 +42,7 @@ class DataManager():
         self.prefixes = {} #{server_id: prefix}, so we dont have to call on the database for every on_message
         self.populate_prefix_table() #Initialize the prefix table
         #The caveat to handling prefix detection this way is that we have to assume that we are the only ones touching the database. Refreshing this once and a while could be a good idea...
+        self._blacklist_types = {"1": "users", "2": "channels", "3": "commands", "4": "servers"}
 
     def register_option(self, name, default = None): #this is so we can keep integrity
         self.server_options[name] = default
@@ -48,9 +59,31 @@ class DataManager():
             self.db.rollback()
             raise e
 
+    def get_blacklists(self, server_id, **filters):
+        try:
+            basic = filters.pop("basic", False)
+            rowsonly = filters.pop("rows_only", False)
+            rows = self.db.query(BlacklistEntry) \
+                .filter(or_(BlacklistEntry.server_id == 0, BlacklistEntry.server_id == server_id)) \
+                .filter_by(**filters).all()
+            if rowsonly:
+                return rows
+            bls = {"users": [], "channels": [], "commands": [], "servers": []}
+            for row in rows:
+                tt = self._blacklist_types[row.target_type]
+                if not basic: #This could be done so that we don't have to check every loop, but this is more readable.
+                    bls[tt].append(row)
+                else:
+                    if row.target_id: bls[tt].append(row.target_id)
+                    if row.target_name: bls[tt].append(row.target_name)
+            return bls
+        except Exception as e:
+            self.db.rollback()
+            raise e
+
     def get_options(self, server_id, **filters):
         try:
-            process = filters.pop("process", True)
+            process = filters.pop("process", True) #Fill in the defaults if the server hasn't set anything
             basic = filters.pop("basic", False)
             rowsonly = filters.pop("rows_only", False)
             hasfilters = filters != {}
