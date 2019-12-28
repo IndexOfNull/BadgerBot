@@ -34,6 +34,11 @@ class BuddyBot(commands.Bot):
 		self.remove_command('help')
 		#Messages
 		self.responses = utils.messages.manager.responses
+		#Init datamanager and register options
+		self.datamanager = data.DataManager(self, False) #Tell it not to autopopulate prefixes, that will happen when the bot is ready.
+		self.datamanager.register_option("lang", "en")
+		self.datamanager.register_option("responses", "default")
+		self.datamanager.register_option("prefix", self.prefix)
 
 	async def on_message(self, message):
 		if message.author.bot:
@@ -57,11 +62,7 @@ class BuddyBot(commands.Bot):
 		return commands.when_mentioned_or(*prefixes)(self, message)
 
 	async def on_ready(self): #THIS MAY BE RUN MULTIPLE TIMES IF reconnect=True!
-		#Init datamanager and register options
-		self.datamanager = data.DataManager(self)
-		self.datamanager.register_option("lang", "en")
-		self.datamanager.register_option("responses", "default")
-		self.datamanager.register_option("prefix", self.prefix)
+		self.datamanager.refresh()
 		#Load cogs
 		finalstr = ""
 		for cog in modules: #Iterate through all the cogs and load them

@@ -23,15 +23,18 @@ class OptionNotRegistered(Exception): pass
 
 class DataManager():
 
-    def __init__(self, bot):
+    def __init__(self, bot, populate=True):
         self.bot = bot
         self.db = bot.db
         if bot.create_tables:
             Base.metadata.create_all(bot.db.bind)
         self.server_options = {}
         self.prefixes = {} #{server_id: prefix}, so we dont have to call on the database for every on_message
-        self.populate_prefix_table() #Initialize the prefix table
+        if populate: self.populate_prefix_table() #Initialize the prefix table
         #The caveat to handling prefix detection this way is that we have to assume that we are the only ones touching the database. Refreshing this once and a while could be a good idea...
+
+    def refresh(self):
+        self.populate_prefix_table()
 
     def register_option(self, name, default = None): #this is so we can keep integrity
         self.server_options[name] = default
