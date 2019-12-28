@@ -1,6 +1,7 @@
 {
     "en": {
         "default": {
+            "general_valid_options": "Valid options are {0}",
             "badge_error": ":neutral_face: Something went wrong while {0} the badge.",
             "badge_exists": ":red_circle: That badge already exists!",
             "badge_hasbadge": ":red_circle: That user already has that badge.",
@@ -31,7 +32,16 @@
             "error_modonly": ":closed_lock_with_key: You need moderator privileges to run this command.",
             "error_owneronly": ":no_entry: You must be the bot owner to run that command.",
             "error_cmddisabled": ":no_entry: The command you are trying to execute is disabled.",
-            "error_nsfw": ":underage: That command must be used in an NSFW channel."
+            "error_nsfw": ":underage: That command must be used in an NSFW channel.",
+            "coin_1": ":speaking_head: Heads!",
+            "coin_2": ":fox: Tails!",
+            "coin_3": ":game_die: The coin landed on its side!",
+            "rps_win": "{0}! You win!",
+            "rps_lose": "{0}! You lose!",
+            "rps_tie": "{0}! Draw!",
+            "dice_limit": ":red_circle: You cannot roll dice with more than {0} sides.",
+            "dice_limit_lower": ":red_circle: You cannot roll dice with less than {0} sides.",
+            "iq": "{0.mention} has {1} IQ"
         }
     }
 }

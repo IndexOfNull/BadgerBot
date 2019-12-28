@@ -12,7 +12,8 @@ import utils.messages.manager
 modules = [
 	"mods.profile",
 	"mods.tags",
-	"mods.options"
+	"mods.options",
+	"mods.fun"
 ] #What cogs to load
 
 class BuddyBot(commands.Bot):
