@@ -1,0 +1,62 @@
+    ____            _                 ____        _   
+    |  _ \          | |               |  _ \      | |  
+    | |_) | __ _  __| | __ _  ___ _ __| |_) | ___ | |_ 
+    |  _ < / _` |/ _` |/ _` |/ _ \ '__|  _ < / _ \| __|
+    | |_) | (_| | (_| | (_| |  __/ |  | |_) | (_) | |_ 
+    |____/ \__,_|\__,_|\__, |\___|_|  |____/ \___/ \__|
+                        __/ |                          
+                       |___/  Badger badger badger badger badger badger badger badger badger badger badger badger MUSHROOM MUSHROOM   
+    BadgerBot by Dk
+    Badger#0675 (651867682559361075)
+
+Command List
+
+    Argument Formatting:
+    - <argument>: required argument (indicated by surrounding <>)
+    - [argument:default]: optional argument and its default value (if applicable)
+
+    Aliases are formatted like ;[tags|taglist], where "tags" or "taglist" are both valid triggers.
+
+    Permission Formatting:
+      Note: Only one of the permissions listed below are needed for their corresponding status.
+            For example: if your servers moderator role can ban members, the bot will see them as an admin AND a mod (regardless of roles), so plan your permissions accordingly
+            Also, admins inherit moderator permissions, so if the bot sees someone as an admin, it will also see them as a mod.
+    - (+): moderator permissions required (manage messages or kick perms)
+    - (++): admin permissions required (administrator, manage server, or ban perms)
+    - (+++): guild owner required (you must own the guild)
+    - (^): bot owner required (this typically means you are hosting the bot, this doesn't inherit mod and admin for now)
+
+    Default prefix: ;
+
+    Fun:
+        1. Flip a coin                   : ;flip
+        2. Play rock, paper, scissors    : ;rps <weapon>
+        3. Roll the dice                 : ;[roll | dice] [sides : 6]
+        4. IQ Test!                      : ;iq [user : you]
+        5. Ask the Almighty Magic 8-Ball : ;8ball <question>
+        6. ZALGO!                        : ;zalgo <text>
+
+    Profile/Badge:
+        1. (+) Award a badge                : ;award <user> <badge>
+        2. (+) Revoke a badge               : ;revoke <user> <badge>
+        3. (++) Create a badge              : ;addbadge <name> <icon> [description]
+            - The 'icon' parameter works best as an emoji
+        4. (++) Delete a badge              : ;delbadge <name>
+        5. List the server's badges         : ;badges
+
+    Tags:
+        1. View a tag's contents        : ;tag <tag>
+        2. Create a tag                 : ;[createtag | addtag] <name> <content>
+        3. Delete a tag                 : ;[removetag | deltag] <name>
+        4. Update a tag's contents      : ;updatetag <name> <content>
+        5. List the server's tags       : ;tags
+
+    Bot Management:
+        1. Set the server prefix        : ;prefix [prefix] (will show the current prefix if no prefix is supplied)
+
+    
+
+
+    
+
+
