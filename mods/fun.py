@@ -92,7 +92,7 @@ class FunCog(commands.Cog):
 		await ctx.send(response)
 
 	@commands.command(name="zalgo")
-	async def zalgotext(self, ctx, *, text:str):
+	async def zalgotext(self, ctx, *, text:str): #Based off of https://gist.github.com/MetroWind/1401473/4631da7a4540a63e72701792a4aa0262acc7d397
 		result = []
 		for char in text:
 			ZalgoCounts = {"up": 0, "down": 0, "mid": 0}

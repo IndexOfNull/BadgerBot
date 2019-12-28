@@ -33,8 +33,8 @@ def has_any_permissions(**perms): #This is basically just commands.has_permissio
 
 #honestly, I could just put the decorators for these in front
 #of all the commands requiring them, but this is easier.
-admin_perms = {"administrator": True, "manage_guild": True}
-mod_perms = {"manage_messages": True, "ban_members": True, "kick_members": True}
+admin_perms = {"administrator": True, "manage_guild": True, "ban_members": True}
+mod_perms = {"manage_messages": True, "kick_members": True}
 #could it be possible to be an admin and not a mod? That would probably never happen with anyone who knows how to use discord...
 
 #These are the wrappers for the decorators. We can use these to infer if somewhat has admin status in a #general sense.
@@ -46,7 +46,7 @@ def is_admin():
 
 def is_mod():
     try:
-        return has_any_permissions(**mod_perms)
+        return has_any_permissions(**mod_perms) or has_any_permissions(**admin_perms)
     except MissingAnyPermissions:
         raise MissingModerator
 

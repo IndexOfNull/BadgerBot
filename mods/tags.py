@@ -93,7 +93,7 @@ class TagCog(commands.Cog):
         else:
             await ctx.send(ctx.responses['tag_exists'])
 
-    @commands.command(aliases = ["deltag"])
+    @commands.command(aliases = ["deltag", "deletetag"])
     @commands.guild_only()
     @checks.is_admin()
     async def removetag(self, ctx, *, name:str): #Delete a tag
