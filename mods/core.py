@@ -1,7 +1,7 @@
 from discord.ext import commands
 
 
-class OptionsCog(commands.Cog):
+class CoreCommandsCog(commands.Cog):
 
 	def __init__(self, bot):
 		self.bot = bot
@@ -20,6 +20,15 @@ class OptionsCog(commands.Cog):
 				self.datamanager.prefixes[str(ctx.guild.id)] = prefix
 			await ctx.send(ctx.responses['prefix_set'].format(prefix))
 
+	@commands.command()
+	async def help(self, ctx, command:str=""):
+		command = command.replace(".", " ")
+		if command:
+			cmd = self.bot.get_command(command)
+			if cmd:
+				await ctx.send_help(cmd)
+				return
+		await ctx.send("https://github.com/IndexOfNull/BadgerBot/blob/master/commands.txt")
 
 def setup(bot):
-	bot.add_cog(OptionsCog(bot))
+	bot.add_cog(CoreCommandsCog(bot))
