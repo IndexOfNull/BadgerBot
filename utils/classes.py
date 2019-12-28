@@ -16,7 +16,10 @@ class CustomContext(Context):
 
     ####Options Code####
     def injectcustom(self):
-        self.options = self.bot.datamanager.get_options(self.guild.id)
+        if not self.guild:
+            self.options = self.bot.datamanager.get_options("dm")
+        else:
+            self.options = self.bot.datamanager.get_options(self.guild.id)
         self.basic_options = {name: data for name, data in self.options.items()} #Converts {'optname': row} to {'optname': value}; this does not give direct access to the row object
         #Wow this is a mess
         if self.options['lang'].data in self.bot.responses:

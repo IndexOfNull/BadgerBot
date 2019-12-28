@@ -12,8 +12,8 @@ import utils.messages.manager
 modules = [
 	"mods.profile",
 	"mods.tags",
-	"mods.options",
-	"mods.core"
+	"mods.core",
+	"mods.fun"
 ] #What cogs to load
 
 class BuddyBot(commands.Bot):
@@ -46,6 +46,8 @@ class BuddyBot(commands.Bot):
 		await self.invoke(ctx)
 
 	async def get_prefix(self, message):
+		if not message.guild:
+			return commands.when_mentioned_or(*[";"])(self, message)
 		if not str(message.guild.id) in self.datamanager.prefixes.keys():
 			prefixes = [self.prefix]
 		else:

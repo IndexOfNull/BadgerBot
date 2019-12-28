@@ -8,6 +8,7 @@ class CoreCommandsCog(commands.Cog):
 		self.datamanager = bot.datamanager
 
 	@commands.command()
+	@commands.guild_only()
 	async def prefix(self, ctx, prefix:str=None):
 		if not prefix:
 			await ctx.send(ctx.responses['prefix'].format(ctx.options['prefix'].data))

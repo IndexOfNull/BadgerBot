@@ -54,7 +54,10 @@ class DataManager():
             basic = filters.pop("basic", False)
             rowsonly = filters.pop("rows_only", False)
             hasfilters = filters != {}
-            rows = self.db.query(OptionEntry).filter_by(server_id=server_id, **filters).all()
+            if server_id == 0 or server_id == "dm": #if we're in a DM channel
+                rows = []
+            else:
+                rows = self.db.query(OptionEntry).filter_by(server_id=server_id, **filters).all()
             rowkeys = [row.name for row in rows]
             if process:
                 for key, value in self.server_options.items():

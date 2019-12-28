@@ -25,6 +25,8 @@ Command List
     - (++): admin permissions required (administrator, manage server, or ban perms)
     - (+++): guild owner required (you must own the guild)
     - (^): bot owner required (this typically means you are hosting the bot, this doesn't inherit mod and admin for now)
+    - (SO): server only
+    - (DM): DM only
 
     Default prefix: ;
 
@@ -36,7 +38,7 @@ Command List
         5. Ask the Almighty Magic 8-Ball : ;8ball <question>
         6. ZALGO!                        : ;zalgo <text>
 
-    Profile/Badge:
+    Profile/Badge (SO):
         1. (+) Award a badge                : ;award <user> <badge>
         2. (+) Revoke a badge               : ;revoke <user> <badge>
         3. (++) Create a badge              : ;addbadge <name> <icon> [description]
@@ -44,7 +46,7 @@ Command List
         4. (++) Delete a badge              : ;delbadge <name>
         5. List the server's badges         : ;badges
 
-    Tags:
+    Tags (SO):
         1. View a tag's contents        : ;tag <tag>
         2. Create a tag                 : ;[createtag | addtag] <name> <content>
         3. Delete a tag                 : ;[removetag | deltag] <name>
@@ -52,4 +54,4 @@ Command List
         5. List the server's tags       : ;tags
 
     Bot Management:
-        1. Set the server prefix        : ;prefix [prefix] (will show the current prefix if no prefix is supplied)
+        1. (SO) Set the server prefix        : ;prefix [prefix] (will show the current prefix if no prefix is supplied)
