@@ -3,8 +3,15 @@ from sqlalchemy import Column, Integer, BigInteger, SmallInteger, String, Foreig
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
+import discord
 
-import datetime
+from datetime import datetime, timezone
+def utc_to_local(utc_dt):
+    return utc_dt.replace(tzinfo=timezone.utc).astimezone(tz=None)
+
+def aslocaltimestr(utc_dt):
+    return utc_to_local(utc_dt).strftime('%Y-%m-%d %H:%M:%S')
+
 
 from .classes import WidgetBase
 
@@ -17,7 +24,7 @@ class BadgeEntry(Base):
     name = Column(String(255, collation="utf8mb4_unicode_ci"), nullable=False)
     description = Column(Text(collation="utf8mb4_unicode_ci"), default="")
     text = Column(String(128, collation="utf8mb4_unicode_ci"), nullable=False) #A piece of text. For use in rendering out to text. Also use utf8mb4 for full unicode support.
-    created_on = Column(TIMESTAMP, default=datetime.datetime.now()) #a timestamp to keep track of when the row was added
+    created_on = Column(TIMESTAMP, default=datetime.now()) #a timestamp to keep track of when the row was added
     
     def __repr__(self):
         return "<BadgeEntry(id='%s', text='%s', created_on='%s')>" % (self.id, self.text, self.created_on)
@@ -28,7 +35,7 @@ class BadgeWinner(Base):
     server_id = Column(BigInteger(), nullable=False)
     discord_id = Column(BigInteger(), nullable=False) # 0 -> 2^63 - 1
     badge_id = Column(SmallInteger, ForeignKey(BadgeEntry.id, ondelete="CASCADE"), nullable=False) # -16000 -> ~16,000, keeps track of what badge
-    awarded = Column(TIMESTAMP, default=datetime.datetime.now()) #a timestamp to keep track of when the row was added
+    awarded = Column(TIMESTAMP, default=datetime.now()) #a timestamp to keep track of when the row was added
 
     badge = relationship("BadgeEntry", foreign_keys="BadgeWinner.badge_id") #Make a reference to the badge in question
 
@@ -100,3 +107,42 @@ class BadgeWidget(WidgetBase):
         except Exception as e:  #Maybe add exc.IntegrityError
             self.db.rollback()
             raise e
+
+    def handle_embed(self, ctx, user, embed):
+        ubadges = self.get_user_badges(ctx.guild.id, user.id)
+        icons = []
+        count = 0
+        for winentry in ubadges:
+            icons.append(winentry.badge.text)
+            count += 1
+        icons = icons if icons else "No Badges"
+        embed.add_field(name="Badges [" + str(count) + "]", value="".join(icons), inline=False)
+        return embed
+
+class DateJoinedWidget(WidgetBase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.widget_only = True
+
+    def handle_embed(self, ctx, user, embed):
+        if not isinstance(user, discord.Member): #If we don't have a member object
+            return
+        t = user.joined_at
+        if t: #user.joined_at can sometimes return None
+            converted_time = t.strftime('%Y-%m-%d %H:%M:%S') + " UTC"
+            embed.add_field(name="Date Joined", value=converted_time)
+
+class AccountAgeWidget(WidgetBase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.widget_only = True
+
+    def handle_embed(self, ctx, user, embed):
+        if not isinstance(user, discord.User) and not isinstance(user, discord.Member): #If we don't have a user-like object
+            return
+        t = user.created_at
+        if t: #user.joined_at can sometimes return None
+            converted_time = t.strftime('%Y-%m-%d %H:%M:%S') + " UTC"
+            embed.add_field(name="Account Created", value=converted_time)
