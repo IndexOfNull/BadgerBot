@@ -15,7 +15,7 @@
             "badge_created": ":shield: Your badge has been created!",
             "badge_nobadges": ":white_sun_small_cloud: This server has no badges.",
             "badgelevels_nolevels": ":white_sun_small_cloud: This server does not have any levels associated to badges.",
-            "badgelevels_max": ":red_circle: Badges cannot award more than {0} levels.",
+            "badgelevels_limit": ":red_circle: Badges cannot award or take away more than {0} levels.",
             "badgelevels_set": ":military_medal: The levels for \"{0}\" have been set to {1}.",
             "badgelevels_remove": ":cloud_lightning: The levels for \"{0}\" have been removed.",
             "tag_lenlimits": ":red_circle: Tag {0} cannot have over {1} characters. Please shorten it.",
