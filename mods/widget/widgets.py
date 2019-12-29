@@ -123,7 +123,7 @@ class DateJoinedWidget(WidgetBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.widget_only = True
+        self.embed_only = True
 
     def handle_embed(self, ctx, user, embed):
         if not isinstance(user, discord.Member): #If we don't have a member object
@@ -137,7 +137,7 @@ class AccountAgeWidget(WidgetBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.widget_only = True
+        self.embed_only = True
 
     def handle_embed(self, ctx, user, embed):
         if not isinstance(user, discord.User) and not isinstance(user, discord.Member): #If we don't have a user-like object

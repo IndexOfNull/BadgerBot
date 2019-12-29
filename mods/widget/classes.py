@@ -13,6 +13,7 @@ class WidgetBase():
         self.render_manager = manager
         self.build_tables = kwargs.pop("create_tables", False)
         self.embed_only = False
+        self.name = kwargs.pop("name", None)
 
     def render_image(self, theme): #Render for the profile screen
         raise NotImplementedError()
@@ -23,7 +24,7 @@ class WidgetBase():
     def on_event(self, event, data): #Handle custom messaging implementations
         pass
 
-    def handle_embed(self, embed):
+    def handle_embed(self, ctx, user, embed):
         pass
 
 class ThemeBase():
@@ -68,4 +69,8 @@ class RenderManager():
         for widget in self.widgets:
             widget.on_event(event, data)
 
+    def get_widget(self, name):
+        for widget in self.widgets:
+            if name == widget.name or name == widget.__class__.__name__:
+                return widget
 
