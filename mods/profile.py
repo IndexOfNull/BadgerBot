@@ -1,8 +1,9 @@
 import discord
 from discord.ext import commands
 
-from mods.widget.badge import BadgeWidget
+from mods.widget.widgets import BadgeWidget, DateJoinedWidget, AccountAgeWidget
 from mods.widget.classes import RenderManager
+from mods.widget import themes
 from utils import checks
 
 class ProfileCog(commands.Cog):
@@ -11,6 +12,9 @@ class ProfileCog(commands.Cog):
         self.bot = bot
         self.manager = RenderManager(self.bot.db, create_tables=bot.create_tables)
         self.badger = self.manager.register_widget(BadgeWidget)
+        self.manager.register_widget(DateJoinedWidget)
+        self.manager.register_widget(AccountAgeWidget)
+        self.maintheme = self.manager.register_theme(themes.MainTheme)
 
     @commands.command(aliases = ['givebadge', 'give'])
     @commands.guild_only()
@@ -104,7 +108,16 @@ class ProfileCog(commands.Cog):
             finalstr = ctx.responses['badge_nobadges']
         await ctx.send(finalstr)
 
-    #Maybe add an update command down the line.
+    @commands.command()
+    @commands.guild_only()
+    async def profile(self, ctx, user:discord.Member=None):
+        if user is None:
+            user = ctx.author
+        if user.bot:
+            await ctx.send(ctx.responses['general_useronly'])
+            return
+        e = self.maintheme.get_embed(ctx, user)
+        await ctx.send(embed=e)
 
 def setup(bot):
     bot.add_cog(ProfileCog(bot))
