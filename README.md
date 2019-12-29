@@ -5,7 +5,7 @@ Hello, this is a little project of mine called BadgerBot. It is currently ***unf
 
 # Requirements
 
-* Python 3.7 or above. Anything past 3.5.3 should work, buy may need additional tweaking.
+* Python 3.7 or above. Anything past 3.5.3 should work, but may need additional tweaking.
 * Pipenv (for now)
 * A database, any should work. I personally use MySQL (MariaDB), but stuff like PostgreSQL should work too.
 
