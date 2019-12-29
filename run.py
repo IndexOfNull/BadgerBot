@@ -40,6 +40,6 @@ buddy = BuddyBot(**config)
 if __name__ == "__main__":
     try:
         buddy.run()
-    except:
+    except KeyboardInterrupt:
         pass
     print("Closing")

@@ -15,6 +15,9 @@ Command List
     - <argument>: required argument (indicated by surrounding <>)
     - [argument:default]: optional argument and its default value (if applicable)
 
+    Parameters accepting text can be encapsulated in quotes to allow for spaces. Some parameters do not require quotes for spaces.
+    Example: ;addbadge "Test Badge" ...
+
     Aliases are formatted like ;[tags|taglist], where "tags" or "taglist" are both valid triggers.
 
     Permission Formatting:

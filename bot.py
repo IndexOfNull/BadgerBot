@@ -13,7 +13,8 @@ modules = [
 	"mods.profile",
 	"mods.tags",
 	"mods.core",
-	"mods.fun"
+	"mods.fun",
+	"mods.leveling"
 ] #What cogs to load
 
 class BuddyBot(commands.Bot):
@@ -130,8 +131,8 @@ class BuddyBot(commands.Bot):
 		super().run(self.token)
 
 	async def close(self):
-		await super().close()
 		self.db.close()
 		self.db_engine.dispose()
+		await super().close()
 		pending = len(asyncio.Task.all_tasks())
 		print("Cleaned up successfully. Waiting for %s tasks to finish." % pending)
