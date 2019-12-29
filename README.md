@@ -1,11 +1,11 @@
 # BadgerBot
-Hello, this is a little project of mine called BadgerBot. It is currently ***unfinished***,  but is in a semi-functional state. Its main purpose right now is to just be a badge system (hence the name), but that will probably branch out more in the future. You can check the projects tab if you want to see what's planned and where I'm going with this.
+Hello, this is a little project of mine called BadgerBot. It is currently ***unfinished***, but it should be in a functional state. Its main purpose right now is to just be a badge system (hence the name), but that will probably branch out more in the future. You can check the projects tab if you want to see what's planned and where I'm going with this.
 
 **I would not clone this if you were looking for a fully-featured bot. You will not get any support; you're on your own.**
 
 # Requirements
 
-* At least python 3.5.3
+* Python 3.7 or above. Anything past 3.5.3 should work, buy may need additional tweaking.
 * Pipenv (for now)
 * A database, any should work. I personally use MySQL (MariaDB), but stuff like PostgreSQL should work too.
 
