@@ -113,10 +113,10 @@ class BadgeWidget(WidgetBase):
         icons = []
         count = 0
         for winentry in ubadges:
-            icons.append(winentry.badge.text)
+            icons.append(winentry.badge.text + " ")
             count += 1
         icons = icons if icons else "No Badges"
-        embed.add_field(name="Badges [" + str(count) + "]", value="".join(icons), inline=False)
+        embed.add_field(name="Badges [" + str(count) + "]", value="".join(icons).strip(), inline=False)
         return embed
 
 class DateJoinedWidget(WidgetBase):

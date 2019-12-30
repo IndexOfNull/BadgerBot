@@ -66,11 +66,10 @@ class LevelWidget(WidgetBase):
         id_to_lvl = {row.badge_id: row.levels for row in rows}
         total = 0
         for row in usr_badges:
-            total += id_to_lvl[row.badge_id]
+            if row.badge_id in id_to_lvl: #Make sure that there is indeed a level entry for the current badge in the iteration
+                total += id_to_lvl[row.badge_id]
         embed.insert_field_at(1, name="Level", value=str(total), inline=False)
-        if len(user.roles) >= 2:
-            rolecolor = user.roles[1].color
-            embed.color = rolecolor
+        embed.color = user.color
         return embed
 
 class LevelCog(commands.Cog):
