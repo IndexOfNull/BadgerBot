@@ -46,7 +46,7 @@ def is_admin():
 
 def is_mod():
     try:
-        return has_any_permissions(**mod_perms) or has_any_permissions(**admin_perms)
+        return has_any_permissions(**{**mod_perms, **admin_perms}) #This effectively merges the two dicts and then unpacks the merged dict
     except MissingAnyPermissions:
         raise MissingModerator
 
