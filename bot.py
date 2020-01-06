@@ -33,14 +33,6 @@ class BuddyBot(commands.Bot):
 		self.db_engine = create_engine(self.db_engine_uri)
 		Session = sessionmaker(bind=self.db_engine)
 		self.db = Session()
-		try:
-			self.db.execute("SELECT * FROM serveropts ORDER BY RAND() LIMIT 1") #Get a random server opt row as a sanity check. This is MySQL specific, so reformatting may be needed for other DBs
-		except sa.exc.ProgrammingError:
-			print("It appears that the database was not initialized properly. Try rerunning with --create-tables")
-			exit()
-		except:
-			print("Something is wrong with the database. Ensure that you have entered the right info into the config.json file and try again.")
-			exit()
 		self.remove_command('help')
 		#Messages
 		self.responses = utils.messages.manager.responses
@@ -72,6 +64,14 @@ class BuddyBot(commands.Bot):
 		return commands.when_mentioned_or(*prefixes)(self, message)
 
 	async def on_ready(self): #THIS MAY BE RUN MULTIPLE TIMES IF reconnect=True!
+		try:
+			self.db.execute("SELECT * FROM serveropts ORDER BY RAND() LIMIT 1") #Get a random server opt row as a sanity check. This is MySQL specific, so reformatting may be needed for other DBs
+		except sa.exc.ProgrammingError:
+			print("It appears that the database was not initialized properly. Try rerunning with --create-tables")
+			exit()
+		except:
+			print("Something is wrong with the database. Ensure that you have entered the right info into the config.json file and try again.")
+			exit()
 		self.datamanager.refresh()
 		#Load cogs
 		finalstr = ""
