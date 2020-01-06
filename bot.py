@@ -63,19 +63,9 @@ class BuddyBot(commands.Bot):
 			prefixes.append(self.prefix)
 		return commands.when_mentioned_or(*prefixes)(self, message)
 
-	async def on_ready(self): #THIS MAY BE RUN MULTIPLE TIMES IF reconnect=True!
-		try:
-			self.db.execute("SELECT * FROM serveropts ORDER BY RAND() LIMIT 1") #Get a random server opt row as a sanity check. This is MySQL specific, so reformatting may be needed for other DBs
-		except sa.exc.ProgrammingError:
-			print("It appears that the database was not initialized properly. Try rerunning with --create-tables")
-			exit()
-		except:
-			print("Something is wrong with the database. Ensure that you have entered the right info into the config.json file and try again.")
-			exit()
-		self.datamanager.refresh()
-		#Load cogs
+	def load_cogs(self, mods):
 		finalstr = ""
-		for cog in modules: #Iterate through all the cogs and load them
+		for cog in mods: #Iterate through all the cogs and load them
 			try:
 				self.load_extension(cog)
 			except commands.ExtensionAlreadyLoaded:
@@ -87,6 +77,17 @@ class BuddyBot(commands.Bot):
 			print('\n======COG ERRORS======')
 			print(finalstr)
 			print("======================\n\nWARNING: Some cogs failed to load! Some things may not function properly.\n")
+
+	async def on_ready(self): #THIS MAY BE RUN MULTIPLE TIMES IF reconnect=True!
+		try:
+			self.db.execute("SELECT * FROM serveropts ORDER BY RAND() LIMIT 1") #Get a random server opt row as a sanity check. This is MySQL specific, so reformatting may be needed for other DBs
+		except sa.exc.ProgrammingError:
+			print("It appears that the database was not initialized properly. Try rerunning with --create-tables")
+			exit()
+		except:
+			print("Something is wrong with the database. Ensure that you have entered the right info into the config.json file and try again.")
+			exit()
+		self.datamanager.refresh()
 		#Print a nice hello message
 		print("---[Ready]---")
 		print("Logged in as:", self.user)
@@ -137,6 +138,8 @@ class BuddyBot(commands.Bot):
 		await super().on_error(event, *args, **kwargs)
 
 	def run(self):
+		#Load cogs
+		self.load_cogs(modules)
 		super().run(self.token)
 
 	async def close(self):
