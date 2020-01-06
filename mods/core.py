@@ -1,5 +1,5 @@
 from discord.ext import commands
-
+from utils import checks
 
 class CoreCommandsCog(commands.Cog):
 
@@ -13,6 +13,8 @@ class CoreCommandsCog(commands.Cog):
 		if not prefix:
 			await ctx.send(ctx.responses['prefix'].format(ctx.options['prefix'].data))
 		else:
+			if not checks.is_admin(return_predicate=True)(ctx): #should error if they aren't an admin
+				return
 			if len(prefix) > 8:
 				await ctx.send(ctx.responses['prefix_limit'].format(8))
 				return
