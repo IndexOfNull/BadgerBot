@@ -51,10 +51,11 @@ Command List
 
     Tags (SO):
         1. View a tag's contents        : ;tag <tag>
-        2. Create a tag                 : ;[createtag | addtag] <name> <content>
-        3. Delete a tag                 : ;[removetag | deltag] <name>
-        4. Update a tag's contents      : ;updatetag <name> <content>
+        2. (++) Create a tag                 : ;[createtag | addtag] <name> <content>
+        3. (++) Delete a tag                 : ;[removetag | deltag] <name>
+        4. (++) Update a tag's contents      : ;updatetag <name> <content>
         5. List the server's tags       : ;tags
 
-    Bot Management:
-        1. (SO) Set the server prefix        : ;prefix [prefix] (will show the current prefix if no prefix is supplied)
+    Bot Management (SO):
+        1. View the server's prefix        : ;prefix
+        2. (++) Set the server's prefix    : ;prefix <prefix>
