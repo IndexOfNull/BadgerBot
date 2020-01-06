@@ -60,9 +60,6 @@ class ProfileCog(commands.Cog):
         if len(name) > 32:
             await ctx.send(ctx.responses['badge_limits'].format("name", 32))
             return
-        if len(icon) > 32:
-            await ctx.send(ctx.responses['badge_limits'].format("icon", 32))
-            return
         if len(description) > 175:
             await ctx.send(ctx.responses['badge_limits'].format("description", 175))
             return
