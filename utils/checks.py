@@ -20,6 +20,7 @@ class MissingAdmin(MissingAnyPermissions): pass
 class MissingModerator(MissingAnyPermissions): pass
 
 def has_any_permissions(**perms): #This is basically just commands.has_permissions with the logic flipped around
+    return_predicate = perms.pop("return_predicate", False)
     def predicate(ctx):
         ch = ctx.channel
         permissions = ch.permissions_for(ctx.author)
@@ -29,6 +30,8 @@ def has_any_permissions(**perms): #This is basically just commands.has_permissio
             return True
 
         raise MissingAnyPermissions(perms.keys())
+    if return_predicate:
+        return predicate
     return commands.check(predicate)
 
 #honestly, I could just put the decorators for these in front
@@ -38,15 +41,15 @@ mod_perms = {"manage_messages": True, "kick_members": True}
 #could it be possible to be an admin and not a mod? That would probably never happen with anyone who knows how to use discord...
 
 #These are the wrappers for the decorators. We can use these to infer if somewhat has admin status in a #general sense.
-def is_admin():
+def is_admin(**kwargs): #The **kwargs allows us to pass return_predicate=True if we don't want a commands.check decorator
     try:
-        return has_any_permissions(**admin_perms)
+        return has_any_permissions(**admin_perms, **kwargs)
     except MissingAnyPermissions:
         raise MissingAdmin
 
-def is_mod():
+def is_mod(**kwargs):
     try:
-        return has_any_permissions(**{**mod_perms, **admin_perms}) #This effectively merges the two dicts and then unpacks the merged dict
+        return has_any_permissions(**{**mod_perms, **admin_perms}, **kwargs) #This effectively merges the two dicts and then unpacks the merged dict
     except MissingAnyPermissions:
         raise MissingModerator
 
