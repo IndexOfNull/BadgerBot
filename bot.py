@@ -15,7 +15,8 @@ modules = [
 	"mods.tags",
 	"mods.core",
 	"mods.fun",
-	"mods.leveling"
+	"mods.leveling",
+	"mods.owner"
 ] #What cogs to load
 
 class BuddyBot(commands.Bot):
