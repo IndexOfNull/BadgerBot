@@ -28,6 +28,9 @@ Command List
     - (++): admin permissions required (administrator, manage server, or ban perms)
     - (+++): guild owner required (you must own the guild)
     - (^): bot owner required (this typically means you are hosting the bot, this doesn't inherit mod and admin for now)
+
+    Other command restrictions:
+    - (!): requires additional confirmation
     - (SO): server only
     - (DM): DM only
 
@@ -59,3 +62,10 @@ Command List
     Bot Management (SO):
         1. View the server's prefix        : ;prefix
         2. (++) Set the server's prefix    : ;prefix <prefix>
+
+    Bot Owner Commands (^):
+        1. Load a module                   : ;loadmodule <module>
+        2. Unload a module                 : ;unloadmodule <module>
+        3. Reload a module                 : ;reloadmodule <module>
+        4. Execute Python                  : ;exec <code>
+        5. Set Bot Activity                : ;activity <playing | listening | watching> [status] -- A blank status will hide it publicly
