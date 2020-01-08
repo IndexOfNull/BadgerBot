@@ -48,7 +48,11 @@
             "dice_limit_lower": ":red_circle: You cannot roll dice with less than {0} sides.",
             "iq": "{0.mention} has {1} IQ",
             "8ball_responses": ["It is certain", "It is decidedly so", "Without a doubt", "Yes, definitely", "You may rely on it","As I see it, yes", "Most likely", "Outlook good", "Yes", "Signs point to yes", "Reply hazy, try again", "Ask again later", "Better not tell you now", "Cannot predict now", "Concentrate and ask again", "Don't count on it", "My reply is no", "My sources say no", "Outlook not so good", "Very doubtful", "The answer lies within", "That's a question for your parents", "Do you think I'm some kind of psychic?", "ERROR: Stupid Question Asked"],
-            "setactivity_success": "My activity status has been updated successfully!"
+            "setactivity_success": "My activity status has been updated successfully!",
+            "verify_message": "You are running a command that requires verification. You can either confirm or cancel by clicking :white_check_mark: or :x:",
+            "verify_timeout": "This command confirmation has timed out. Please run your command again.",
+            "verify_confirmed": "This command confirmation has been confirmed.",
+            "verify_canceled": "This command confirmation has been canceled."
         }
     }
 }
