@@ -6,6 +6,7 @@ class CoreCommandsCog(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.datamanager = bot.datamanager
+		self.keep_enabled = True
 
 	@commands.command()
 	@commands.guild_only()

@@ -107,7 +107,7 @@ class ProfileCog(commands.Cog):
 
     @commands.command()
     @commands.guild_only()
-    async def profile(self, ctx, user:discord.Member=None):
+    async def profile(self, ctx, *, user:discord.Member=None):
         if user is None:
             user = ctx.author
         if user.bot:
