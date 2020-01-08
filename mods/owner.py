@@ -1,6 +1,8 @@
 import discord
 from discord.ext import commands
 
+from utils import funcs
+
 from sqlalchemy import Column, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -66,6 +68,42 @@ class BotOwnerCog(commands.Cog):
         await self.bot.change_presence(activity=activity)
         self.set_value("activity", activity_type + ";" + text)
         await ctx.send(ctx.responses['setactivity_success'])
+
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    @funcs.require_confirmation()
+    async def reloadmodule(self, ctx, *, module:str):
+        try:
+            self.bot.reload_extension(module)
+        except Exception as e:
+            await ctx.send(ctx.responses['module_fail'])
+            raise e
+        else:
+            await ctx.send(ctx.responses['module_reloaded'].format(module))
+
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    @funcs.require_confirmation()
+    async def unloadmodule(self, ctx, *, module:str):
+        try:
+            self.bot.unload_extension(module)
+        except Exception as e:
+            await ctx.send(ctx.responses['module_fail'])
+            raise e
+        else:
+            await ctx.send(ctx.responses['module_unloaded'].format(module))
+
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    @funcs.require_confirmation()
+    async def loadmodule(self, ctx, *, module:str):
+        try:
+            self.bot.load_extension(module)
+        except Exception as e:
+            await ctx.send(ctx.responses['module_fail'])
+            raise e
+        else:
+            await ctx.send(ctx.responses['module_loaded'].format(module))
 
 def setup(bot):
     bot.add_cog(BotOwnerCog(bot))

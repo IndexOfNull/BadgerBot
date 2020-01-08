@@ -52,7 +52,11 @@
             "verify_message": "You are running a command that requires verification. You can either confirm or cancel by clicking :white_check_mark: or :x:",
             "verify_timeout": "This command confirmation has timed out. Please run your command again.",
             "verify_confirmed": "This command confirmation has been confirmed.",
-            "verify_canceled": "This command confirmation has been canceled."
+            "verify_canceled": "This command confirmation has been canceled.",
+            "module_reloaded": "{0} has been reloaded.",
+            "module_unloaded": "{0} has been unloaded.",
+            "module_loaded": "{0} has been loaded.",
+            "module_fail": "There was a problem while loading or unloading your module."
         }
     }
 }
