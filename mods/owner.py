@@ -105,5 +105,22 @@ class BotOwnerCog(commands.Cog):
         else:
             await ctx.send(ctx.responses['module_loaded'].format(module))
 
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    async def exec(self, ctx, *, code:str): #with great power comes great destructiveness
+        code = code.strip("` py")
+        # Make an async function with the code and `exec` it
+        exec(
+            f'async def __ex(bot, ctx, message, server, channel, author): ' +
+            ''.join(f'\n {l}' for l in code.split('\n'))
+        )
+        # Get `__ex` from local variables, call it and return the result
+        try:
+            result = await locals()['__ex'](self.bot, ctx, ctx.message, ctx.guild, ctx.channel, ctx.author)
+        except Exception as e:
+            await ctx.send("Error: " + str(e))
+        else:
+            await ctx.send("`{0}`".format(result))
+
 def setup(bot):
     bot.add_cog(BotOwnerCog(bot))
