@@ -52,7 +52,11 @@ class BuddyBot(commands.Bot):
 		self.web_app = web.Application()
 		web_runner = web.AppRunner(self.web_app)
 		#Register routes
-		self.web_app.add_routes([web.get('/widgetbroadcast', self.web_broadcast)])
+		routes = [
+			web.get('/widgetbroadcast', self.web_broadcast),
+			web.get('/event', self.web_event)
+		]
+		self.web_app.add_routes(routes)
 		#Run it
 		self.loop.run_until_complete(web_runner.setup())
 		web_site = web.TCPSite(web_runner)
@@ -164,10 +168,27 @@ class BuddyBot(commands.Bot):
 			r = {"status": "error", "error": "You must pass an event and a payload"}
 			return web.Response(status=406, text=json.dumps(r))
 		else:
-			pcog.manager.broadcast_event(request.query['event'], request.query['payload'])
+			pcog.manager.broadcast(request.query['event'], request.query['payload'])
 			r = {"status": "good"}
 			return web.Response(status=200, text=json.dumps(r))
 
+	async def web_event(self, request):
+		pcog = self.get_cog("ProfileCog")
+		if not pcog:
+			r = {"status": "error", "error": "The profile cog (and thus the widget manager) is not loaded."}
+			return web.Response(status=503, text=json.dumps(r))
+		if not 'event' in request.query or not 'payload' in request.query:
+			r = {"status": "error", "error": "You must pass an event and a payload"}
+			return web.Response(status=406, text=json.dumps(r))
+		else:
+			print(request.query['event'])
+			try:
+				result = pcog.manager.fire_event(request.query['event'], **request.query) #Request params get converted to kwargs
+			except KeyError:
+				resp = {"status": "error", "error": "The specified event does not exist."}
+				return web.Response(status=406, text=json.dumps(resp))
+			r = {"status": "good", "result": result}
+			return web.Response(status=200, text=json.dumps(r))
 
 	def run(self):
 		#Load cogs

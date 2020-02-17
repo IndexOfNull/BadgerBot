@@ -52,6 +52,7 @@ class RenderManager():
     def __init__(self, db, **kwargs):
         self.themes = []
         self.widgets = []
+        self.events = {}
         self.db = db
         self.build_tables = kwargs.pop("create_tables", False) #Should we build tables based on the schema?
         
@@ -65,9 +66,17 @@ class RenderManager():
         self.themes.append(t)
         return t
 
-    def broadcast_event(self, event, data):
+    def broadcast(self, event, data): #Broadcast something to all widgets.
         for widget in self.widgets:
             widget.on_event(event, data)
+
+    def register_event(self, event, func):
+        if event in self.events:
+            raise Exception("You cannot register two events to the same event name")
+        self.events[event] = func
+
+    def fire_event(self, e, *args, **kwargs):
+        return self.events[e](*args, **kwargs)
 
     def get_widget(self, name):
         for widget in self.widgets:
