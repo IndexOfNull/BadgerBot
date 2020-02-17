@@ -53,8 +53,8 @@ class BuddyBot(commands.Bot):
 		web_runner = web.AppRunner(self.web_app)
 		#Register routes
 		routes = [
-			web.get('/widgetbroadcast', self.web_broadcast),
-			web.get('/event', self.web_event)
+			web.post('/broadcast', self.web_broadcast),
+			web.post('/event', self.web_event)
 		]
 		self.web_app.add_routes(routes)
 		#Run it
