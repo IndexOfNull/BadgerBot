@@ -4,7 +4,7 @@ from discord.ext import commands
 from mods.widget.widgets import BadgeWidget, DateJoinedWidget, AccountAgeWidget
 from mods.widget.classes import RenderManager
 from mods.widget import themes
-from utils import checks
+from utils import checks, funcs
 
 class ProfileCog(commands.Cog):
 
@@ -107,6 +107,7 @@ class ProfileCog(commands.Cog):
     @commands.command(aliases = ["removebadge", "rembadge", "delbadge", "rmbadge"])
     @commands.guild_only()
     @checks.is_admin()
+    @funcs.require_confirmation()
     async def deletebadge(self, ctx, *, name:str):
         badgeid = self.badger.name_to_id(ctx.guild.id, name)
         if badgeid: #If we got a valid id
