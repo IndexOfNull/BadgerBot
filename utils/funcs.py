@@ -29,7 +29,7 @@ def require_confirmation():
                 return user == ctx.author and (str(reaction.emoji) == allow or str(reaction.emoji) == deny)
 
             try:
-                reaction, user = await cog.bot.wait_for('reaction_add', timeout=5, check=check)
+                reaction, user = await cog.bot.wait_for('reaction_add', timeout=20, check=check)
                 if str(reaction.emoji) == deny:
                     await msg.edit(content=ctx.responses['verify_canceled'])
                     raise ConfirmationFailed("The confirmation was canceled")
