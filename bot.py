@@ -6,9 +6,13 @@ from sqlalchemy.orm import sessionmaker
 import sqlalchemy as sa
 
 import asyncio
+import aiohttp
+from aiohttp import web
 
 from utils import classes, data, checks, funcs
 import utils.messages.manager
+
+import json
 
 modules = [
 	"mods.profile",
@@ -42,6 +46,17 @@ class BuddyBot(commands.Bot):
 		self.datamanager.register_option("lang", "en")
 		self.datamanager.register_option("responses", "default")
 		self.datamanager.register_option("prefix", self.prefix)
+
+
+	def start_webserver(self):
+		self.web_app = web.Application()
+		web_runner = web.AppRunner(self.web_app)
+		#Register routes
+		self.web_app.add_routes([web.get('/widgetbroadcast', self.web_broadcast)])
+		#Run it
+		self.loop.run_until_complete(web_runner.setup())
+		web_site = web.TCPSite(web_runner)
+		self.loop.run_until_complete(web_site.start())
 
 	async def on_message(self, message):
 		if message.author.bot:
@@ -140,9 +155,24 @@ class BuddyBot(commands.Bot):
 			await message.channel.send("Something went seriously wrong when processing your message. Something is probably wrong with the bot.")
 		await super().on_error(event, *args, **kwargs)
 
+	async def web_broadcast(self, request):
+		pcog = self.get_cog("ProfileCog")
+		if not pcog:
+			r = {"status": "error", "error": "The profile cog (and thus the widget manager) is not loaded."}
+			return web.Response(status=503, text=json.dumps(r))
+		if not 'event' in request.query or not 'payload' in request.query:
+			r = {"status": "error", "error": "You must pass an event and a payload"}
+			return web.Response(status=406, text=json.dumps(r))
+		else:
+			pcog.manager.broadcast_event(request.query['event'], request.query['payload'])
+			r = {"status": "good"}
+			return web.Response(status=200, text=json.dumps(r))
+
+
 	def run(self):
 		#Load cogs
 		self.load_cogs(modules)
+		self.start_webserver()
 		super().run(self.token)
 
 	async def close(self):

@@ -4,7 +4,8 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-discord.py = "*"
+aiohttp = "*"
+discord = {py = "*"}
 sqlalchemy = "*"
 pymysql = "*"
 pillow = "*"
