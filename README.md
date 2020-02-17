@@ -23,3 +23,6 @@ Installing is pretty simple, and can basically be done with these steps:
    *Note*: You shouldn't (normally) have to include the `--create-tables` argument. You can omit it from now on.
 
 7. You should be good to go.
+
+# Additional Info
+If you are curious about how the bot implements different things, check out the info.md file.
