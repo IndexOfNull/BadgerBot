@@ -46,15 +46,16 @@ class BuddyBot(commands.Bot):
 		self.datamanager.register_option("lang", "en")
 		self.datamanager.register_option("responses", "default")
 		self.datamanager.register_option("prefix", self.prefix)
+		self.web_secret = kwargs.pop("web_secret", None)
 
 
 	def start_webserver(self):
-		self.web_app = web.Application()
+		self.web_app = web.Application(middlewares=[self.web_keymiddleware])
 		web_runner = web.AppRunner(self.web_app)
 		#Register routes
 		routes = [
-			web.post('/broadcast', self.web_broadcast),
-			web.post('/event', self.web_event)
+			web.get('/broadcast', self.web_broadcast),
+			web.get('/event', self.web_event)
 		]
 		self.web_app.add_routes(routes)
 		#Run it
@@ -159,6 +160,22 @@ class BuddyBot(commands.Bot):
 			await message.channel.send("Something went seriously wrong when processing your message. Something is probably wrong with the bot.")
 		await super().on_error(event, *args, **kwargs)
 
+	@web.middleware
+	async def web_keymiddleware(self, request, handler):
+		if self.web_secret:
+			if 'Authorization' in request.headers:
+				key = request.headers['Authorization']
+			elif 'secret' in request.query:
+				key = request.query['secret']
+			else:
+				resp = {"status": "error", "error": "No secret passed."}
+				return web.Response(status=403, text=json.dumps(resp))
+			if not key == self.web_secret:
+				resp = {"status": "error", "error": "Invalid secret."}
+				return web.Response(status=403, text=json.dumps(resp))
+		resp = await handler(request)
+		return resp
+
 	async def web_broadcast(self, request):
 		pcog = self.get_cog("ProfileCog")
 		if not pcog:
@@ -181,7 +198,6 @@ class BuddyBot(commands.Bot):
 			r = {"status": "error", "error": "You must pass an event and a payload"}
 			return web.Response(status=406, text=json.dumps(r))
 		else:
-			print(request.query['event'])
 			try:
 				result = pcog.manager.fire_event(request.query['event'], **request.query) #Request params get converted to kwargs
 			except KeyError:

@@ -2,6 +2,7 @@ from bot import BuddyBot
 import json
 import os
 import argparse
+import binascii
 
 parser = argparse.ArgumentParser(description="Run BadgerBot")
 parser.add_argument("--generate-config", default=False, action="store_true", help="generates the config file if it doesn't exist")
@@ -14,7 +15,8 @@ def generate_config():
     settings = {
         "token": "[TOKEN HERE]",
         "db_engine_uri": "mysql+pymysql://USER:PASS@IP/DATABASE",
-        "case_insensitive": True
+        "case_insensitive": True,
+        "web_secret": binascii.hexlify(os.urandom(24)).decode("utf-8")
     }
     stringed = json.dumps(settings)
     with open(args.config, "w") as f:
