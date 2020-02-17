@@ -108,6 +108,18 @@ class BadgeWidget(WidgetBase):
             self.db.rollback()
             raise e
 
+    def update_badge(self, server_id, name, **kwargs):
+        try:
+            badge = self.db.query(BadgeEntry).filter_by(server_id=server_id, name=name).first()
+            badge.name = kwargs.pop("newname", badge.name)
+            badge.text = kwargs.pop("text", badge.text)
+            badge.description = kwargs.pop("description", badge.description)
+            self.db.commit()
+            return badge
+        except Exception as e:
+            self.db.rollback()
+            raise e
+
     def handle_embed(self, ctx, user, embed):
         ubadges = self.get_user_badges(ctx.guild.id, user.id)
         icons = []

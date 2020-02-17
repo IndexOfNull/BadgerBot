@@ -77,6 +77,33 @@ class ProfileCog(commands.Cog):
         else:
             await ctx.send(ctx.responses['badge_exists'])
 
+    @commands.command()
+    @commands.guild_only()
+    @checks.is_admin()
+    async def updatebadge(self, ctx, name:str, newname:str, icon:str=None, *, description:str=None):
+        #Impose some limits on the parameters
+        if len(name) > 32:
+            await ctx.send(ctx.responses['badge_limits'].format("name", 32))
+            return
+        if description:
+            if len(description) > 175:
+                await ctx.send(ctx.responses['badge_limits'].format("description", 175))
+                return
+        badge_exists = self.badger.name_to_id(ctx.guild.id, name)
+        if badge_exists:
+            args = {}
+            if icon:
+                args['text'] = icon
+            if description:
+                args['description'] = description
+            updated = self.badger.update_badge(ctx.guild.id, name, newname=newname, **args)
+            if updated:
+                await ctx.send(ctx.responses['badge_updated'])
+            else:
+                await ctx.send(ctx.responses['badge_error'].format("updating"))
+        else:
+            await ctx.send(ctx.responses['badge_notfound'])
+
     @commands.command(aliases = ["removebadge", "rembadge", "delbadge", "rmbadge"])
     @commands.guild_only()
     @checks.is_admin()

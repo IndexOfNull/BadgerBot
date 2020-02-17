@@ -14,6 +14,7 @@
             "badge_maxbadgeslimit": ":compression: You can only have up to 50 badges on your server.",
             "badge_created": ":shield: Your badge has been created!",
             "badge_nobadges": ":white_sun_small_cloud: This server has no badges.",
+            "badge_updated": ":pencil: Your badge has been updated.",
             "badgelevels_nolevels": ":white_sun_small_cloud: This server does not have any levels associated to badges.",
             "badgelevels_limit": ":red_circle: Badges cannot award or take away more than {0} levels.",
             "badgelevels_set": ":military_medal: The levels for \"{0}\" have been set to {1}.",
