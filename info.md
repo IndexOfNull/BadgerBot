@@ -69,6 +69,7 @@ The bot also ships with a webserver baked into it. This allows (albeit basic) co
 The `event` and `payload` params are both required and an error will be returned if either of them are not included. See below for how responses will be formatted.
 ### Firing Events
 ```POST /event?event=event&payload=payload```
+
 This is functionally the same as broadcasting. But your response will also include a return value. Successful responses may look like this:
 
 ```json
