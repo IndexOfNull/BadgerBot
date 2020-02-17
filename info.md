@@ -8,7 +8,7 @@ The idea behind the profile and widget system is that there are 3 components:
  2. A theme that registers widgets
  3. A widget that actually handles the dirty work
 
-The idea behind a render manager is that it oversees everything necessary to get a nice profile. This is the highest level of interfacing with everything. Keep reading to see how some features are utilized.
+The idea behind a render manager is that it oversees everything necessary to get a nice profile. It is the highest level of interfacing with everything. Keep reading to see how some features are utilized.
 
 ### Communication: Broadcasts
  A broadcast is a message sent (from the render manager) to every widget containing an event name (so widgets can listen for certain broadcasts) and a payload. Widgets can currently receive information this way by implementing `on_event(event, data)`. Here's a rough example of how this might work:
@@ -57,20 +57,20 @@ A few other things exist about the render manager that don't demand a full expan
 
 Getting a widget by name:
 ```python
-render_manager.get_widget("BadgeWidget") #by class name or by Widget.name
+widget = render_manager.get_widget("BadgeWidget") #by class name or by Widget.name
 ```
 
 ## The Built-in Webserver
 The bot also ships with a webserver baked into it. This allows (albeit basic) communications from other services with widgets. It can be thought of as a REST API. The webserver can be used to broadcast and fire widget events.
 
 ### Broadcasting
-`POST /broadcast?event=event&payload=payload`
+```POST /broadcast?event=event&payload=payload```
 The `event` and `payload` params are both required and an error will be returned if either of them are not included. See below for how responses will be formatted.
 ### Firing Events
-`POST /event?event=event&payload=payload`
+```POST /event?event=event&payload=payload```
 This is functionally the same as broadcasting. But your response will also include a return value. Successful responses may look like this:
 ```json
-{"status": "good", "result": return_val}
+{"status": "good", "result": "some return value"}
 ```
 ### Responses
 Requests that error will respond with a HTTP status code corresponding to the type of error along with a JSON encoded body with more information. They may look like this:
