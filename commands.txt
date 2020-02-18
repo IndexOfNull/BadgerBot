@@ -49,8 +49,9 @@ Command List
         2. (+) Revoke a badge               : ;revoke <user> <badge>
         3. (++) Create a badge              : ;addbadge <name> <icon> [description]
             - The 'icon' parameter works best as an emoji
-        4. (++) Delete a badge              : ;delbadge <name>
-        5. List the server's badges         : ;badges
+        4. (!)(++) Delete a badge           : ;delbadge <name>
+        5. (++) Update a badge              ; ;updatebadge <name> <newname> [newicon] [newdescription]
+        6. List the server's badges         : ;badges
 
     Tags (SO):
         1. View a tag's contents        : ;tag <tag>
