@@ -19,7 +19,7 @@ class ProfileCog(commands.Cog):
     @commands.command(aliases = ['givebadge', 'give'])
     @commands.guild_only()
     @checks.is_mod()
-    async def award(self, ctx, user:discord.Member, badge:str):
+    async def award(self, ctx, user:discord.Member, *, badge:str):
         badgeid = self.badger.name_to_id(ctx.guild.id, badge)
         if badgeid:
             has_badge = self.badger.user_has_badge(ctx.guild.id, user.id, badgeid)
@@ -37,7 +37,7 @@ class ProfileCog(commands.Cog):
     @commands.command(aliases = ['strip'])
     @commands.guild_only()
     @checks.is_mod()
-    async def revoke(self, ctx, user:discord.Member, badge):
+    async def revoke(self, ctx, user:discord.Member, *, badge:str):
         badgeid = self.badger.name_to_id(ctx.guild.id, badge)
         if badgeid:
             has_badge = self.badger.user_has_badge(ctx.guild.id, user.id, badgeid)
