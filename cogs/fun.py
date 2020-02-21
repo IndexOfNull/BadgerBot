@@ -3,6 +3,8 @@ from discord.ext import commands
 from random import randint, choice
 import random
 
+from PIL import Image
+
 class Object(object): pass
 
 class FunCog(commands.Cog):

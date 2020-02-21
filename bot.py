@@ -15,12 +15,12 @@ import utils.messages.manager
 import json
 
 modules = [
-	"mods.profile",
-	"mods.tags",
-	"mods.core",
-	"mods.fun",
-	"mods.leveling",
-	"mods.owner"
+	"cogs.profile",
+	"cogs.tags",
+	"cogs.core",
+	"cogs.fun",
+	"cogs.leveling",
+	"cogs.owner"
 ] #What cogs to load
 
 class BuddyBot(commands.Bot):
