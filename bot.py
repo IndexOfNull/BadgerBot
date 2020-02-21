@@ -35,7 +35,10 @@ class BuddyBot(commands.Bot):
 		self.db_engine_uri = kwargs.pop("db_engine_uri")
 		self.dev_mode = kwargs.pop("dev_mode", False)
 		self.create_tables = kwargs.pop("create_tables", False)
-		self.db_engine = create_engine(self.db_engine_uri)
+		self.pool_recycle = kwargs.pop("pool_recycle", 0) #How long until we recycle long open connections.
+		db_engine_kwargs = {}
+		if self.pool_recycle != 0: db_engine_kwargs['pool_recycle'] = self.pool_recycle
+		self.db_engine = create_engine(self.db_engine_uri, **db_engine_kwargs)
 		Session = sessionmaker(bind=self.db_engine)
 		self.db = Session()
 		self.remove_command('help')
