@@ -8,8 +8,8 @@ from datetime import datetime
 import discord
 from discord.ext import commands
 
-from mods.widget.classes import WidgetBase
-from mods.widget.widgets import BadgeEntry
+from cogs.widget.classes import WidgetBase
+from cogs.widget.widgets import BadgeEntry
 from utils import checks
 
 Base = declarative_base()

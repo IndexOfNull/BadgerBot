@@ -1,9 +1,9 @@
 import discord
 from discord.ext import commands
 
-from mods.widget.widgets import BadgeWidget, DateJoinedWidget, AccountAgeWidget
-from mods.widget.classes import RenderManager
-from mods.widget import themes
+from cogs.widget.widgets import BadgeWidget, DateJoinedWidget, AccountAgeWidget
+from cogs.widget.classes import RenderManager
+from cogs.widget import themes
 from utils import checks, funcs
 
 class ProfileCog(commands.Cog):

@@ -1,4 +1,4 @@
-from mods.widget import classes
+from cogs.widget import classes
 import discord
 
 class MainTheme(classes.ThemeBase):
