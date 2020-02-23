@@ -49,6 +49,8 @@ class BuddyBot(commands.Bot):
 		self.datamanager.register_option("responses", "default")
 		self.datamanager.register_option("prefix", self.prefix)
 		self.web_secret = kwargs.pop("web_secret", None)
+		self.web_ip = kwargs.pop("web_ip", "0.0.0.0")
+		self.web_port = kwargs.pop("web_port", "8080")
 		self.http_session = http.http_session
 
 
@@ -63,7 +65,7 @@ class BuddyBot(commands.Bot):
 		self.web_app.add_routes(routes)
 		#Run it
 		self.loop.run_until_complete(web_runner.setup())
-		web_site = web.TCPSite(web_runner)
+		web_site = web.TCPSite(web_runner, host=self.web_ip, port=self.web_port)
 		self.loop.run_until_complete(web_site.start())
 
 	async def on_message(self, message):
@@ -156,6 +158,7 @@ class BuddyBot(commands.Bot):
 			return
 		else:
 			await ctx.send("`Unhandled Error: " + str(e) + "`")
+			raise e
 
 	async def on_error(self, event, *args, **kwargs):
 		if event == "on_message":
