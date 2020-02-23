@@ -9,9 +9,8 @@ import asyncio
 import aiohttp
 from aiohttp import web
 
-from utils import classes, data, checks, funcs
+from utils import classes, data, checks, funcs, http
 import utils.messages.manager
-
 import json
 
 modules = [
@@ -50,6 +49,7 @@ class BuddyBot(commands.Bot):
 		self.datamanager.register_option("responses", "default")
 		self.datamanager.register_option("prefix", self.prefix)
 		self.web_secret = kwargs.pop("web_secret", None)
+		self.http_session = http.http_session
 
 
 	def start_webserver(self):
@@ -218,6 +218,7 @@ class BuddyBot(commands.Bot):
 	async def close(self):
 		self.db.close()
 		self.db_engine.dispose()
+		await self.http_session.close()
 		await super().close()
 		pending = len(asyncio.Task.all_tasks())
 		print("Cleaned up successfully. Waiting for %s tasks to finish." % pending)
