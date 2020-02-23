@@ -57,7 +57,9 @@
             "module_reloaded": "{0} has been reloaded.",
             "module_unloaded": "{0} has been unloaded.",
             "module_loaded": "{0} has been loaded.",
-            "module_fail": "There was a problem while loading or unloading your module."
+            "module_fail": "There was a problem while loading or unloading your module.",
+            "marry_message": "{0.mention} has been shipped with {1.mention}! Their child shall be called {2}.",
+            "marry_notself": "Nice try, but you can't marry yourself."
         }
     }
 }

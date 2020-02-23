@@ -5,6 +5,9 @@ import random
 
 from PIL import Image
 
+from utils import funcs
+from io import BytesIO
+
 class Object(object): pass
 
 class FunCog(commands.Cog):
@@ -105,6 +108,43 @@ class FunCog(commands.Cog):
 				c = random.sample(self.zalgo.ZALGO_CHARS[pos],ZalgoCounts[pos])
 				result.append(''.join(c))
 		await ctx.send(''.join(result))
+
+	@commands.command(aliases = ["ship"])
+	async def marry(self, ctx, waifu:discord.Member, husbando:discord.Member):
+		#add restriction against marrying self
+		if waifu == husbando:
+			await ctx.send(ctx.responses['marry_notself'])
+			return
+		imageformat, imagesize = "png", 64 #Each image will be 64x64
+		u1icon = waifu.avatar_url_as(format = imageformat, static_format = imageformat, size = imagesize)
+		u2icon = husbando.avatar_url_as(format = imageformat, static_format = imageformat, size = imagesize)
+		u1iconbytes = BytesIO(await u1icon.read())
+		u2iconbytes = BytesIO(await u2icon.read())
+		u1img = Image.open(u1iconbytes)
+		u2img = Image.open(u2iconbytes)
+		heart = Image.open("resources/img/heart.png")
+		canvas = Image.new("RGBA", (198, 64), (0, 0, 0, 0)) #64*3 = 192, add six for margins
+		canvas.paste(u1img, (0, 0))
+		canvas.paste(heart, (67, 0))
+		canvas.paste(u2img, (134, 0))
+		b = funcs.img_to_bytesio(canvas, "PNG")
+		f = discord.File(b, filename="married.png")
+		#make child name
+		names = [waifu.display_name, husbando.display_name]
+		finalname = ""
+		for name in names:
+			splitname = name.split(" ")
+			if len(splitname) == 1:
+				#finalname += splitname[0][ :(int(len(splitname[0])/2)) ] #Get half of the string. This is messy
+				finalname += splitname[0][ :(randint(0, len(splitname[0]))) ]
+			else:
+				if randint(0, 1) == 0:
+					finalname += ("").join(splitname[ :int(len(splitname)/2) ]) + " "
+				else:
+					finalname += ("").join(splitname[ int(len(splitname)/2): ]) + " "
+		finalname = '"' + finalname.rstrip() + '"'
+		message = ctx.responses['marry_message'].format(waifu, husbando, finalname)
+		await ctx.send(message, file=f)
 
 def setup(bot):
 	bot.add_cog(FunCog(bot))

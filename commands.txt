@@ -43,6 +43,7 @@ Command List
         4. IQ Test!                      : ;iq [user : you]
         5. Ask the Almighty Magic 8-Ball : ;8ball <question>
         6. ZALGO!                        : ;zalgo <text>
+        7. Ship two people               : ;[ship | marry] <waifu> <husbando>
 
     Profile/Badge (SO):
         1. (+) Award a badge                : ;award <user> <badge>

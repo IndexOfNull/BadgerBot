@@ -5,6 +5,8 @@ from discord.ext import commands
 
 import functools
 
+from io import BytesIO
+
 def discord_obj_tostring(obj):
     if isinstance(obj, discord.User) or isinstance(obj, discord.Member):
         return obj.name + "#" + obj.discriminator
@@ -41,3 +43,9 @@ def require_confirmation():
                 return await coro(cog, ctx, *args, **kwargs)
         return wrapped
     return wrapper
+
+def img_to_bytesio(img, *args):
+    b = BytesIO()
+    img.save(b, *args)
+    b.seek(0)
+    return b
