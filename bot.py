@@ -48,8 +48,19 @@ class BuddyBot(commands.Bot):
 		self.web_secret = kwargs.pop("web_secret", None)
 		self.web_ip = kwargs.pop("web_ip", "0.0.0.0")
 		self.web_port = kwargs.pop("web_port", "8080")
+		self.database_ping_interval = kwargs.pop("db_ping_interval", 28800/2) #28800 is the default wait_timeout value in MySQL. This will ping every 4 hours
 		self.http_session = http.http_session
+		self.been_ready = False #This will be set to true on the first on_ready call
 
+	async def database_ping_task(self):
+		while True:
+			try:
+				self.db.execute("SELECT 1")
+			except sa.exc.SQLAlchemyError as e:
+				print("DATABASE PING ERROR:", e)
+				await asyncio.sleep(60) #Retry again in 60 seconds.
+				continue
+			await asyncio.sleep(self.database_ping_interval)
 
 	def start_webserver(self):
 		self.web_app = web.Application(middlewares=[self.web_keymiddleware])
@@ -102,6 +113,8 @@ class BuddyBot(commands.Bot):
 			print("======================\n\nWARNING: Some cogs failed to load! Some things may not function properly.\n")
 
 	async def on_ready(self): #THIS MAY BE RUN MULTIPLE TIMES IF reconnect=True!
+		if not self.been_ready:
+			self.loop.create_task(self.database_ping_task())
 		try:
 			self.db.execute("SELECT * FROM serveropts ORDER BY RAND() LIMIT 1") #Get a random server opt row as a sanity check. This is MySQL specific, so reformatting may be needed for other DBs
 		except sa.exc.ProgrammingError:
@@ -111,6 +124,7 @@ class BuddyBot(commands.Bot):
 			print("Something is wrong with the database. Ensure that you have entered the right info into the config.json file and try again.")
 			exit()
 		self.datamanager.refresh()
+		self.been_ready = True
 		#Print a nice hello message
 		print("---[Ready]---")
 		print("Logged in as:", self.user)

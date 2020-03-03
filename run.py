@@ -18,7 +18,8 @@ settings = {
     "case_insensitive": True,
     "web_secret": binascii.hexlify(os.urandom(24)).decode("utf-8"),
     "web_ip": "0.0.0.0",
-    "web_port": "8080"
+    "web_port": "8080",
+    "db_ping_interval": 14400
 }
 
 def write_config(opts):
