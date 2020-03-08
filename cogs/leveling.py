@@ -1,3 +1,4 @@
+import sqlalchemy as sa
 from sqlalchemy.types import TIMESTAMP
 from sqlalchemy import Column, Integer, BigInteger, SmallInteger, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
@@ -9,7 +10,7 @@ import discord
 from discord.ext import commands
 
 from cogs.widget.classes import WidgetBase
-from cogs.widget.widgets import BadgeEntry
+from cogs.widget.widgets import BadgeEntry, BadgeWinner
 from utils import checks
 
 Base = declarative_base()
@@ -114,6 +115,32 @@ class LevelCog(commands.Cog):
             await ctx.send(ctx.responses['badgelevels_remove'].format(badge))
         else:
             await ctx.send(ctx.responses['badgelevels_set'].format(badge, levels))
+
+    @commands.command()
+    async def leaderboard(self, ctx):
+        lbd = self.db.query(BadgeWinner.server_id, BadgeWinner.discord_id, sa.func.sum(BadgeLevelEntry.levels)\
+            .label("levels"))\
+            .join(BadgeLevelEntry, sa.and_(BadgeWinner.badge_id == BadgeLevelEntry.badge_id, BadgeWinner.server_id == ctx.guild.id))\
+            .group_by(BadgeWinner.discord_id)\
+            .order_by(sa.desc("levels"))\
+            .limit(10)
+        rows = lbd.all()
+        header = "```md\n> {0}\n================\n".format(ctx.responses['leaderboard_strings']['leaderboard'])
+        footer = "\n```"
+        entry = "<{num}: {user}> {levels} levels\n"
+        final = header
+        for position, row in enumerate(rows):
+            user = self.bot.get_user(row.discord_id)
+            if not user:
+                u = ctx.responses['leaderboard_strings']['unknown_user'] + "#" + str(row.discord_id)
+            else:
+                u = str(user)
+            final += entry.format(num=position+1, user=u, levels=row.levels)
+        if final == header:
+            final += ctx.responses['leaderboard_strings']['nothing']
+        final.rstrip()
+        final += footer
+        await ctx.send(final)
 
 def setup(bot):
     bot.add_cog(LevelCog(bot))

@@ -59,7 +59,8 @@
             "module_loaded": "{0} has been loaded.",
             "module_fail": "There was a problem while loading or unloading your module.",
             "marry_message": "{0.mention} has been shipped with {1.mention}! Their child shall be called {2}.",
-            "marry_notself": "Nice try, but people can't marry themselves."
+            "marry_notself": "Nice try, but people can't marry themselves.",
+            "leaderboard_strings": {"unknown_user": "Unknown User", "levels": "levels", "leaderboard": "Leaderboard (Top 10)", "nothing": "Nothing to show here (yet)."}
         }
     }
 }
