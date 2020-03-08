@@ -64,7 +64,7 @@ class BuddyBot(commands.Bot):
 
 	def start_webserver(self):
 		self.web_app = web.Application(middlewares=[self.web_keymiddleware])
-		web_runner = web.AppRunner(self.web_app)
+		self.web_runner = web.AppRunner(self.web_app)
 		#Register routes
 		routes = [
 			web.get('/broadcast', self.web_broadcast),
@@ -72,8 +72,8 @@ class BuddyBot(commands.Bot):
 		]
 		self.web_app.add_routes(routes)
 		#Run it
-		self.loop.run_until_complete(web_runner.setup())
-		web_site = web.TCPSite(web_runner, host=self.web_ip, port=self.web_port)
+		self.loop.run_until_complete(self.web_runner.setup())
+		web_site = web.TCPSite(self.web_runner, host=self.web_ip, port=self.web_port)
 		self.loop.run_until_complete(web_site.start())
 
 	async def on_message(self, message):
@@ -232,6 +232,7 @@ class BuddyBot(commands.Bot):
 	async def close(self):
 		self.db.close()
 		self.db_engine.dispose()
+		await self.web_runner.cleanup()
 		await self.http_session.close()
 		await super().close()
 		pending = len(asyncio.Task.all_tasks())
