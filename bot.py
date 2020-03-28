@@ -45,6 +45,7 @@ class BuddyBot(commands.Bot):
 		self.datamanager.register_option("lang", "en")
 		self.datamanager.register_option("responses", "default")
 		self.datamanager.register_option("prefix", self.prefix)
+		self.web_enable = kwargs.pop("web_enable", False)
 		self.web_secret = kwargs.pop("web_secret", None)
 		self.web_ip = kwargs.pop("web_ip", "0.0.0.0")
 		self.web_port = kwargs.pop("web_port", "8080")
@@ -113,7 +114,7 @@ class BuddyBot(commands.Bot):
 			print("======================\n\nWARNING: Some cogs failed to load! Some things may not function properly.\n")
 
 	async def on_ready(self): #THIS MAY BE RUN MULTIPLE TIMES IF reconnect=True!
-		if not self.been_ready:
+		if not self.been_ready and self.database_ping_interval > 0:
 			self.loop.create_task(self.database_ping_task())
 		try:
 			self.db.execute("SELECT * FROM serveropts ORDER BY RAND() LIMIT 1") #Get a random server opt row as a sanity check. This is MySQL specific, so reformatting may be needed for other DBs
@@ -128,7 +129,11 @@ class BuddyBot(commands.Bot):
 		#Print a nice hello message
 		print("---[Ready]---")
 		print("Logged in as:", self.user)
-		print("Developer mode is " + ("ENABLED" if self.dev_mode else "DISABLED"))
+		print("Developer mode:", ("ENABLED" if self.dev_mode else "DISABLED"))
+		print("Internal Webserver Enabled: " + str(self.web_enable))
+		if self.web_enable:
+			print("Webserver IP/Port: " + self.web_ip + ":" + self.web_port)
+		print("Database Ping Interval: " + ((str(self.database_ping_interval) + " seconds") if self.database_ping_interval > 0 else "NEVER"))
 		print("-------------")
 
 	async def on_command_error(self, ctx, e):
@@ -226,13 +231,13 @@ class BuddyBot(commands.Bot):
 	def run(self):
 		#Load cogs
 		self.load_cogs(modules)
-		self.start_webserver()
+		if self.web_enable: self.start_webserver()
 		super().run(self.token)
 
 	async def close(self):
 		self.db.close()
 		self.db_engine.dispose()
-		await self.web_runner.cleanup()
+		if self.web_enable: await self.web_runner.cleanup()
 		await self.http_session.close()
 		await super().close()
 		pending = len(asyncio.Task.all_tasks())
