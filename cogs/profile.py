@@ -21,6 +21,7 @@ class ProfileCog(commands.Cog):
     @commands.command(aliases = ['givebadge', 'give'])
     @commands.guild_only()
     @checks.is_mod()
+    @commands.cooldown(1, 5, type=commands.BucketType.guild)
     async def award(self, ctx, user:discord.Member, *, badge:str):
         badgeid = self.badger.name_to_id(ctx.guild.id, badge)
         if badgeid:
@@ -39,6 +40,7 @@ class ProfileCog(commands.Cog):
     @commands.command(aliases = ['strip'])
     @commands.guild_only()
     @checks.is_mod()
+    @commands.cooldown(1, 5, type=commands.BucketType.guild)
     async def revoke(self, ctx, user:discord.Member, *, badge:str):
         badgeid = self.badger.name_to_id(ctx.guild.id, badge)
         if badgeid:
@@ -57,6 +59,7 @@ class ProfileCog(commands.Cog):
     @commands.command(aliases = ["addbadge"])
     @commands.guild_only()
     @checks.is_admin()
+    @commands.cooldown(1, 10, type=commands.BucketType.guild)
     async def createbadge(self, ctx, name:str, icon:str, *, description:str=""):
         #Impose some limits on the parameters
         if len(name) > 32:
@@ -82,6 +85,7 @@ class ProfileCog(commands.Cog):
     @commands.command()
     @commands.guild_only()
     @checks.is_admin()
+    @commands.cooldown(1, 10, type=commands.BucketType.guild)
     async def updatebadge(self, ctx, name:str, newname:str, icon:str=None, *, description:str=None):
         #Impose some limits on the parameters
         if len(name) > 32:
@@ -109,6 +113,7 @@ class ProfileCog(commands.Cog):
     @commands.command(aliases = ["removebadge", "rembadge", "delbadge", "rmbadge"])
     @commands.guild_only()
     @checks.is_admin()
+    @commands.cooldown(1, 10, type=commands.BucketType.guild)
     @funcs.require_confirmation()
     async def deletebadge(self, ctx, *, name:str):
         badgeid = self.badger.name_to_id(ctx.guild.id, name)
@@ -123,6 +128,7 @@ class ProfileCog(commands.Cog):
 
     @commands.command(aliases = ["listbadges", "listbadge", "badgeslist", "badgelist"])
     @commands.guild_only()
+    @commands.cooldown(1, 5, type=commands.BucketType.channel)
     async def badges(self, ctx, page:int=1):
         page -= 1 #So that we can be comfy while the user is
         if page < 0: #Make it so they can't go lower than 0
@@ -149,6 +155,7 @@ class ProfileCog(commands.Cog):
         
     @commands.command()
     @commands.guild_only()
+    @commands.cooldown(1, 3, type=commands.BucketType.user)
     async def profile(self, ctx, *, user:discord.Member=None):
         if user is None:
             user = ctx.author

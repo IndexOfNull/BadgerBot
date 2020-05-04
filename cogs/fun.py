@@ -110,6 +110,7 @@ class FunCog(commands.Cog):
 		await ctx.send(''.join(result))
 
 	@commands.command(aliases = ["ship"])
+	@commands.cooldown(1, 3, type=commands.BucketType.user)
 	async def marry(self, ctx, waifu:discord.Member, husbando:discord.Member):
 		#add restriction against marrying self
 		if waifu == husbando:
