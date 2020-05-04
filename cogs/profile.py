@@ -8,6 +8,20 @@ from utils import checks, funcs
 
 from io import BytesIO
 
+#This is super hacky
+import sqlalchemy as sa
+try:
+    from cogs.leveling import BadgeLevelEntry
+    ble = BadgeLevelEntry
+except:
+    ble = None
+
+try:
+    from cogs.widget.widgets import BadgeEntry
+    be = BadgeEntry
+except:
+    be = None
+
 class ProfileCog(commands.Cog):
 
     def __init__(self, bot):
@@ -17,6 +31,7 @@ class ProfileCog(commands.Cog):
         self.manager.register_widget(DateJoinedWidget)
         self.manager.register_widget(AccountAgeWidget)
         self.maintheme = self.manager.register_theme(themes.MainTheme)
+        self.levelingwidget = None
 
     @commands.command(aliases = ['givebadge', 'give'])
     @commands.guild_only()
@@ -130,12 +145,17 @@ class ProfileCog(commands.Cog):
     @commands.guild_only()
     @commands.cooldown(1, 5, type=commands.BucketType.channel)
     async def badges(self, ctx, page:int=1):
+        if not self.levelingwidget:
+            self.levelingwidget = self.manager.get_widget("LevelWidget")
         page -= 1 #So that we can be comfy while the user is
         if page < 0: #Make it so they can't go lower than 0
             page = 0
-        line = "{0.text} **{0.name}**{1} {0.description}\n"
-        finalstr = "> __Badges__ `|` (Page " + str(page+1) + ")\n"
-        server_badges = self.badger.get_server_badges(ctx.guild.id)
+        if ble and be and self.levelingwidget:
+            server_badges = self.bot.db.query(BadgeEntry, BadgeLevelEntry.levels)\
+                .filter_by(server_id=ctx.guild.id)\
+                .outerjoin(BadgeLevelEntry, BadgeEntry.id == BadgeLevelEntry.badge_id)
+        else:
+            server_badges = self.badger.get_server_badges(ctx.guild.id)
         paginator = funcs.Paginator(server_badges, items_per_page=10)
         pc = paginator.page_count
         if pc == 0:
@@ -143,9 +163,14 @@ class ProfileCog(commands.Cog):
             return
         if page + 1 > pc:
             page = pc - 1 #Cap the pages argument to the actual amount of pages
+        line = "{0.text} **{0.name}**{1} {0.description}\n"
+        finalstr = "> __Badges__ `|` (Page " + str(page+1) + ")\n"
         page_list = paginator.get_page(page)
         for row in page_list:
-            finalstr += line.format(row, (":" if row.description else ""))
+            if ble and be and self.levelingwidget: #This could be optimized by making two for loops inside an if statement instead of this way
+                finalstr += line.format(row.BadgeEntry, ((" [*" + str(row.levels) + "*]") if row.levels else "") + (":" if row.BadgeEntry.description else ""))
+            else:
+                finalstr += line.format(row, (":" if row.description else ""))
         finalstr += "\n" + ctx.responses['page_strings']['footer'].format(ctx.prefix + ctx.invoked_with)
         if len(finalstr) > 2000: #This is a bit of jank hack, I know. But it's far more elegant than erroring and it lets server administrators fix the problem.
             f = discord.File(BytesIO(finalstr.encode("utf-8")), filename="badgelist-pg" + str(page) + ".txt")
