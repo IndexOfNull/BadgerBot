@@ -6,6 +6,8 @@ from cogs.widget.classes import RenderManager
 from cogs.widget import themes
 from utils import checks, funcs
 
+from io import BytesIO
+
 class ProfileCog(commands.Cog):
 
     def __init__(self, bot):
@@ -121,18 +123,30 @@ class ProfileCog(commands.Cog):
 
     @commands.command(aliases = ["listbadges", "listbadge", "badgeslist", "badgelist"])
     @commands.guild_only()
-    async def badges(self, ctx):
+    async def badges(self, ctx, page:int=1):
+        page -= 1 #So that we can be comfy while the user is
+        if page < 0: #Make it so they can't go lower than 0
+            page = 0
         line = "{0.text} **{0.name}**{1} {0.description}\n"
-        finalstr = "> __Badges__\n"
+        finalstr = "> __Badges__ `|` (Page " + str(page+1) + ")\n"
         server_badges = self.badger.get_server_badges(ctx.guild.id)
-        count = 0
-        for row in server_badges:
-            count += 1
+        paginator = funcs.Paginator(server_badges, items_per_page=10)
+        pc = paginator.page_count
+        if pc == 0:
+            await ctx.send(ctx.responses['badge_nobadges'])
+            return
+        if page + 1 > pc:
+            page = pc - 1 #Cap the pages argument to the actual amount of pages
+        page_list = paginator.get_page(page)
+        for row in page_list:
             finalstr += line.format(row, (":" if row.description else ""))
-        if count == 0:
-            finalstr = ctx.responses['badge_nobadges']
-        await ctx.send(finalstr)
-
+        finalstr += "\n" + ctx.responses['page_strings']['footer'].format(ctx.prefix + ctx.invoked_with)
+        if len(finalstr) > 2000: #This is a bit of jank hack, I know. But it's far more elegant than erroring and it lets server administrators fix the problem.
+            f = discord.File(BytesIO(finalstr.encode("utf-8")), filename="badgelist-pg" + str(page) + ".txt")
+            await ctx.send(ctx.responses['badgelist_toolarge'], file=f)
+        else:
+            await ctx.send(finalstr)
+        
     @commands.command()
     @commands.guild_only()
     async def profile(self, ctx, *, user:discord.Member=None):
