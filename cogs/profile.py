@@ -164,11 +164,11 @@ class ProfileCog(commands.Cog):
         if page + 1 > pc:
             page = pc - 1 #Cap the pages argument to the actual amount of pages
         line = "{0.text} **{0.name}**{1} {0.description}\n"
-        finalstr = "> __Badges__ `|` (Page " + str(page+1) + ")\n"
+        finalstr = "> Badges `|` (Page " + str(page+1) + " of " + str(pc) + ")\n"
         page_list = paginator.get_page(page)
         for row in page_list:
             if ble and be and self.levelingwidget: #This could be optimized by making two for loops inside an if statement instead of this way
-                finalstr += line.format(row.BadgeEntry, ((" [*" + str(row.levels) + "*]") if row.levels else "") + (":" if row.BadgeEntry.description else ""))
+                finalstr += line.format(row.BadgeEntry, ((" [**" + str(row.levels) + "**]") if row.levels else "") + (":" if row.BadgeEntry.description else ""))
             else:
                 finalstr += line.format(row, (":" if row.description else ""))
         finalstr += "\n" + ctx.responses['page_strings']['footer'].format(ctx.prefix + ctx.invoked_with)
