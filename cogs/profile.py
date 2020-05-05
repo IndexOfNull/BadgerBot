@@ -32,6 +32,11 @@ class ProfileCog(commands.Cog):
         self.manager.register_widget(AccountAgeWidget)
         self.maintheme = self.manager.register_theme(themes.MainTheme)
         self.levelingwidget = None
+        self.badge_limits = {
+            "name": 32,
+            "description": 175,
+            "icon": 55
+        }
 
     @commands.command(aliases = ['givebadge', 'give'])
     @commands.guild_only()
@@ -77,11 +82,14 @@ class ProfileCog(commands.Cog):
     @commands.cooldown(1, 10, type=commands.BucketType.guild)
     async def createbadge(self, ctx, name:str, icon:str, *, description:str=""):
         #Impose some limits on the parameters
-        if len(name) > 32:
-            await ctx.send(ctx.responses['badge_limits'].format("name", 32))
+        if len(name) > self.badge_limits['name']:
+            await ctx.send(ctx.responses['badge_limits'].format("name", self.badge_limits['name']))
             return
-        if len(description) > 175:
-            await ctx.send(ctx.responses['badge_limits'].format("description", 175))
+        if len(description) > self.badge_limits['description']:
+            await ctx.send(ctx.responses['badge_limits'].format("description", self.badge_limits['description']))
+            return
+        if len(icon) > self.badge_limits['icon']:
+            await ctx.send(ctx.responses['badge_limits'].format("icon", self.badge_limits['icon']))
             return
         badge_exists = self.badger.name_to_id(ctx.guild.id, name)
         if not badge_exists: #This should be None if there is no row matching our criteria
@@ -103,12 +111,15 @@ class ProfileCog(commands.Cog):
     @commands.cooldown(1, 10, type=commands.BucketType.guild)
     async def updatebadge(self, ctx, name:str, newname:str, icon:str=None, *, description:str=None):
         #Impose some limits on the parameters
-        if len(name) > 32:
-            await ctx.send(ctx.responses['badge_limits'].format("name", 32))
+        if len(name) > self.badge_limits['name']:
+            await ctx.send(ctx.responses['badge_limits'].format("name", self.badge_limits['name']))
+            return
+        if len(icon) > self.badge_limits['icon']:
+            await ctx.send(ctx.responses['badge_limits'].format("icon", self.badge_limits['icon']))
             return
         if description:
-            if len(description) > 175:
-                await ctx.send(ctx.responses['badge_limits'].format("description", 175))
+            if len(description) > self.badge_limits['description']:
+                await ctx.send(ctx.responses['badge_limits'].format("description", self.badge_limits['description']))
                 return
         badge_exists = self.badger.name_to_id(ctx.guild.id, name)
         if badge_exists:
