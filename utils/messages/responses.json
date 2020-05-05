@@ -11,7 +11,7 @@
             "badge_revoked": ":cloud_lightning: {0.mention} has been stripped of their \"{1}\" badge!",
             "badge_notfound": ":grey_question: There doesn't appear to be a badge with that name.",
             "badge_limits": ":red_circle: The {0} for your badge is more than {1} characters. Please shorten it.",
-            "badge_maxbadgeslimit": ":compression: You can only have up to 50 badges on your server.",
+            "badge_maxbadgeslimit": ":compression: You can only have up to 80 badges on your server.",
             "badge_created": ":shield: Your badge has been created!",
             "badge_nobadges": ":white_sun_small_cloud: This server has no badges.",
             "badge_updated": ":pencil: Your badge has been updated.",
@@ -64,6 +64,14 @@
             "leaderboard_strings": {"unknown_user": "Unknown User", "levels": "levels", "leaderboard": "Leaderboard (Top 10)", "nothing": "Nothing to show here (yet)."},
             "page_strings": {
                 "footer": "You can switch pages by running `{0} [page]`."
+            },
+            "badgewizard_strings": {
+                "start": ":alarm_clock: You're now in badge creation mode! You have {0} seconds to answer each prompt.",
+                "name": ":scroll: Enter a name for your badge (max of {0} characters.)",
+                "icon": ":frame_photo: Give your badge an icon. Emojis look best, but you can also use characters (max of {0} characters.)",
+                "description": ":label: Give a description to your badge (max of {0} characters). Reply with `none` or `blank` to leave it empty.",
+                "levels": ":arrow_up: How many levels do you want this badge to be worth? You can type `0`, `none`, or `blank` to make it worth 0 levels.",
+                "limit": ":red_circle: The {0} for your badge is more than {1} characters. Try again."
             }
         }
     }

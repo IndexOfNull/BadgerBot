@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+import asyncio
 
 from cogs.widget.widgets import BadgeWidget, DateJoinedWidget, AccountAgeWidget
 from cogs.widget.classes import RenderManager
@@ -35,7 +36,8 @@ class ProfileCog(commands.Cog):
         self.badge_limits = {
             "name": 32,
             "description": 175,
-            "icon": 55
+            "icon": 55,
+            "serverbadges": 80
         }
 
     @commands.command(aliases = ['givebadge', 'give'])
@@ -94,7 +96,7 @@ class ProfileCog(commands.Cog):
         badge_exists = self.badger.name_to_id(ctx.guild.id, name)
         if not badge_exists: #This should be None if there is no row matching our criteria
             badge_count = self.badger.get_server_badges(ctx.guild.id).count()
-            if badge_count < 80: #Limit badges to 80
+            if badge_count < self.badge_limits['serverbadges']: #Limit badges
                 result = self.badger.create_badge(ctx.guild.id, name, icon, description=description)
                 if result:
                     await ctx.send(ctx.responses['badge_created'])
@@ -104,6 +106,76 @@ class ProfileCog(commands.Cog):
                 await ctx.send(ctx.responses['badge_maxbadgeslimit'])
         else:
             await ctx.send(ctx.responses['badge_exists'])
+
+    @commands.command()
+    @commands.guild_only()
+    @checks.is_admin()
+    @commands.cooldown(1, 10, type=commands.BucketType.guild)
+    async def badgewizard(self, ctx):
+
+        badge_count = self.badger.get_server_badges(ctx.guild.id).count()
+        if badge_count > self.badge_limits['serverbadges']:
+            await ctx.send(ctx.responses['badge_maxbadgeslimit'])
+            return
+        strs = ctx.responses['badgewizard_strings']
+        maxmsg = strs['limit']
+        maxtime = 30 #Max time per prompt
+        msgs = []
+        try:
+            msgs.append(await ctx.send(strs['start'].format(maxtime) + "\n" + strs['name'].format(self.badge_limits['name'])))
+            name = icon = description = None
+
+            def message_check(m):
+                return m.author == ctx.author and m.channel == ctx.channel
+
+            while not name: #get the name
+                message = await self.bot.wait_for("message", check=message_check, timeout=maxtime)
+                if len(message.content) > self.badge_limits['name']:
+                    msgs.append(await ctx.send(maxmsg.format("name", self.badge_limits['name'])))
+                    continue
+                name = message.content
+            badge_exists = self.badger.name_to_id(ctx.guild.id, name)
+            if badge_exists:
+                await ctx.send(ctx.responses['badge_exists'])
+                return
+            msgs.append(await ctx.send(strs['icon'].format(self.badge_limits['icon'])))
+            while not icon: #get the icon
+                message = await self.bot.wait_for("message", check=message_check, timeout=maxtime)
+                if len(message.content) > self.badge_limits['icon']:
+                    msgs.append(await ctx.send(maxmsg.format("icon", self.badge_limits['icon'])))
+                    continue
+                icon = message.content
+            msgs.append(await ctx.send(strs['description'].format(self.badge_limits['description'])))
+            while not description: #get the description
+                msg = await self.bot.wait_for("message", check=message_check, timeout=maxtime)
+                if msg.content.lower() in ("none", "blank"):
+                    description = ""
+                    break
+                if len(msg.content) > self.badge_limits['description']:
+                    msgs.append(await ctx.send(maxmsg.format("description", self.badge_limits['description'])))
+                    continue
+                description = msg.content
+            if not self.levelingwidget: #detect the leveling widget
+                self.levelingwidget = self.manager.get_widget("LevelWidget")
+            levels = None
+            if self.levelingwidget: #ask for levels if we find the leveling widget
+                msgs.append(await ctx.send(strs['levels']))
+                message = await self.bot.wait_for("message", check=message_check, timeout=maxtime)
+                if not message.content.lower() in ("0", "blank", "none"):
+                    try:
+                        levels = int(message.content)
+                    except:
+                        pass
+            result = self.badger.create_badge(ctx.guild.id, name, icon, description=description)
+            if levels:
+                self.levelingwidget.assign_levels(ctx.guild.id, result.id, levels)
+            if result:
+                await ctx.send(ctx.responses['badge_created'])
+            else:
+                await ctx.send(ctx.responses['badge_error'].format("creating"))
+            await ctx.channel.delete_messages(msgs)
+        except Exception as e:
+            raise e
 
     @commands.command()
     @commands.guild_only()
@@ -140,7 +212,7 @@ class ProfileCog(commands.Cog):
     @commands.guild_only()
     @checks.is_admin()
     @commands.cooldown(1, 10, type=commands.BucketType.guild)
-    @funcs.require_confirmation()
+    @funcs.require_confirmation(warning="All users with this badge will be stripped of it. There is no undoing this!") #Localization support would be nice here
     async def deletebadge(self, ctx, *, name:str):
         badgeid = self.badger.name_to_id(ctx.guild.id, name)
         if badgeid: #If we got a valid id
@@ -175,7 +247,7 @@ class ProfileCog(commands.Cog):
         if page + 1 > pc:
             page = pc - 1 #Cap the pages argument to the actual amount of pages
         line = "{0.text} **{0.name}**{1} {0.description}\n"
-        finalstr = "> Badges `|` (Page " + str(page+1) + " of " + str(pc) + ")\n"
+        finalstr = "> Badges `|` (Page " + str(page+1) + " of " + str(pc) + ")\n" #Could use a localization string
         page_list = paginator.get_page(page)
         for row in page_list:
             if ble and be and self.levelingwidget: #This could be optimized by making two for loops inside an if statement instead of this way
