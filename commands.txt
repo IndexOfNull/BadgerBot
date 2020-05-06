@@ -51,8 +51,12 @@ Command List
         3. (++) Create a badge              : ;addbadge <name> <icon> [description]
             - The 'icon' parameter works best as an emoji
         4. (!)(++) Delete a badge           : ;delbadge <name>
-        5. (++) Update a badge              ; ;updatebadge <name> <newname> [newicon] [newdescription]
+        5. (++) Update a badge              : ;updatebadge <name> <newname> [newicon] [newdescription]
         6. List the server's badges         : ;badges
+
+    Leveling Module (SO):
+        1. (++) Set a badge's levels        : ;setlevel <badge> <levels>
+        2. View the server leaderboard              : ;leaderboard
 
     Tags (SO):
         1. View a tag's contents        : ;tag <tag>

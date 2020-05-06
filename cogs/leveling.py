@@ -88,7 +88,8 @@ class LevelCog(commands.Cog):
 
 
 
-    @commands.command()
+    """@commands.command() #We don't need this anymore because the ProfileCog will autodetect 
+    @commands.cooldown(1, 5, type=commands.BucketType.channel)
     async def levels(self, ctx):
         line = "{0.text} **{0.name}**: {1}\n"
         finalstr = "> __Badge Levels__\n"
@@ -98,10 +99,11 @@ class LevelCog(commands.Cog):
             return
         for entry in levels:
             finalstr += line.format(entry.badge, entry.levels)
-        await ctx.send(finalstr)
+        await ctx.send(finalstr)"""
 
     @commands.command(aliases=["setlevel", "badgelevel", "setlevels", "badgelevels", "assignlevels"])
     @checks.is_admin()
+    @commands.cooldown(1, 5, type=commands.BucketType.guild)
     async def assignlevel(self, ctx, badge:str, levels:int):
         if abs(levels) > 200:
             await ctx.send(ctx.responses['badgelevels_limit'].format(30))
@@ -117,6 +119,7 @@ class LevelCog(commands.Cog):
             await ctx.send(ctx.responses['badgelevels_set'].format(badge, levels))
 
     @commands.command()
+    @commands.cooldown(1, 10, type=commands.BucketType.channel)
     async def leaderboard(self, ctx):
         lbd = self.db.query(BadgeWinner.server_id, BadgeWinner.discord_id, sa.func.sum(BadgeLevelEntry.levels)\
             .label("levels"))\

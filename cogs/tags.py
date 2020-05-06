@@ -61,6 +61,7 @@ class TagCog(commands.Cog):
 
     @commands.command()
     @commands.guild_only()
+    @commands.cooldown(1, 3, type=commands.BucketType.channel)
     async def tag(self, ctx, *, tag:str): #Get the content of a tag
         tag = self.get_tags(ctx, name=tag).first()
         if not tag:
@@ -71,6 +72,7 @@ class TagCog(commands.Cog):
     @commands.command(aliases = ["maketag", "addtag"])
     @commands.guild_only()
     @checks.is_admin()
+    @commands.cooldown(1, 10, type=commands.BucketType.guild)
     async def createtag(self, ctx, name:str, *, content:str): #Create a tag
         #Check name and content length
         if len(name) > 100:
@@ -96,6 +98,7 @@ class TagCog(commands.Cog):
     @commands.command(aliases = ["deltag", "deletetag"])
     @commands.guild_only()
     @checks.is_admin()
+    @commands.cooldown(1, 10, type=commands.BucketType.guild)
     async def removetag(self, ctx, *, name:str): #Delete a tag
         tag = self.get_tags(ctx, name=name).first()
         if not tag:
@@ -109,6 +112,7 @@ class TagCog(commands.Cog):
 
     @commands.command(aliases = ["taglist", "listtag", "tagslist", "listtags"])
     @commands.guild_only()
+    @commands.cooldown(1, 5, type=commands.BucketType.guild)
     async def tags(self, ctx): #list the tags
         line = "+ {0.name}\n"
         finalstr = "> __Tags__\n```diff\n"
@@ -126,6 +130,7 @@ class TagCog(commands.Cog):
     @commands.command(aliases = ["changetag"])
     @commands.guild_only()
     @checks.is_admin()
+    @commands.cooldown(1, 10, type=commands.BucketType.guild)
     async def updatetag(self, ctx, name:str, *, content:str): #Change the content of tag
         result = self.update_tag(ctx, name, content)
         if result:

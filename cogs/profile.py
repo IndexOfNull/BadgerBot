@@ -1,10 +1,27 @@
 import discord
 from discord.ext import commands
+import asyncio
 
 from cogs.widget.widgets import BadgeWidget, DateJoinedWidget, AccountAgeWidget
 from cogs.widget.classes import RenderManager
 from cogs.widget import themes
 from utils import checks, funcs
+
+from io import BytesIO
+
+#This is super hacky
+import sqlalchemy as sa
+try:
+    from cogs.leveling import BadgeLevelEntry
+    ble = BadgeLevelEntry
+except:
+    ble = None
+
+try:
+    from cogs.widget.widgets import BadgeEntry
+    be = BadgeEntry
+except:
+    be = None
 
 class ProfileCog(commands.Cog):
 
@@ -15,10 +32,18 @@ class ProfileCog(commands.Cog):
         self.manager.register_widget(DateJoinedWidget)
         self.manager.register_widget(AccountAgeWidget)
         self.maintheme = self.manager.register_theme(themes.MainTheme)
+        self.levelingwidget = None
+        self.badge_limits = {
+            "name": 32,
+            "description": 175,
+            "icon": 55,
+            "serverbadges": 80
+        }
 
     @commands.command(aliases = ['givebadge', 'give'])
     @commands.guild_only()
     @checks.is_mod()
+    @commands.cooldown(1, 5, type=commands.BucketType.guild)
     async def award(self, ctx, user:discord.Member, *, badge:str):
         badgeid = self.badger.name_to_id(ctx.guild.id, badge)
         if badgeid:
@@ -37,6 +62,7 @@ class ProfileCog(commands.Cog):
     @commands.command(aliases = ['strip'])
     @commands.guild_only()
     @checks.is_mod()
+    @commands.cooldown(1, 5, type=commands.BucketType.guild)
     async def revoke(self, ctx, user:discord.Member, *, badge:str):
         badgeid = self.badger.name_to_id(ctx.guild.id, badge)
         if badgeid:
@@ -55,18 +81,22 @@ class ProfileCog(commands.Cog):
     @commands.command(aliases = ["addbadge"])
     @commands.guild_only()
     @checks.is_admin()
+    @commands.cooldown(1, 10, type=commands.BucketType.guild)
     async def createbadge(self, ctx, name:str, icon:str, *, description:str=""):
         #Impose some limits on the parameters
-        if len(name) > 32:
-            await ctx.send(ctx.responses['badge_limits'].format("name", 32))
+        if len(name) > self.badge_limits['name']:
+            await ctx.send(ctx.responses['badge_limits'].format("name", self.badge_limits['name']))
             return
-        if len(description) > 175:
-            await ctx.send(ctx.responses['badge_limits'].format("description", 175))
+        if len(description) > self.badge_limits['description']:
+            await ctx.send(ctx.responses['badge_limits'].format("description", self.badge_limits['description']))
+            return
+        if len(icon) > self.badge_limits['icon']:
+            await ctx.send(ctx.responses['badge_limits'].format("icon", self.badge_limits['icon']))
             return
         badge_exists = self.badger.name_to_id(ctx.guild.id, name)
         if not badge_exists: #This should be None if there is no row matching our criteria
             badge_count = self.badger.get_server_badges(ctx.guild.id).count()
-            if badge_count < 80: #Limit badges to 80
+            if badge_count < self.badge_limits['serverbadges']: #Limit badges
                 result = self.badger.create_badge(ctx.guild.id, name, icon, description=description)
                 if result:
                     await ctx.send(ctx.responses['badge_created'])
@@ -80,14 +110,88 @@ class ProfileCog(commands.Cog):
     @commands.command()
     @commands.guild_only()
     @checks.is_admin()
+    @commands.cooldown(1, 10, type=commands.BucketType.guild)
+    async def badgewizard(self, ctx):
+
+        badge_count = self.badger.get_server_badges(ctx.guild.id).count()
+        if badge_count > self.badge_limits['serverbadges']:
+            await ctx.send(ctx.responses['badge_maxbadgeslimit'])
+            return
+        strs = ctx.responses['badgewizard_strings']
+        maxmsg = strs['limit']
+        maxtime = 30 #Max time per prompt
+        msgs = []
+        try:
+            msgs.append(await ctx.send(strs['start'].format(maxtime) + "\n" + strs['name'].format(self.badge_limits['name'])))
+            name = icon = description = None
+
+            def message_check(m):
+                return m.author == ctx.author and m.channel == ctx.channel
+
+            while not name: #get the name
+                message = await self.bot.wait_for("message", check=message_check, timeout=maxtime)
+                if len(message.content) > self.badge_limits['name']:
+                    msgs.append(await ctx.send(maxmsg.format("name", self.badge_limits['name'])))
+                    continue
+                name = message.content
+            badge_exists = self.badger.name_to_id(ctx.guild.id, name)
+            if badge_exists:
+                await ctx.send(ctx.responses['badge_exists'])
+                return
+            msgs.append(await ctx.send(strs['icon'].format(self.badge_limits['icon'])))
+            while not icon: #get the icon
+                message = await self.bot.wait_for("message", check=message_check, timeout=maxtime)
+                if len(message.content) > self.badge_limits['icon']:
+                    msgs.append(await ctx.send(maxmsg.format("icon", self.badge_limits['icon'])))
+                    continue
+                icon = message.content
+            msgs.append(await ctx.send(strs['description'].format(self.badge_limits['description'])))
+            while not description: #get the description
+                msg = await self.bot.wait_for("message", check=message_check, timeout=maxtime)
+                if msg.content.lower() in ("none", "blank"):
+                    description = ""
+                    break
+                if len(msg.content) > self.badge_limits['description']:
+                    msgs.append(await ctx.send(maxmsg.format("description", self.badge_limits['description'])))
+                    continue
+                description = msg.content
+            if not self.levelingwidget: #detect the leveling widget
+                self.levelingwidget = self.manager.get_widget("LevelWidget")
+            levels = None
+            if self.levelingwidget: #ask for levels if we find the leveling widget
+                msgs.append(await ctx.send(strs['levels']))
+                message = await self.bot.wait_for("message", check=message_check, timeout=maxtime)
+                if not message.content.lower() in ("0", "blank", "none"):
+                    try:
+                        levels = int(message.content)
+                    except:
+                        pass
+            result = self.badger.create_badge(ctx.guild.id, name, icon, description=description)
+            if levels:
+                self.levelingwidget.assign_levels(ctx.guild.id, result.id, levels)
+            if result:
+                await ctx.send(ctx.responses['badge_created'])
+            else:
+                await ctx.send(ctx.responses['badge_error'].format("creating"))
+            await ctx.channel.delete_messages(msgs)
+        except Exception as e:
+            raise e
+
+    @commands.command()
+    @commands.guild_only()
+    @checks.is_admin()
+    @commands.cooldown(1, 10, type=commands.BucketType.guild)
     async def updatebadge(self, ctx, name:str, newname:str, icon:str=None, *, description:str=None):
         #Impose some limits on the parameters
-        if len(name) > 32:
-            await ctx.send(ctx.responses['badge_limits'].format("name", 32))
+        if len(name) > self.badge_limits['name']:
+            await ctx.send(ctx.responses['badge_limits'].format("name", self.badge_limits['name']))
+            return
+        if len(icon) > self.badge_limits['icon']:
+            await ctx.send(ctx.responses['badge_limits'].format("icon", self.badge_limits['icon']))
             return
         if description:
-            if len(description) > 175:
-                await ctx.send(ctx.responses['badge_limits'].format("description", 175))
+            if len(description) > self.badge_limits['description']:
+                await ctx.send(ctx.responses['badge_limits'].format("description", self.badge_limits['description']))
                 return
         badge_exists = self.badger.name_to_id(ctx.guild.id, name)
         if badge_exists:
@@ -107,7 +211,8 @@ class ProfileCog(commands.Cog):
     @commands.command(aliases = ["removebadge", "rembadge", "delbadge", "rmbadge"])
     @commands.guild_only()
     @checks.is_admin()
-    @funcs.require_confirmation()
+    @commands.cooldown(1, 10, type=commands.BucketType.guild)
+    @funcs.require_confirmation(warning="All users with this badge will be stripped of it. There is no undoing this!") #Localization support would be nice here
     async def deletebadge(self, ctx, *, name:str):
         badgeid = self.badger.name_to_id(ctx.guild.id, name)
         if badgeid: #If we got a valid id
@@ -121,20 +226,44 @@ class ProfileCog(commands.Cog):
 
     @commands.command(aliases = ["listbadges", "listbadge", "badgeslist", "badgelist"])
     @commands.guild_only()
-    async def badges(self, ctx):
+    @commands.cooldown(1, 5, type=commands.BucketType.channel)
+    async def badges(self, ctx, page:int=1):
+        if not self.levelingwidget:
+            self.levelingwidget = self.manager.get_widget("LevelWidget")
+        page -= 1 #So that we can be comfy while the user is
+        if page < 0: #Make it so they can't go lower than 0
+            page = 0
+        if ble and be and self.levelingwidget:
+            server_badges = self.bot.db.query(BadgeEntry, BadgeLevelEntry.levels)\
+                .filter_by(server_id=ctx.guild.id)\
+                .outerjoin(BadgeLevelEntry, BadgeEntry.id == BadgeLevelEntry.badge_id)
+        else:
+            server_badges = self.badger.get_server_badges(ctx.guild.id)
+        paginator = funcs.Paginator(server_badges, items_per_page=10)
+        pc = paginator.page_count
+        if pc == 0:
+            await ctx.send(ctx.responses['badge_nobadges'])
+            return
+        if page + 1 > pc:
+            page = pc - 1 #Cap the pages argument to the actual amount of pages
         line = "{0.text} **{0.name}**{1} {0.description}\n"
-        finalstr = "> __Badges__\n"
-        server_badges = self.badger.get_server_badges(ctx.guild.id)
-        count = 0
-        for row in server_badges:
-            count += 1
-            finalstr += line.format(row, (":" if row.description else ""))
-        if count == 0:
-            finalstr = ctx.responses['badge_nobadges']
-        await ctx.send(finalstr)
-
+        finalstr = "> Badges `|` (Page " + str(page+1) + " of " + str(pc) + ")\n" #Could use a localization string
+        page_list = paginator.get_page(page)
+        for row in page_list:
+            if ble and be and self.levelingwidget: #This could be optimized by making two for loops inside an if statement instead of this way
+                finalstr += line.format(row.BadgeEntry, ((" [**" + str(row.levels) + "**]") if row.levels else "") + (":" if row.BadgeEntry.description else ""))
+            else:
+                finalstr += line.format(row, (":" if row.description else ""))
+        finalstr += "\n" + ctx.responses['page_strings']['footer'].format(ctx.prefix + ctx.invoked_with)
+        if len(finalstr) > 2000: #This is a bit of jank hack, I know. But it's far more elegant than erroring and it lets server administrators fix the problem.
+            f = discord.File(BytesIO(finalstr.encode("utf-8")), filename="badgelist-pg" + str(page) + ".txt")
+            await ctx.send(ctx.responses['badgelist_toolarge'], file=f)
+        else:
+            await ctx.send(finalstr)
+        
     @commands.command()
     @commands.guild_only()
+    @commands.cooldown(1, 3, type=commands.BucketType.user)
     async def profile(self, ctx, *, user:discord.Member=None):
         if user is None:
             user = ctx.author

@@ -10,6 +10,7 @@ class CoreCommandsCog(commands.Cog):
 
 	@commands.command()
 	@commands.guild_only()
+	@commands.cooldown(1, 10, type=commands.BucketType.guild)
 	async def prefix(self, ctx, prefix:str=None):
 		if not prefix:
 			await ctx.send(ctx.responses['prefix'].format(ctx.options['prefix'].data))
