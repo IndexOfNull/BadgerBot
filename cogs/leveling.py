@@ -103,7 +103,7 @@ class LevelCog(commands.Cog):
     @commands.command(aliases=["setlevel", "badgelevel", "setlevels", "badgelevels", "assignlevels"])
     @checks.is_admin()
     async def assignlevel(self, ctx, badge:str, levels:int):
-        if abs(levels) > 30:
+        if abs(levels) > 200:
             await ctx.send(ctx.responses['badgelevels_limit'].format(30))
             return
         badge_id = self.profilecog.badger.name_to_id(ctx.guild.id, badge)
