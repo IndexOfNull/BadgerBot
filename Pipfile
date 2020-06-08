@@ -5,10 +5,11 @@ name = "pypi"
 
 [packages]
 aiohttp = "*"
-discord = {py = "*"}
 sqlalchemy = "*"
 pymysql = "*"
 pillow = "*"
+pynacl = "*"
+discord-py = "*"
 
 [dev-packages]
 pylint = "*"
