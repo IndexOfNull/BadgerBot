@@ -57,5 +57,5 @@ if __name__ == "__main__":
     try:
         buddy.run()
     except KeyboardInterrupt:
-        pass
-    print("Closing")
+        task = buddy.loop.create_task(buddy.close())
+        buddy.loop.run_until_complete(buddy.close())

@@ -235,6 +235,7 @@ class BuddyBot(commands.Bot):
 		super().run(self.token)
 
 	async def close(self):
+		print("Closing")
 		self.db.close()
 		self.db_engine.dispose()
 		if self.web_enable: await self.web_runner.cleanup()
