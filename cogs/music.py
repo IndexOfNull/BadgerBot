@@ -1,11 +1,50 @@
 #This module makes use of the PyNaCl library, you may remove PyNaCl if you decide not to enable this. This module will also likely depend on libopus, so have that installed.
 #Also huge thanks to this gist: https://gist.github.com/vbe0201/ade9b80f2d3b64643d854938d40a0a2d
+import discord
 from discord.ext import commands
 import asyncio
+from async_timeout import timeout
+import itertools
+import random
 
 #Maybe implement a song class to hold info about a song (like source, who requested it, other metadata, etc)
 
-#Also perhaps a SongQueue class extended from asyncio.Queue?
+mcog = None
+
+class SongQueue(asyncio.Queue):
+    def __getitem__(self, item):
+        if isinstance(item, slice):
+            return list(itertools.islice(self._queue, item.start, item.stop, item.step))
+        else:
+            return self._queue[item]
+
+    def __iter__(self):
+        return self._queue.__iter__()
+
+    def __len__(self):
+        return self.qsize()
+
+    def clear(self):
+        self._queue.clear()
+
+    def shuffle(self):
+        random.shuffle(self._queue)
+
+    def remove(self, index: int):
+        del self._queue[index]
+
+class Song():
+
+    def __init__(self, source, ctx:commands.Context=None):
+        self.source = source
+        self.ctx = None
+        self.requester = None
+        if ctx:
+            self.ctx = ctx
+            self.requester = ctx.author
+
+    def __repr__(self):
+        return str(self.source)
 
 class VoiceError(Exception): pass
 
@@ -14,22 +53,51 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
     def __init__(self, ctx: commands.Context):
         self.ctx = ctx
         self._bot = ctx.bot
-        self.playing = None
+
+        self.current = None
         self.voice = None #This will get set later by the actual music cog
         self.next_event = asyncio.Event() #Event to tell audio coroutine when it needs to move on to the next song
         self.audio_player = self._bot.loop.create_task(self.audio_player_task())
+        self.song_queue = SongQueue()
+
+        self.loop = False #Loop the queue? This will be further implemented later
+
+    @property
+    def is_playing(self):
+        return self.voice and self.current
+
+    def __del__(self):
+        self.audio_player.cancel() #Make sure we stop the audio player task when we clean up
 
     async def audio_player_task(self):
         while True:
             self.next_event.clear() #Reset the next flag
-            #Disconnect code here
-            #Playing code here
+
+            #Make sure that we are still playing stuff, otherwise disconnect after some time
+            if not self.loop:
+                try:
+                    async with timeout(180):
+                        self.current = await self.song_queue.get() #Get a song from the queue with a timeout of 180
+                except asyncio.TimeoutError:
+                    self._bot.loop.create_task(self.close())
+                    return
+                
+            #Play the stuff
+            self.voice.play(self.current.source, after=self.next_song)
             await self.next_event.wait() #Wait for the next event to be triggered
 
     def next_song(self, error=None): #callback for when the current playing song finishes
         if error:
             raise VoiceError(str(error))
+        self.current = None
         self.next_event.set()
+
+    async def close(self): #Stop audio and disconnect
+        self.song_queue.clear()
+        if self.voice:
+            self.voice.stop()
+            await self.voice.disconnect() #Close our connection
+            self.voice = None #Destroy our connection
 
 class MusicCog(commands.Cog):
 
@@ -55,11 +123,65 @@ class MusicCog(commands.Cog):
             return
         ctx.voice_state.voice = await channel.connect()
 
-    @commands.command()
-    async def play(self, ctx):
-        if not ctx.voice_state.voice:
+    @commands.command(name="leave", invoke_without_subcommand=True)
+    async def _leave(self, ctx: commands.Context):
+        if not ctx.voice_state.voice: #Check if we are connected, if not, throw an error
+            raise VoiceError("Cannot leave unless connected to a channel.")
+        await ctx.voice_state.close()
+        #del self.voice_states[ctx.guild.id]
+
+    @commands.command(name="play")
+    async def _play(self, ctx):
+        if not ctx.voice_state.voice: #Join if we aren't already connected
             await ctx.invoke(self._join)
+        async with ctx.typing():
+            try:
+                source = discord.FFmpegPCMAudio("resources/bruh.mp3")
+            except Exception as e:
+                raise e
+            else:
+                song = Song(source, ctx)
+
+                await ctx.voice_state.song_queue.put(song)
+                await ctx.send('Enqueued {}'.format(str(song)))
+
+    @commands.command(name='summon')
+    #@commands.has_permissions(move_members=True)
+    async def _summon(self, ctx: commands.Context, *, channel: discord.VoiceChannel = None):
+        """Summons the bot to a voice channel.
+        If no channel was specified, it joins your channel.
+        """
+
+        if not channel and not ctx.author.voice:
+            raise VoiceError('You are neither connected to a voice channel nor specified a channel to join.')
+
+        destination = channel or ctx.author.voice.channel
+        if ctx.voice_state.voice:
+            await ctx.voice_state.voice.move_to(destination)
+            return
+
+        ctx.voice_state.voice = await destination.connect()
         
+    @_join.before_invoke
+    @_play.before_invoke
+    async def ensure_voice_state(self, ctx: commands.Context):
+        if not ctx.author.voice or not ctx.author.voice.channel:
+            raise VoiceError('You are not connected to any voice channel.')
+        if ctx.voice_client:
+            if ctx.voice_client.channel != ctx.author.voice.channel:
+                raise VoiceError('Bot is already in a voice channel.')
+    
+    async def close_all(self):
+        for voice in self.voice_states.values():
+            await voice.close()
+        self.voice_states = {}
 
 def setup(bot):
-    bot.add_cog(MusicCog(bot))
+    global mcog
+    mcog = MusicCog(bot)
+    bot.add_cog(mcog)
+
+def teardown(bot):
+    global mcog
+    task = bot.loop.create_task(mcog.close_all())
+    bot.loop.run_until_complete(task)

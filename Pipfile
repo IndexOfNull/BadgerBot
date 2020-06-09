@@ -10,6 +10,7 @@ pymysql = "*"
 pillow = "*"
 pynacl = "*"
 discord-py = "*"
+async-timeout = "*"
 
 [dev-packages]
 pylint = "*"
