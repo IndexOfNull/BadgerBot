@@ -64,8 +64,14 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
         self.skips = set()
 
     @property
-    def is_playing(self):
-        return self.voice and self.current
+    def is_playing(self): #Check if we are playing anything
+        if self.voice: #Have to do this to be save that we have a VoiceClient instance.
+            return self.current and self.voice.is_playing() #if there is a voice instance, check if it is playing anything
+        return False
+
+    @property
+    def is_empty(self): #Check if the queue and playing are empty (awaiting a song)
+        return not self.is_playing and ( len(self.song_queue) == 0 and not self.current)
 
     @property
     def skips_required(self): #How many skips are required, returns None if not in a channel
@@ -167,6 +173,30 @@ class MusicCog(commands.Cog):
             await ctx.send("Skipped!") #Add localization string for this later
         await ctx.send("Added skip vote!") #Add localization string for this later
 
+    """@commands.command()
+    async def queue(self, ctx: commands.Context):
+        if len(ctx.voice_state.queue)"""
+
+    @commands.command(name="pause", aliases=["stop"], invoke_without_subcommand=True)
+    async def _pause(self, ctx: commands.Context):
+        if ctx.voice_state.is_playing:
+            ctx.voice_state.voice.pause()
+            await ctx.send("Paused") #Add localization string for this later
+            return
+        await ctx.send("Not playing") #Add localization string for this later
+    
+    @commands.command(name="resume", invoke_without_subcommand=True)
+    async def _resume(self, ctx: commands.Context):
+        if ctx.voice_state.is_playing:
+            await ctx.send("Already playing") #Add localization string for this later
+            return
+        if ctx.voice_state.is_empty:
+            await ctx.send("Empty queue") #Add localization string for this later
+            return
+        ctx.voice_state.voice.resume()
+        await ctx.send("Resumed") #Add localization string for this later
+        return
+        
     @commands.command(name="leave", invoke_without_subcommand=True)
     async def _leave(self, ctx: commands.Context):
         if not ctx.voice_state.voice: #Check if we are connected, if not, throw an error
