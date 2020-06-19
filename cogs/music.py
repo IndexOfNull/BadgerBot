@@ -61,10 +61,23 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
         self.song_queue = SongQueue()
 
         self.loop = False #Loop the queue? This will be further implemented later
+        self.skips = set()
 
     @property
     def is_playing(self):
         return self.voice and self.current
+
+    @property
+    def skips_required(self): #How many skips are required, returns None if not in a channel
+        if not self.voice: #Make sure we actually have a voice state
+            return None
+        if not self.voice.channel: #Make sure we are connected
+            return None
+        member_count = len(self.voice.channel.members) - 1 #Number of users (minus the bot, of course)
+        if member_count <= 1:
+            return 1
+        else:
+            return member_count // 3 #One third of the users, leaning towards the smaller side
 
     def __del__(self):
         self.audio_player.cancel() #Make sure we stop the audio player task when we clean up
@@ -89,8 +102,12 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
     def next_song(self, error=None): #callback for when the current playing song finishes
         if error:
             raise VoiceError(str(error))
-        self.current = None
+        self.current = None #Unset the current song (this will be set back in audio_player_task if there is another queued item)
+        self.skips.clear() #Clear all votes to skip
         self.next_event.set()
+
+    def skip(self):
+        self.voice.stop() #This stops the current song, do not be confused. This also calls the "after" callback set in self.voice.play()
 
     async def close(self): #Stop audio and disconnect
         self.song_queue.clear()
@@ -105,7 +122,7 @@ class MusicCog(commands.Cog):
         self.bot = bot
         self.voice_states = {}
 
-    def get_voice_state(self, ctx: commands.Context):
+    def get_voice_state(self, ctx: commands.Context): #Typing in Python? What!
         state = self.voice_states.get(ctx.guild.id)
         if not state:
             state = VoiceState(ctx)
@@ -115,6 +132,15 @@ class MusicCog(commands.Cog):
     async def cog_before_invoke(self, ctx: commands.Context): #Get ourselves a music context! (Only accessable throughout this cog)
         ctx.voice_state = self.get_voice_state(ctx)
 
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after): #Removes the users vote and recomputes the number of needed votes 
+        if after.channel == before.channel: #We only want to detect when a member moves or leaves, so we can ignore all other updates
+            return
+        state = self.voice_states.get(member.guild.id)
+        if not state:
+            return #Do nothing if there is no voice state for the guild
+        state.skips.discard(member.id) #Discard the users vote
+
     @commands.command(name="join", invoke_without_subcommand=True)
     async def _join(self, ctx: commands.Context):
         channel = ctx.author.voice.channel
@@ -122,6 +148,24 @@ class MusicCog(commands.Cog):
             await ctx.voice_state.voice.move_to(channel)
             return
         ctx.voice_state.voice = await channel.connect()
+
+    @commands.command()
+    async def skip(self, ctx):
+        #Check if they have already voted
+
+        #THESE CHECKS SHOULD MAKE THERE WAY INTO A before_invoke DECORATED FUNCTION!11!1
+        if not ctx.voice_state.is_playing:
+            await ctx.send("Bot must be playing in order to skip.") #Add localization string for this later
+            return
+        if ctx.author.id in ctx.voice_state.skips:
+            await ctx.send("Already voted!") #Add localization string for this later
+            return
+
+        ctx.voice_state.skips.add(ctx.author.id)
+        if len(ctx.voice_state.skips) >= ctx.voice_state.skips_required:
+            ctx.voice_state.skip()
+            await ctx.send("Skipped!") #Add localization string for this later
+        await ctx.send("Added skip vote!") #Add localization string for this later
 
     @commands.command(name="leave", invoke_without_subcommand=True)
     async def _leave(self, ctx: commands.Context):
@@ -161,15 +205,30 @@ class MusicCog(commands.Cog):
             return
 
         ctx.voice_state.voice = await destination.connect()
+
+    @commands.command()
+    async def shuffle(self, ctx):
+        #Check if there is a non-empty queue
+        if len(ctx.voice_state.song_queue) <= 0:
+            raise VoiceError("Song queue must have items in it to be shuffled.")
+        ctx.voice_state.song_queue.shuffle()
+
+    """@commands.command(name="skip")
+    async def _skip(self, ctx):
+        if not ctx.voice_state.is_playing:
+            raise VoiceError("Bot must be playing music in order to skip.")"""
         
+    """ Gonna worry about all this later. Probably gonna rework it too.
     @_join.before_invoke
     @_play.before_invoke
+    @_skip.before_invoke
     async def ensure_voice_state(self, ctx: commands.Context):
         if not ctx.author.voice or not ctx.author.voice.channel:
             raise VoiceError('You are not connected to any voice channel.')
         if ctx.voice_client:
             if ctx.voice_client.channel != ctx.author.voice.channel:
                 raise VoiceError('Bot is already in a voice channel.')
+    """
     
     async def close_all(self):
         for voice in self.voice_states.values():
