@@ -183,15 +183,24 @@ class MusicCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after): #Removes the users vote and recomputes the number of needed votes 
+        """
+        ! This triggers when some MOVES/DISCONNECTS from a channel AND if we have a state !
+        - If it is the bot's state that has changed, we check if it is still in a channel, if not, cleanup
+        - If it is a user's state that has changed, we check to see if they are moving into the same channel
+            as the bot (maybe it got summoned away), if not, discard any votes to skip they have.
+        """
         if after.channel == before.channel: #We only want to detect when a member moves or leaves, so we can ignore all other updates
             return
         state = self.voice_states.get(member.guild.id)
         if not state:
             return #Do nothing if there is no voice state for the guild
-        if member == self.bot.user and after.channel is None: #If it is the bot and if it left (this should catch all disconnects not already handled)
+        if member == self.bot.user:
+            if after.channel is None: #If it is the bot and if it left (this should catch all disconnects not already handled)
             await self.unregister_voice_state(member.guild.id) #Unregister the voice state if we unexpectedly disconnect
             return
-        state.skips.discard(member.id) #Discard the users vote
+        else: #Not the bot moving
+            if not after.channel == state.voice.channel:
+                state.skips.discard(member.id) #Discard the users vote if they are moving out of the bots channel
 
     @commands.command(name="join", invoke_without_subcommand=True)
     async def _join(self, ctx: commands.Context):
