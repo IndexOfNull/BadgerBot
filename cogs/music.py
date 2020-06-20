@@ -6,6 +6,7 @@ import asyncio
 from async_timeout import timeout
 import itertools
 import random
+import typing
 
 #Maybe implement a song class to hold info about a song (like source, who requested it, other metadata, etc)
 
@@ -53,6 +54,7 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
     def __init__(self, ctx: commands.Context):
         self.ctx = ctx
         self._bot = ctx.bot
+        self.parent = ctx.cog
 
         self.current = None
         self.voice = None #This will get set later by the actual music cog
@@ -94,7 +96,7 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
         else:
             return member_count // 3 #One third of the users, leaning towards the smaller side
 
-    def __del__(self):
+    def __del__(self): #This is a catch to prevent leaks, THIS SHOULD (IDEALLY) NEVER BE CALLED!
         self.audio_player.cancel() #Make sure we stop the audio player task when we clean up
 
     async def audio_player_task(self):
@@ -105,10 +107,10 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
             #Make sure that we are still playing stuff, otherwise disconnect after some time
             if not self.loop:
                 try:
-                    async with timeout(180):
-                        self.current = await self.song_queue.get() #Get a song from the queue with a timeout of 180
+                    async with timeout(100):
+                        self.current = await self.song_queue.get() #Get a song from the queue with a timeout of 180, otherwise disconnect
                 except asyncio.TimeoutError:
-                    self._bot.loop.create_task(self.close())
+                    self._bot.loop.create_task(self.close(True))
                     return
                 
             #Play the stuff
@@ -144,12 +146,16 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
     def skip(self):
         self.voice.stop() #This stops the current song, do not be confused. This also calls the "after" callback set in self.voice.play()
 
-    async def close(self): #Stop audio and disconnect
+    async def close(self, timeout=False): #Stop audio and disconnect
         self.song_queue.clear()
         if self.voice:
             self.voice.stop()
             await self.voice.disconnect() #Close our connection
             self.voice = None #Destroy our connection
+        if self.audio_player:
+            self.audio_player.cancel()
+        if timeout:
+            self._bot.loop.create_task(self.parent.unregister_voice_state(self.ctx, auto_close=False))
 
 class MusicCog(commands.Cog):
 
@@ -167,6 +173,14 @@ class MusicCog(commands.Cog):
     async def cog_before_invoke(self, ctx: commands.Context): #Get ourselves a music context! (Only accessable throughout this cog)
         ctx.voice_state = self.get_voice_state(ctx)
 
+    async def unregister_voice_state(self, id: typing.Union[int, commands.Context], *, auto_close=True):
+        if isinstance(id, commands.Context):
+            id = id.guild.id
+        if auto_close:
+            state = self.voice_states.get(id)
+            await state.close()
+        del self.voice_states[id]
+
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after): #Removes the users vote and recomputes the number of needed votes 
         if after.channel == before.channel: #We only want to detect when a member moves or leaves, so we can ignore all other updates
@@ -174,6 +188,9 @@ class MusicCog(commands.Cog):
         state = self.voice_states.get(member.guild.id)
         if not state:
             return #Do nothing if there is no voice state for the guild
+        if member == self.bot.user and after.channel is None: #If it is the bot and if it left (this should catch all disconnects not already handled)
+            await self.unregister_voice_state(member.guild.id) #Unregister the voice state if we unexpectedly disconnect
+            return
         state.skips.discard(member.id) #Discard the users vote
 
     @commands.command(name="join", invoke_without_subcommand=True)
@@ -234,8 +251,7 @@ class MusicCog(commands.Cog):
     async def _leave(self, ctx: commands.Context):
         if not ctx.voice_state.voice: #Check if we are connected, if not, throw an error
             raise VoiceError("Cannot leave unless connected to a channel.")
-        await ctx.voice_state.close()
-        #del self.voice_states[ctx.guild.id]
+        await self.unregister_voice_state(ctx, auto_close=True)
 
     @commands.command(name="play")
     async def _play(self, ctx, *, search:str=None):
