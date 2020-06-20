@@ -62,6 +62,11 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
 
         self.loop = False #Loop the queue? This will be further implemented later
         self.skips = set()
+        #Flags
+        self._paused = False #Keep track of if we should move the queue along.
+        self._keep_skips = False #Flag to tell the after_handler not to discard skips
+        self._keep_current = False #Flag to tell the after_handler not to set self.current = None
+        self._waiting = False
 
     @property
     def is_playing(self): #Check if we are playing anything
@@ -72,6 +77,10 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
     @property
     def is_empty(self): #Check if the queue and playing are empty (awaiting a song)
         return not self.is_playing and ( len(self.song_queue) == 0 and not self.current)
+
+    @property
+    def paused(self):
+        return self._paused
 
     @property
     def skips_required(self): #How many skips are required, returns None if not in a channel
@@ -91,6 +100,7 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
     async def audio_player_task(self):
         while True:
             self.next_event.clear() #Reset the next flag
+            self._waiting = False
 
             #Make sure that we are still playing stuff, otherwise disconnect after some time
             if not self.loop:
@@ -102,15 +112,34 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
                     return
                 
             #Play the stuff
-            self.voice.play(self.current.source, after=self.next_song)
+            self.voice.play(self.current.source, after=self.after_handler) #This is non-blocking
             await self.next_event.wait() #Wait for the next event to be triggered
 
-    def next_song(self, error=None): #callback for when the current playing song finishes
+    def after_handler(self, error=None): #callback for when the current playing song finishes
         if error:
             raise VoiceError(str(error))
-        self.current = None #Unset the current song (this will be set back in audio_player_task if there is another queued item)
+        self._waiting = True
+        if self._paused: #Do nothing if the queue is paused, this may have to be moved to the bottom in the future
+            return
+        if not self._keep_skips:
+            self.skips.clear()
+        if not self._keep_current:
+            self.current = None
+        self.next_event.set()            
+        """self.current = None #Unset the current song (this will be set back in audio_player_task if there is another queued item)
         self.skips.clear() #Clear all votes to skip
-        self.next_event.set()
+        self.next_event.set()"""
+
+    def resume(self): #Resume the current song and queue
+        self._paused = False #Lets hope it doesn't error i guess ¯\_(ツ)_/¯, worst case we can manually clear skips and whatnot, but this is more consistent
+        if self._waiting:
+            self.after_handler()
+        else:
+            self.voice.resume() #Only resume if we are actually resuming the same track, otherwise it will create a weird sounding blip.
+        
+    def pause(self): #Pause the current song and queue
+        self.voice.pause()
+        self._paused = True
 
     def skip(self):
         self.voice.stop() #This stops the current song, do not be confused. This also calls the "after" callback set in self.voice.play()
@@ -160,8 +189,11 @@ class MusicCog(commands.Cog):
         #Check if they have already voted
 
         #THESE CHECKS SHOULD MAKE THERE WAY INTO A before_invoke DECORATED FUNCTION!11!1
-        if not ctx.voice_state.is_playing:
+        """if not ctx.voice_state.is_playing:
             await ctx.send("Bot must be playing in order to skip.") #Add localization string for this later
+            return"""
+        if ctx.voice_state.is_empty:
+            await ctx.send("Empty queue") #Add localization string for this later
             return
         if ctx.author.id in ctx.voice_state.skips:
             await ctx.send("Already voted!") #Add localization string for this later
@@ -171,6 +203,7 @@ class MusicCog(commands.Cog):
         if len(ctx.voice_state.skips) >= ctx.voice_state.skips_required:
             ctx.voice_state.skip()
             await ctx.send("Skipped!") #Add localization string for this later
+            return
         await ctx.send("Added skip vote!") #Add localization string for this later
 
     """@commands.command()
@@ -180,7 +213,7 @@ class MusicCog(commands.Cog):
     @commands.command(name="pause", aliases=["stop"], invoke_without_subcommand=True)
     async def _pause(self, ctx: commands.Context):
         if ctx.voice_state.is_playing:
-            ctx.voice_state.voice.pause()
+            ctx.voice_state.pause()
             await ctx.send("Paused") #Add localization string for this later
             return
         await ctx.send("Not playing") #Add localization string for this later
@@ -193,7 +226,7 @@ class MusicCog(commands.Cog):
         if ctx.voice_state.is_empty:
             await ctx.send("Empty queue") #Add localization string for this later
             return
-        ctx.voice_state.voice.resume()
+        ctx.voice_state.resume()
         await ctx.send("Resumed") #Add localization string for this later
         return
         
@@ -205,12 +238,12 @@ class MusicCog(commands.Cog):
         #del self.voice_states[ctx.guild.id]
 
     @commands.command(name="play")
-    async def _play(self, ctx):
+    async def _play(self, ctx, *, search:str=None):
         if not ctx.voice_state.voice: #Join if we aren't already connected
             await ctx.invoke(self._join)
         async with ctx.typing():
             try:
-                source = discord.FFmpegPCMAudio("resources/bruh.mp3")
+                source = discord.FFmpegPCMAudio("resources/{0}.mp3".format(search))
             except Exception as e:
                 raise e
             else:
