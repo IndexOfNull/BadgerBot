@@ -257,9 +257,10 @@ class MusicCog(commands.Cog):
     async def _play(self, ctx, *, search:str=None):
         if not ctx.voice_state.voice: #Join if we aren't already connected
             await ctx.invoke(self._join)
+        if search:
         async with ctx.typing():
             try:
-                source = discord.FFmpegPCMAudio("resources/{0}.mp3".format(search))
+                    source = discord.FFmpegOpusAudio("resources/{0}.mp3".format(search)) #FFmpegOpusAudio seems faster (going by ear), but incapable of modulating volume on the fly
             except Exception as e:
                 raise e
             else:
@@ -267,6 +268,8 @@ class MusicCog(commands.Cog):
 
                 await ctx.voice_state.song_queue.put(song)
                 await ctx.send('Enqueued {}'.format(str(song)))
+        else:
+            await ctx.invoke(self._resume) #If they're not searching, do ;resume instead
 
     @commands.command(name='summon')
     #@commands.has_permissions(move_members=True)
