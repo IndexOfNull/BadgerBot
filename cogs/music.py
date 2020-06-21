@@ -11,6 +11,19 @@ import typing
 import functools
 import youtube_dl
 
+"""
+When writing this module I encountered the interesting mechanics of the asyncio ThreadPoolExecutor,
+which is what is used pretty heavily throughout this software. Asyncio in Python versions
+below 3.8 sets the max worker threads to os.cpu_count() times five. This means that the executor
+could make 20 threads on my Macbook that has only 2 cores and 4 threads! Even worse, I usually deploy my bots
+to a 12 core, 24 thread server. That means that the ThreadPoolExecutor would happily use 120 threads! To add even
+more insult to injury, it appears that the the max worker count must be hit before threads are reused, so there's
+really only going up in terms thread count. This wouldn't be so bad if Python didn't have a GIL, but whatever.
+
+If you don't want to run into this, run the bot on Python 3.8. It will set the max threads to 32 or os.cpu_count()+4, whichever is less.
+I may add an option to change this if I can figure out how.
+"""
+
 #Maybe implement a song class to hold info about a song (like source, who requested it, other metadata, etc)
 
 mcog = None
@@ -226,7 +239,7 @@ class MusicCog(commands.Cog):
                 except IndexError:
                     raise YTDLError('Couldn\'t retrieve any matches for `{}`'.format(webpage_url))
         
-        print(info)
+        return info
 
     def get_voice_state(self, ctx: commands.Context): #Typing in Python? What!
         state = self.voice_states.get(ctx.guild.id)
@@ -333,8 +346,9 @@ class MusicCog(commands.Cog):
             await ctx.invoke(self._join)
         if search:
             async with ctx.typing():
+                info = await self.ytdl_search(search)
                 try:
-                    source = discord.FFmpegOpusAudio("resources/{0}.mp3".format(search)) #FFmpegOpusAudio seems faster (going by ear), but incapable of modulating volume on the fly
+                    source = discord.FFmpegOpusAudio(info['url']) #FFmpegOpusAudio seems faster (going by ear), but incapable of modulating volume on the fly
                 except Exception as e:
                     raise e
                 else:
