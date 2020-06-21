@@ -11,6 +11,7 @@ pillow = "*"
 pynacl = "*"
 discord-py = "*"
 async-timeout = "*"
+youtube-dl = "*"
 
 [dev-packages]
 pylint = "*"

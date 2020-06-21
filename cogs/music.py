@@ -8,9 +8,33 @@ import itertools
 import random
 import typing
 
+import functools
+import youtube_dl
+
 #Maybe implement a song class to hold info about a song (like source, who requested it, other metadata, etc)
 
 mcog = None
+
+YTDL_OPTIONS = {
+    'format': 'bestaudio/best',
+    'extractaudio': True,
+    'audioformat': 'mp3',
+    'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
+    'restrictfilenames': True,
+    'noplaylist': True,
+    'nocheckcertificate': True,
+    'ignoreerrors': False,
+    'logtostderr': False,
+    'quiet': True,
+    'no_warnings': True,
+    'default_search': 'auto',
+}
+YTDL = youtube_dl.YoutubeDL(YTDL_OPTIONS)
+
+FFMPEG_OPTIONS = {
+    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+    'options': '-vn',
+}
 
 class SongQueue(asyncio.Queue):
     def __getitem__(self, item):
@@ -48,6 +72,7 @@ class Song():
         return str(self.source)
 
 class VoiceError(Exception): pass
+class YTDLError(Exception): pass
 
 class VoiceState(): #Responsible for managing all audio activity in a guild
 
@@ -162,6 +187,46 @@ class MusicCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.voice_states = {}
+
+    async def ytdl_search(self, search):
+        loop = self.bot.loop
+
+        partial = functools.partial(YTDL.extract_info, search, download=False, process=False)
+        data = await loop.run_in_executor(None, partial)
+        
+        if data is None:
+            raise YTDLError('Couldn\'t find anything that matches `{}`'.format(search))
+
+        if 'entries' not in data:
+            process_info = data
+        else:
+            process_info = None
+            for entry in data['entries']:
+                if entry:
+                    process_info = entry
+                    break
+
+            if process_info is None:
+                raise YTDLError('Couldn\'t find anything that matches `{}`'.format(search))
+
+        webpage_url = process_info['webpage_url']
+        partial = functools.partial(YTDL.extract_info, webpage_url, download=False)
+        processed_info = await loop.run_in_executor(None, partial)
+
+        if processed_info is None:
+            raise YTDLError('Couldn\'t fetch `{}`'.format(webpage_url))
+
+        if 'entries' not in processed_info:
+            info = processed_info
+        else:
+            info = None
+            while info is None:
+                try:
+                    info = processed_info['entries'].pop(0)
+                except IndexError:
+                    raise YTDLError('Couldn\'t retrieve any matches for `{}`'.format(webpage_url))
+        
+        print(info)
 
     def get_voice_state(self, ctx: commands.Context): #Typing in Python? What!
         state = self.voice_states.get(ctx.guild.id)
