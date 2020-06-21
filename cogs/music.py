@@ -196,8 +196,8 @@ class MusicCog(commands.Cog):
             return #Do nothing if there is no voice state for the guild
         if member == self.bot.user:
             if after.channel is None: #If it is the bot and if it left (this should catch all disconnects not already handled)
-            await self.unregister_voice_state(member.guild.id) #Unregister the voice state if we unexpectedly disconnect
-            return
+                await self.unregister_voice_state(member.guild.id) #Unregister the voice state if we unexpectedly disconnect
+                return
         else: #Not the bot moving
             if not after.channel == state.voice.channel:
                 state.skips.discard(member.id) #Discard the users vote if they are moving out of the bots channel
@@ -267,16 +267,16 @@ class MusicCog(commands.Cog):
         if not ctx.voice_state.voice: #Join if we aren't already connected
             await ctx.invoke(self._join)
         if search:
-        async with ctx.typing():
-            try:
+            async with ctx.typing():
+                try:
                     source = discord.FFmpegOpusAudio("resources/{0}.mp3".format(search)) #FFmpegOpusAudio seems faster (going by ear), but incapable of modulating volume on the fly
-            except Exception as e:
-                raise e
-            else:
-                song = Song(source, ctx)
+                except Exception as e:
+                    raise e
+                else:
+                    song = Song(source, ctx)
 
-                await ctx.voice_state.song_queue.put(song)
-                await ctx.send('Enqueued {}'.format(str(song)))
+                    await ctx.voice_state.song_queue.put(song)
+                    await ctx.send('Enqueued {}'.format(str(song)))
         else:
             await ctx.invoke(self._resume) #If they're not searching, do ;resume instead
 
