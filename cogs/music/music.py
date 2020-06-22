@@ -10,6 +10,10 @@ import typing
 
 import functools
 import youtube_dl
+import aiohttp
+from io import BytesIO
+
+from cogs.music import fftools
 
 """
 When writing this module I encountered the interesting mechanics of the asyncio ThreadPoolExecutor,
@@ -41,6 +45,7 @@ YTDL_OPTIONS = {
     'quiet': True,
     'no_warnings': True,
     'default_search': 'auto',
+    'source_address': '0.0.0.0'
 }
 YTDL = youtube_dl.YoutubeDL(YTDL_OPTIONS)
 
@@ -48,6 +53,18 @@ FFMPEG_OPTIONS = {
     'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
     'options': '-vn',
 }
+
+class CustomOpusSource(discord.FFmpegOpusAudio): #holy shit this actually works lol
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.ms_read = 0
+
+    def read(self):
+        self.ms_read += 20 #read() is supposed to give 20ms of Opus encoded or 16-bit 48KHz stereo PCM stuff
+        if self.ms_read % 500:
+            print(self.ms_read/1000, "seconds")
+        return super().read()
 
 class SongQueue(asyncio.Queue):
     def __getitem__(self, item):
@@ -348,7 +365,9 @@ class MusicCog(commands.Cog):
             async with ctx.typing():
                 info = await self.ytdl_search(search)
                 try:
-                    source = discord.FFmpegOpusAudio(info['url']) #FFmpegOpusAudio seems faster (going by ear), but incapable of modulating volume on the fly
+                    #source = discord.FFmpegOpusAudio(info['url']) #FFmpegOpusAudio seems faster (going by ear), but incapable of modulating volume on the fly
+                    #fftools.get_codec_info(info['url'])
+                    source = await CustomOpusSource.from_probe(info['url'])
                 except Exception as e:
                     raise e
                 else:
