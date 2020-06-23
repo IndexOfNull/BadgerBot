@@ -454,7 +454,7 @@ class MusicCog(commands.Cog):
                     #source = discord.FFmpegOpusAudio(info['url']) #FFmpegOpusAudio seems faster (going by ear), but incapable of modulating volume on the fly
                     #fftools.get_codec_info(info['url'])
                     #source = await CustomOpusSource.from_probe(info['url'])
-                    source = AudioInfoTransformer(discord.FFmpegOpusAudio(info['url']))
+                    source = AudioInfoTransformer(discord.FFmpegOpusAudio(info['url'], **FFMPEG_OPTIONS))
                 except Exception as e:
                     raise e
                 else:
