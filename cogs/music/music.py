@@ -54,17 +54,28 @@ FFMPEG_OPTIONS = {
     'options': '-vn',
 }
 
-class CustomOpusSource(discord.FFmpegOpusAudio): #holy shit this actually works lol
+class AudioInfoTransformer(discord.AudioSource):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.ms_read = 0
+    def __init__(self, original):
+        if not isinstance(original, discord.AudioSource):
+            raise TypeError('expected AudioSource not {0.__class__.__name__}.'.format(original))
+        
+        self.original = original
+        self._ms_read = 0
+
+    @property
+    def head(self): #Returns the track head in milliseconds
+        return self._ms_read
+
+    def is_opus(self):
+        return self.original.is_opus()
+
+    def cleanup(self):
+        self.original.cleanup()
 
     def read(self):
-        self.ms_read += 20 #read() is supposed to give 20ms of Opus encoded or 16-bit 48KHz stereo PCM stuff
-        if self.ms_read % 500:
-            print(self.ms_read/1000, "seconds")
-        return super().read()
+        self._ms_read += 20 #20 is the default discord.py FRAME_LENGTH (see Encoder in discord/opus.py)
+        return self.original.read()
 
 class SongQueue(asyncio.Queue):
     def __getitem__(self, item):
@@ -90,13 +101,88 @@ class SongQueue(asyncio.Queue):
 
 class Song():
 
-    def __init__(self, source, ctx:commands.Context=None):
+    def __init__(self, source, ctx:commands.Context=None, ytdl_info={}):
         self.source = source
         self.ctx = None
         self.requester = None
         if ctx:
             self.ctx = ctx
             self.requester = ctx.author
+
+        self.ytdl_info = ytdl_info
+        self.uploader = ytdl_info.get("uploader")
+        self.uploader_url = ytdl_info.get("uploader_url")
+        self.title = ytdl_info.get("title")
+        self.thumbnails = ytdl_info.get("thumnails")
+        self.thumbnail = ytdl_info.get("thumbnail")
+        self.duration = ytdl_info.get("duration")
+        self.extractor = ytdl_info.get("extractor")
+        self.url = ytdl_info.get('webpage_url')
+
+    @staticmethod
+    def format_timebar(current=None, duration=None, *, length=25, dash='-', dot='🔵', unknown="Unknown"):
+        if not duration or not current:
+            s = unknown.center(length)
+            s = s.replace(' ', dash)
+            return s
+        time_segments = duration/length #How much time each "dash" should represent
+        index, remainder = divmod(current, time_segments)
+        index = int(index)
+        s = dash * length #Create the line
+        s = s[:index] + dot + s[index + 1:] #Insert our dot
+        return s
+
+    def get_embed(self): #Add localization string for this later
+        embed = discord.Embed(title='Now playing',
+                               description='```yaml\n{0}\n```'.format(self.title),
+                               color=discord.Color.from_rgb(233, 160, 63))
+        if isinstance(self.source, AudioInfoTransformer): #If we even have access to the current head
+            bar = '`' + self.parse_duration(self.source.head/1000) + '` ' #Get the number of seconds passed
+            if not self.duration:
+                bar += '/ `Unknown`'
+            else:
+                bar += self.format_timebar(self.source.head/1000, self.duration) + ' `' + self.parse_duration(self.duration) + '`'
+            bar += ' '
+            #bar += 'Unknown' if not self.duration else self.parse_duration(self.duration) #Get the duration if possible, otherwise just say its unkown
+            embed.add_field(name='Timebar', value=bar)
+        if self.uploader or self.uploader_url:
+            embed.add_field(name='Uploader', value=('[' + self.uploader + ']' if self.uploader else '') + ('[' + self.uploader_url + ']' if self.uploader_url else ''), inline=False)
+        if self.url:
+            embed.add_field(name='URL', value='[Click]({0})'.format(self.url))
+        embed.add_field(name='Requested by', value=self.requester.mention)
+        if self.thumbnail:
+            embed.set_thumbnail(url=self.thumbnail)
+        if self.extractor:
+            if not self.extractor == 'generic':
+                embed.set_footer(text='From ' + self.extractor.capitalize())
+            else:
+                embed.set_footer(text='From an MP3 file, probably...') 
+
+        return embed
+
+    @staticmethod
+    def parse_duration(duration: int):
+        minutes, seconds = divmod(duration, 60)
+        hours, minutes = divmod(minutes, 60)
+        days, hours = divmod(hours, 24)
+
+        gothours = False
+
+        duration = []
+        if days > 0:
+            duration.append('{:n}'.format(int(days)))
+        if hours > 0:
+            duration.append('{:n}'.format(int(hours)))
+            gothours = True
+        if minutes > 0:
+            if gothours:
+                duration.append('{:02n}'.format(int(minutes)))
+            else:
+                duration.append('{:02n}'.format(int(minutes)))
+        if seconds > 0:
+            duration.append('{:02n}'.format(int(seconds)))
+
+        return ':'.join(duration)
 
     def __repr__(self):
         return str(self.source)
@@ -367,16 +453,21 @@ class MusicCog(commands.Cog):
                 try:
                     #source = discord.FFmpegOpusAudio(info['url']) #FFmpegOpusAudio seems faster (going by ear), but incapable of modulating volume on the fly
                     #fftools.get_codec_info(info['url'])
-                    source = await CustomOpusSource.from_probe(info['url'])
+                    #source = await CustomOpusSource.from_probe(info['url'])
+                    source = AudioInfoTransformer(discord.FFmpegOpusAudio(info['url']))
                 except Exception as e:
                     raise e
                 else:
-                    song = Song(source, ctx)
+                    song = Song(source, ctx, info)
 
                     await ctx.voice_state.song_queue.put(song)
                     await ctx.send('Enqueued {}'.format(str(song)))
         else:
             await ctx.invoke(self._resume) #If they're not searching, do ;resume instead
+
+    @commands.command()
+    async def np(self, ctx):
+        await ctx.send(embed=ctx.voice_state.current.get_embed())
 
     @commands.command(name='summon')
     #@commands.has_permissions(move_members=True)
