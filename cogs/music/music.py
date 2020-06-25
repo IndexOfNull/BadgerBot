@@ -145,10 +145,15 @@ class Song():
             bar += ' '
             #bar += 'Unknown' if not self.duration else self.parse_duration(self.duration) #Get the duration if possible, otherwise just say its unkown
             embed.add_field(name='Timebar', value=bar)
-        if self.uploader or self.uploader_url:
-            embed.add_field(name='Uploader', value=('[' + self.uploader + ']' if self.uploader else '') + ('[' + self.uploader_url + ']' if self.uploader_url else ''), inline=False)
+
+        if self.uploader and self.uploader_url:
+            embed.add_field(name='Uploader', value='[{0}]({1})'.format(self.uploader, self.uploader_url))
+        elif self.uploader or self.uploader_url:
+            embed.add_field(name='Uploader', value=(self.uploader + '\n' if self.uploader else '') + ('[' + self.uploader_url + ']' if self.uploader_url else ''), inline=False)
+        
         if self.url:
-            embed.add_field(name='URL', value='[Click]({0})'.format(self.url))
+            embed.add_field(name='Source', value='[Click]({0})'.format(self.url))
+
         embed.add_field(name='Requested by', value=self.requester.mention)
         if self.thumbnail:
             embed.set_thumbnail(url=self.thumbnail)
@@ -166,26 +171,27 @@ class Song():
         hours, minutes = divmod(minutes, 60)
         days, hours = divmod(hours, 24)
 
-        gothours = False
-
         duration = []
         if days > 0:
             duration.append('{:n}'.format(int(days)))
-        if hours > 0:
+            duration.append('{:02n}'.format(int(hours)))
+            duration.append('{:02n}'.format(int(minutes)))
+            duration.append('{:02n}'.format(int(seconds)))
+        elif hours > 0:
             duration.append('{:n}'.format(int(hours)))
-            gothours = True
-        if minutes > 0:
-            if gothours:
-                duration.append('{:02n}'.format(int(minutes)))
-            else:
-                duration.append('{:02n}'.format(int(minutes)))
-        if seconds > 0:
+            duration.append('{:02n}'.format(int(minutes)))
+            duration.append('{:02n}'.format(int(seconds)))
+        else:
+            duration.append('{:n}'.format(int(minutes)))
             duration.append('{:02n}'.format(int(seconds)))
 
         return ':'.join(duration)
 
     def __repr__(self):
-        return str(self.source)
+        if self.title:
+            return self.title
+        else:
+            return str(self.source)
 
 class VoiceError(Exception): pass
 class YTDLError(Exception): pass
@@ -461,7 +467,7 @@ class MusicCog(commands.Cog):
                     song = Song(source, ctx, info)
 
                     await ctx.voice_state.song_queue.put(song)
-                    await ctx.send('Enqueued {}'.format(str(song)))
+                    await ctx.send('```diff\n+ Queued: {}\n```'.format(str(song)))
         else:
             await ctx.invoke(self._resume) #If they're not searching, do ;resume instead
 
