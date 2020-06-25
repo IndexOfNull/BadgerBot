@@ -309,6 +309,16 @@ class MusicCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.voice_states = {}
+        recommended_demuxers = ('h264', 'h265', 'mp3', 'aac', 'dash', 'webm_dash_manifest', 'matroska,webm')
+        missing_demuxers = []
+        demuxers = fftools.get_supported_formats()
+        for demuxer in recommended_demuxers:
+            if demuxer in demuxers:
+                if not demuxers[demuxer][0]:
+                    missing_demuxers.append(demuxer)
+        if missing_demuxers:
+            j = ";".join(missing_demuxers)
+            print("You are missing support to demux the following formats, some sources may not work properly: " + j)
 
     async def ytdl_search(self, search):
         loop = self.bot.loop
