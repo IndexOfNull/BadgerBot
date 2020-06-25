@@ -33,8 +33,8 @@ def require_confirmation(*, warning=None):
             await msg.add_reaction(allow)
             await msg.add_reaction(deny)
 
-            def check(reaction, user):
-                return user == ctx.author and (str(reaction.emoji) == allow or str(reaction.emoji) == deny)
+            def check(reaction, user): #The reaction is for the right message, from the executor, and is either an allow or deny
+                return reaction.message.id == msg.id and user == ctx.author and ( str(reaction.emoji) == allow or str(reaction.emoji) == deny )
 
             try:
                 reaction, user = await ctx.bot.wait_for('reaction_add', timeout=20, check=check)
