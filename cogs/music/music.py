@@ -28,6 +28,13 @@ If you don't want to run into this, run the bot on Python 3.8. It will set the m
 I may add an option to change this if I can figure out how.
 """
 
+"""
+TODO:
+
+- Fix "Twitch:stream" source (maybe)
+- Source restriction
+"""
+
 #Maybe implement a song class to hold info about a song (like source, who requested it, other metadata, etc)
 
 mcog = None
@@ -324,6 +331,7 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
 class MusicCog(commands.Cog):
 
     def __init__(self, bot):
+        print("WARNING: The music cog is, while functional, experimental and not without problems. You can track its progress on GitHub.")
         self.bot = bot
         self.voice_states = {}
         recommended_demuxers = ('h264', 'h265', 'mp3', 'aac', 'dash', 'webm_dash_manifest', 'matroska,webm')
@@ -497,6 +505,12 @@ class MusicCog(commands.Cog):
                     await ctx.send('```diff\n+ Queued: {}\n```'.format(str(song)))
         else:
             await ctx.invoke(self._resume) #If they're not searching, do ;resume instead
+
+    @commands.command()
+    async def test(self, ctx):
+        await ctx.invoke(self._play, search="tabloid jargon")
+        await ctx.invoke(self._play, search="https://soundcloud.com/capsadmin/oh_z")
+        await ctx.invoke(self._play, search="purpdaniel")
 
     @commands.command()
     async def queue(self, ctx): #Yes I know this looks awfully similar to Rythm's 👀. What can I say, Rythm sets a good standard.
