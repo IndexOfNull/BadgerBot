@@ -132,10 +132,27 @@ class Song():
         s = s[:index] + dot + s[index + 1:] #Insert our dot
         return s
 
+    def get_queue_entry(self):
+        s = ""
+        if self.title:
+            s += "`" + self.title + "` "
+        if self.duration:
+            s += "(" + self.parse_duration(self.duration) + ")"
+        else:
+            s += "(Unknown Duration)"
+        if self.requester:
+            s += " | Requested by: " + self.requester.mention
+        return s
+
     def get_embed(self): #Add localization string for this later
-        embed = discord.Embed(title='Now playing',
-                               description='```yaml\n{0}\n```'.format(self.title),
+        embed = discord.Embed(description='```yaml\n{0}\n```'.format(self.title),
                                color=discord.Color.from_rgb(233, 160, 63))
+
+        if self.requester:
+            embed.set_author(name='Now playing', icon_url=self.requester.avatar_url_as(size=128))
+        else:
+            embed.title = 'Now playing'
+
         if isinstance(self.source, AudioInfoTransformer): #If we even have access to the current head
             bar = '`' + self.parse_duration(self.source.head/1000) + '` ' #Get the number of seconds passed
             if not self.duration:
@@ -480,6 +497,25 @@ class MusicCog(commands.Cog):
                     await ctx.send('```diff\n+ Queued: {}\n```'.format(str(song)))
         else:
             await ctx.invoke(self._resume) #If they're not searching, do ;resume instead
+
+    @commands.command()
+    async def queue(self, ctx): #Yes I know this looks awfully similar to Rythm's 👀. What can I say, Rythm sets a good standard.
+        embed = discord.Embed(title='🎵 Queue 🎵', color=discord.Color.from_rgb(233, 160, 63)) #Add localization string for this later
+        embed.add_field(name='**__Now Playing__**', #Add localization string for this later
+                        value=ctx.voice_state.current.get_queue_entry(),
+                        inline=False)
+        queue_time = ctx.voice_state.current.duration if ctx.voice_state.current.duration else 0 #Why isn't duration a variable yet? idk...
+        if len(ctx.voice_state.song_queue) > 0: #if we have more than one song coming up
+            display_str = ""
+            for index, song in enumerate(ctx.voice_state.song_queue):
+                display_str += "{0}. {1}\n\n".format(index+1, song.get_queue_entry()) #Gotta have than human friendly index
+                if song.duration:
+                    queue_time += song.duration
+            embed.add_field(name='**__Up Next__**', #Add localization string for this later
+                        value=display_str)
+        if queue_time > 0:
+            embed.set_footer(text='Estimated Length: {0} (sources of unknown length are not included)'.format(Song.parse_duration(queue_time)))
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def np(self, ctx):
