@@ -14,6 +14,7 @@ import aiohttp
 from io import BytesIO
 
 from cogs.music import fftools
+from cogs.music import checks as musicchecks
 
 """
 When writing this module I encountered the interesting mechanics of the asyncio ThreadPoolExecutor,
@@ -425,6 +426,7 @@ class MusicCog(commands.Cog):
                 state.skips.discard(member.id) #Discard the users vote if they are moving out of the bots channel
 
     @commands.command(name="join", invoke_without_subcommand=True)
+    @musicchecks.has_music_perms()
     async def _join(self, ctx: commands.Context):
         channel = ctx.author.voice.channel
         if ctx.voice_state.voice: #If we have an existing connection, move it!
@@ -455,6 +457,7 @@ class MusicCog(commands.Cog):
         await ctx.send("Added skip vote!") #Add localization string for this later
 
     @commands.command(name="pause", aliases=["stop"], invoke_without_subcommand=True)
+    @musicchecks.has_music_perms()
     async def _pause(self, ctx: commands.Context):
         if ctx.voice_state.is_playing:
             ctx.voice_state.pause()
@@ -463,6 +466,7 @@ class MusicCog(commands.Cog):
         await ctx.send("Not playing") #Add localization string for this later
     
     @commands.command(name="resume", invoke_without_subcommand=True)
+    @musicchecks.has_music_perms()
     async def _resume(self, ctx: commands.Context):
         if ctx.voice_state.is_playing:
             await ctx.send("Already playing") #Add localization string for this later
@@ -475,12 +479,14 @@ class MusicCog(commands.Cog):
         return
         
     @commands.command(name="leave", invoke_without_subcommand=True)
+    @musicchecks.has_music_perms()
     async def _leave(self, ctx: commands.Context):
         if not ctx.voice_state.voice: #Check if we are connected, if not, throw an error
             raise VoiceError("Cannot leave unless connected to a channel.")
         await self.unregister_voice_state(ctx, auto_close=True)
 
     @commands.command(name="play")
+    @musicchecks.has_music_perms()
     async def _play(self, ctx, *, search:str=None):
         if not ctx.voice_state.voice: #Join if we aren't already connected
             await ctx.invoke(self._join)
@@ -532,6 +538,7 @@ class MusicCog(commands.Cog):
         await ctx.send(embed=ctx.voice_state.current.get_embed())
 
     @commands.command(name='summon')
+    @musicchecks.has_music_perms()
     #@commands.has_permissions(move_members=True)
     async def _summon(self, ctx: commands.Context, *, channel: discord.VoiceChannel = None):
         """Summons the bot to a voice channel.
@@ -549,6 +556,7 @@ class MusicCog(commands.Cog):
         ctx.voice_state.voice = await destination.connect()
 
     @commands.command()
+    @musicchecks.has_music_perms()
     async def shuffle(self, ctx):
         #Check if there is a non-empty queue
         if len(ctx.voice_state.song_queue) <= 0:
@@ -559,7 +567,7 @@ class MusicCog(commands.Cog):
     Joining: Must be in any channel
     Leaving: No requirements
     Pausing: Must be in same channel
-    Playing (Queuing): Must be in same channel
+    Playing (Queuing): Must be in same channel (This breaks the join functionality, needs work!)
     Resuming: Must be in same channel
     Summoning (will be combined with ;join): Must be in any channel
     Shuffling: Must be in same channel
