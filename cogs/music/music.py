@@ -454,10 +454,6 @@ class MusicCog(commands.Cog):
             return
         await ctx.send("Added skip vote!") #Add localization string for this later
 
-    """@commands.command()
-    async def queue(self, ctx: commands.Context):
-        if len(ctx.voice_state.queue)"""
-
     @commands.command(name="pause", aliases=["stop"], invoke_without_subcommand=True)
     async def _pause(self, ctx: commands.Context):
         if ctx.voice_state.is_playing:
@@ -558,23 +554,36 @@ class MusicCog(commands.Cog):
         if len(ctx.voice_state.song_queue) <= 0:
             raise VoiceError("Song queue must have items in it to be shuffled.")
         ctx.voice_state.song_queue.shuffle()
-
-    """@commands.command(name="skip")
-    async def _skip(self, ctx):
-        if not ctx.voice_state.is_playing:
-            raise VoiceError("Bot must be playing music in order to skip.")"""
         
-    """ Gonna worry about all this later. Probably gonna rework it too.
-    @_join.before_invoke
-    @_play.before_invoke
-    @_skip.before_invoke
-    async def ensure_voice_state(self, ctx: commands.Context):
-        if not ctx.author.voice or not ctx.author.voice.channel:
-            raise VoiceError('You are not connected to any voice channel.')
-        if ctx.voice_client:
-            if ctx.voice_client.channel != ctx.author.voice.channel:
-                raise VoiceError('Bot is already in a voice channel.')
     """
+    Joining: Must be in any channel
+    Leaving: No requirements
+    Pausing: Must be in same channel
+    Playing (Queuing): Must be in same channel
+    Resuming: Must be in same channel
+    Summoning (will be combined with ;join): Must be in any channel
+    Shuffling: Must be in same channel
+    Skipping: Must be in same channel
+    """
+
+    @_join.before_invoke
+    @_summon.before_invoke
+    async def ensure_user_voice_state(self, ctx: commands.Context):
+        if not ctx.author.voice or not ctx.author.voice.channel:
+            raise VoiceError('You must be in a voice channel to use that command.')
+
+    @skip.before_invoke
+    @_pause.before_invoke
+    @_resume.before_invoke
+    @_play.before_invoke
+    @shuffle.before_invoke
+    async def ensure_same_voice_channel(self, ctx: commands.Context):
+        if ctx.voice_client and ctx.author.voice:
+            if ctx.voice_client.channel != ctx.author.voice.channel:
+                raise VoiceError('You must be in the same voice channel as the bot to use this command.')
+            return
+        #If neither of them are in a channel
+        raise VoiceError('You must be in the same voice channel as the bot to use this command.')
     
     async def close_all(self):
         for voice in self.voice_states.values():
