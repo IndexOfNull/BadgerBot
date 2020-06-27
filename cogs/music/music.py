@@ -16,6 +16,9 @@ from io import BytesIO
 from cogs.music import fftools
 from cogs.music import checks as musicchecks
 
+import json, os
+file_path = os.path.dirname(os.path.realpath(__file__))
+
 """
 When writing this module I encountered the interesting mechanics of the asyncio ThreadPoolExecutor,
 which is what is used pretty heavily throughout this software. Asyncio in Python versions
@@ -335,6 +338,10 @@ class MusicCog(commands.Cog):
         print("WARNING: The music cog is, while functional, experimental and not without problems. You can track its progress on GitHub.")
         self.bot = bot
         self.voice_states = {}
+
+        if not self.bot.been_ready:
+            self.add_responses()
+
         recommended_demuxers = ('h264', 'h265', 'mp3', 'aac', 'dash', 'webm_dash_manifest', 'matroska,webm')
         missing_demuxers = []
         demuxers = fftools.get_supported_formats()
@@ -345,6 +352,11 @@ class MusicCog(commands.Cog):
         if missing_demuxers:
             j = ";".join(missing_demuxers)
             print("You are missing support to demux the following formats, some sources may not work properly: " + j)
+
+    def add_responses(self):
+        with open(os.path.join(file_path, "responses.json"), 'r') as f:
+            s = json.loads(f.read())
+            self.bot.response_manager.add_response_set(s)
 
     async def ytdl_search(self, search):
         loop = self.bot.loop
