@@ -39,7 +39,7 @@ class BuddyBot(commands.Bot):
 		self.db = Session()
 		self.remove_command('help')
 		#Messages
-		self.responses = utils.messages.manager.responses
+		self.response_manager = utils.messages.manager
 		#Init datamanager and register options
 		self.datamanager = data.DataManager(self, False) #Tell it not to autopopulate prefixes, that will happen when the bot is ready.
 		self.datamanager.register_option("lang", "en")
@@ -112,6 +112,9 @@ class BuddyBot(commands.Bot):
 			print('\n======COG ERRORS======')
 			print(finalstr)
 			print("======================\n\nWARNING: Some cogs failed to load! Some things may not function properly.\n")
+		#Cogs are done loading
+		if not self.been_ready:
+			self.responses = utils.messages.manager.build_responses() #Doing this later lets cogs add their own message keys
 
 	async def on_ready(self): #THIS MAY BE RUN MULTIPLE TIMES IF reconnect=True!
 		if not self.been_ready and self.database_ping_interval > 0:
