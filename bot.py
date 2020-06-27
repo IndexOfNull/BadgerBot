@@ -173,8 +173,9 @@ class BuddyBot(commands.Bot):
 			await ctx.send(ctx.responses['error_owneronly'])
 		elif isinstance(e, commands.NSFWChannelRequired): #NSFW only
 			await ctx.send(ctx.responses['error_nsfw'])
-		elif isinstance(e.original, funcs.ConfirmationFailed): #We can ignore this as the decorator auto-edits the message
-			return
+		elif hasattr(e, 'original'):
+			if isinstance(e.original, funcs.ConfirmationFailed): #We can ignore this as the decorator auto-edits the message
+				return
 		else:
 			await ctx.send("`Unhandled Error: " + str(e) + "`")
 			raise e
