@@ -65,6 +65,9 @@ FFMPEG_OPTIONS = {
     'options': '-vn',
 }
 
+class VoiceError(commands.CommandError): pass
+class YTDLError(commands.CommandError): pass
+
 class AudioInfoTransformer(discord.AudioSource):
 
     def __init__(self, original):
@@ -221,8 +224,6 @@ class Song():
         else:
             return str(self.source)
 
-class VoiceError(Exception): pass
-class YTDLError(Exception): pass
 
 class VoiceState(): #Responsible for managing all audio activity in a guild
 
@@ -405,6 +406,11 @@ class MusicCog(commands.Cog):
             self.voice_states[ctx.guild.id] = state
         return state
 
+    async def cog_check(self, ctx: commands.Context):
+        if ctx.guild is None:
+            raise commands.NoPrivateMessage()
+        return True
+
     async def cog_before_invoke(self, ctx: commands.Context): #Get ourselves a music context! (Only accessable throughout this cog)
         ctx.voice_state = self.get_voice_state(ctx)
 
@@ -441,7 +447,7 @@ class MusicCog(commands.Cog):
     @musicchecks.has_music_perms()
     async def _join(self, ctx: commands.Context):
         channel = ctx.author.voice.channel
-        if ctx.voice_state.voice: #If we have an existing connection, move it!
+        if ctx.voice_state.voice: #If we have an existing connection, move it! This needs some permission checks
             await ctx.voice_state.voice.move_to(channel)
             return
         ctx.voice_state.voice = await channel.connect()
@@ -598,10 +604,10 @@ class MusicCog(commands.Cog):
     @_play.before_invoke
     @shuffle.before_invoke
     async def ensure_same_voice_channel(self, ctx: commands.Context):
-        if ctx.voice_client and ctx.author.voice:
+        if ctx.voice_client is not None and ctx.author.voice is not None:
             if ctx.voice_client.channel != ctx.author.voice.channel:
                 raise VoiceError('You must be in the same voice channel as the bot to use this command.')
-            return
+            return True
         #If neither of them are in a channel
         raise VoiceError('You must be in the same voice channel as the bot to use this command.')
     

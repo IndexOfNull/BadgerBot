@@ -1,7 +1,8 @@
 import discord
 from discord.ext import commands
 
-def has_music_perms(): #Passes if the user is the only one with the bot, the bot is alone, if they have a DJ role, or if DJ roles are disabled
+#Passes if the user is the only one with the bot, the bot is alone, if they have a DJ role, or if DJ roles are disabled
+def has_music_perms():
     def predicate(ctx):
         dj_role_enabled = True #This should be pulled from server options once I figure that part out
         if not dj_role_enabled: #Don't even bother with these other checks if they're supposed to have perms anyway
@@ -21,7 +22,7 @@ def has_music_perms(): #Passes if the user is the only one with the bot, the bot
             return True #Allow if the bot or the user isn't in a channel
         if dj_role_enabled: #Otherwise, check if they have the proper roles/perms
             if not isinstance(ctx.channel, discord.abc.GuildChannel):
-                raise NoPrivateMessage()
+                raise commands.NoPrivateMessage()
             roles = set(('DJ', 'Music'))
             if len(roles.intersection(set([r.name for r in ctx.author.roles]))) > 0:
                 return True
