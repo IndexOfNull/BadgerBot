@@ -11,6 +11,7 @@ import typing
 import functools
 import youtube_dl
 import aiohttp
+from urllib.parse import urlparse
 from io import BytesIO
 
 from cogs.music import fftools
@@ -359,6 +360,7 @@ class MusicCog(commands.Cog):
         print("WARNING: The music cog is, while functional, experimental and not without problems. You can track its progress on GitHub.")
         self.bot = bot
         self.voice_states = {}
+        self.allowed_sources = ('youtube', 'soundcloud', 'vimeo', 'discord')
 
         if not self.bot.been_ready:
             self.add_responses()
@@ -416,7 +418,12 @@ class MusicCog(commands.Cog):
                     info = processed_info['entries'].pop(0)
                 except IndexError:
                     raise YTDLError('Couldn\'t retrieve any matches for `{}`'.format(webpage_url))
-        
+        if info['extractor'] == 'generic' and 'discord' in self.allowed_sources:
+            parsed_url = urlparse(info['url'])
+            if not parsed_url.netloc == "cdn.discordapp.com": #If it is a non-discord generic source
+                raise YTDLError('Source not in sources whitelist.')
+        elif info['extractor'] not in self.allowed_sources:
+            raise YTDLError('Source not in sources whitelist.')
         return info
 
     def get_voice_state(self, ctx: commands.Context): #Typing in Python? What!
@@ -626,7 +633,7 @@ class MusicCog(commands.Cog):
     """
 
     @_join.before_invoke
-    @_summon.before_invoke
+    @_play.before_invoke
     async def ensure_user_voice_state(self, ctx: commands.Context):
         if not ctx.author.voice or not ctx.author.voice.channel:
             raise UserNotInVoice('You must be in a voice channel to use that command.')
