@@ -30,7 +30,8 @@
             "music_voiceerror": ":fire: Something went wrong while streaming your audio. Try another audio source if the problem persists.",
             "music_ytdlerror": ":mag: I couldn't find anything that matches your search.",
             "music_endedbeforestart": ":fire: It looks like the audio stream ended before it started. Try another audio source if the problem persists.",
-            "music_endedearly": ":fire: It looks like the audio stream ended early. Try another audio source if the problem persists."
+            "music_endedearly": ":fire: It looks like the audio stream ended early. Try another audio source if the problem persists.",
+            "music_botmissingperms": ":fire: I don't have permission to do that. Make sure the bot has access to connect to channels."
         }
     }
 }

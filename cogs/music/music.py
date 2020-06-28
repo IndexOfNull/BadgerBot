@@ -72,7 +72,7 @@ class BotNotInVoice(commands.CommandError): pass
 class UserNotInVoice(commands.CommandError): pass
 class YTDLError(commands.CommandError): pass
 class EmptyQueue(commands.CommandError): pass
-
+class MissingPerms(commands.CommandError): pass
 class AudioInfoTransformer(discord.AudioSource):
 
     def __init__(self, original):
@@ -456,6 +456,8 @@ class MusicCog(commands.Cog):
             await ctx.send(ctx.responses['music_ytdlerror'])
         elif isinstance(e, commands.MissingAnyRole):
             await ctx.send(ctx.responses['music_noperms'])
+        elif isinstance(e, MissingPerms):
+            await ctx.send(ctx.responses['music_botmissingperms'])
         ctx.ignore_errors = True
 
     async def unregister_voice_state(self, id: typing.Union[int, commands.Context], *, auto_close=True):
@@ -484,8 +486,7 @@ class MusicCog(commands.Cog):
                 await self.unregister_voice_state(member.guild.id) #Unregister the voice state if we unexpectedly disconnect
                 return
         else: #Not the bot moving
-            if not hasattr(after, 'channel'):
-                state.skips.discard(member.id)
+            if not state.voice:
                 return
             if not after.channel == state.voice.channel:
                 state.skips.discard(member.id) #Discard the users vote if they are moving out of the bots channel
@@ -494,6 +495,9 @@ class MusicCog(commands.Cog):
     @musicchecks.has_music_perms()
     async def _join(self, ctx: commands.Context):
         channel = ctx.author.voice.channel
+        perms = channel.permissions_for(ctx.guild.me)
+        if not perms.connect:
+            raise MissingPerms('The bot does not have permission to connect to the specified VoiceChannel')
         if ctx.voice_state.voice: #If we have an existing connection, move it! This needs some permission checks
             await ctx.voice_state.voice.move_to(channel)
             return
