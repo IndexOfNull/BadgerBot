@@ -1,6 +1,26 @@
 {
     "en": {
         "default": {
+            "music_queue": "🎵 Queue 🎵",
+            "music_nowplaying": "Now Playing",
+            "music_upnext": "Up Next",
+            "music_estimatedlength": "Estimated Length: {0} (sources of unknown length are not included)",
+            "music_queued": "```diff\n+ Queued: {}\n```",
+            "music_resumed": ":arrow_forward: Resumed",
+            "music_paused": ":pause_button: Paused",
+            "music_emptyqueue": ":cloud: The queue is empty.",
+            "music_alreadyplaying": ":minidisc: I'm already playing.",
+            "music_notplaying": ":play_pause: I'm not playing.",
+            "music_skipped": ":fast_forward: Skipped!",
+            "music_voted": ":ballot_box: You have voted to skip the current song. (`{0} / {1}`)",
+            "music_alreadyvoted": ":no_entry: You've already voted to skip.",
+            "music_unknownduration": "Unknown Duration",
+            "music_requestedby": "Requested by",
+            "music_uploader": "Uploader",
+            "music_timebar": "Timebar",
+            "music_source": "Source",
+            "music_from": "From {0}",
+            "music_fromgeneric": "From an MP3 file, probably..."
         }
     }
 }

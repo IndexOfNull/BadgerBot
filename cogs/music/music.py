@@ -150,46 +150,46 @@ class Song():
         if self.duration:
             s += "(" + self.parse_duration(self.duration) + ")"
         else:
-            s += "(Unknown Duration)"
+            s += "(" + self.ctx.responses['music_unknownduration'] + ")" #Yes, doing localization this way means that if the servers responses change, this will not
         if self.requester:
-            s += " | Requested by: " + self.requester.mention
+            s += " | " + self.ctx.responses['music_requestedby'] + ": " + self.requester.mention
         return s
 
-    def get_embed(self): #Add localization string for this later
+    def get_embed(self):
         embed = discord.Embed(description='```yaml\n{0}\n```'.format(self.title),
                                color=discord.Color.from_rgb(233, 160, 63))
 
         if self.requester:
-            embed.set_author(name='Now playing', icon_url=self.requester.avatar_url_as(size=128))
+            embed.set_author(name=self.ctx.responses['music_nowplaying'], icon_url=self.requester.avatar_url_as(size=128))
         else:
-            embed.title = 'Now playing'
+            embed.title = self.ctx.responses['music_nowplaying']
 
         if isinstance(self.source, AudioInfoTransformer): #If we even have access to the current head
             bar = '`' + self.parse_duration(self.source.head/1000) + '` ' #Get the number of seconds passed
             if not self.duration:
-                bar += '/ `Unknown`'
+                bar += '/ `' + self.ctx.responses['music_unknownduration'] + '`'
             else:
                 bar += self.format_timebar(self.source.head/1000, self.duration) + ' `' + self.parse_duration(self.duration) + '`'
             bar += ' '
             #bar += 'Unknown' if not self.duration else self.parse_duration(self.duration) #Get the duration if possible, otherwise just say its unkown
-            embed.add_field(name='Timebar', value=bar)
+            embed.add_field(name=self.ctx.responses['music_timebar'], value=bar)
 
         if self.uploader and self.uploader_url:
-            embed.add_field(name='Uploader', value='[{0}]({1})'.format(self.uploader, self.uploader_url))
+            embed.add_field(name=self.ctx.responses['music_uploader'], value='[{0}]({1})'.format(self.uploader, self.uploader_url))
         elif self.uploader or self.uploader_url:
-            embed.add_field(name='Uploader', value=(self.uploader + '\n' if self.uploader else '') + ('[' + self.uploader_url + ']' if self.uploader_url else ''), inline=False)
+            embed.add_field(name=self.ctx.responses['music_uploader'], value=(self.uploader + '\n' if self.uploader else '') + ('[' + self.uploader_url + ']' if self.uploader_url else ''), inline=False)
         
         if self.url:
-            embed.add_field(name='Source', value='[Click]({0})'.format(self.url))
+            embed.add_field(name=self.ctx.responses['music_source'], value='[Click]({0})'.format(self.url))
 
-        embed.add_field(name='Requested by', value=self.requester.mention)
+        embed.add_field(name=self.ctx.responses['music_requestedby'], value=self.requester.mention)
         if self.thumbnail:
             embed.set_thumbnail(url=self.thumbnail)
         if self.extractor:
             if not self.extractor == 'generic':
-                embed.set_footer(text='From ' + self.extractor.capitalize())
+                embed.set_footer(text=self.ctx.responses['music_from'].format(self.extractor.capitalize()))
             else:
-                embed.set_footer(text='From an MP3 file, probably...') 
+                embed.set_footer(text=self.ctx.responses['music_fromgeneric']) 
 
         return embed
 
@@ -455,39 +455,39 @@ class MusicCog(commands.Cog):
             await ctx.send("Bot must be playing in order to skip.") #Add localization string for this later
             return"""
         if ctx.voice_state.is_empty:
-            await ctx.send("Empty queue") #Add localization string for this later
+            await ctx.send(ctx.responses['music_emptyqueue'])
             return
         if ctx.author.id in ctx.voice_state.skips:
-            await ctx.send("Already voted!") #Add localization string for this later
+            await ctx.send(ctx.responses['music_alreadyvoted'])
             return
 
         ctx.voice_state.skips.add(ctx.author.id)
         if len(ctx.voice_state.skips) >= ctx.voice_state.skips_required:
             ctx.voice_state.skip()
-            await ctx.send("Skipped!") #Add localization string for this later
+            await ctx.send(ctx.responses['music_skipped'])
             return
-        await ctx.send("Added skip vote!") #Add localization string for this later
+        await ctx.send(ctx.responses['music_voted'].format(len(ctx.voice_state.skips), ctx.voice_state.skips_required))
 
     @commands.command(name="pause", aliases=["stop"], invoke_without_subcommand=True)
     @musicchecks.has_music_perms()
     async def _pause(self, ctx: commands.Context):
         if ctx.voice_state.is_playing:
             ctx.voice_state.pause()
-            await ctx.send("Paused") #Add localization string for this later
+            await ctx.send(ctx.responses['music_paused'])
             return
-        await ctx.send("Not playing") #Add localization string for this later
+        await ctx.send(ctx.responses['music_notplaying'])
     
     @commands.command(name="resume", invoke_without_subcommand=True)
     @musicchecks.has_music_perms()
     async def _resume(self, ctx: commands.Context):
         if ctx.voice_state.is_playing:
-            await ctx.send("Already playing") #Add localization string for this later
+            await ctx.send(ctx.responses['music_alreadyplaying'])
             return
         if ctx.voice_state.is_empty:
-            await ctx.send("Empty queue") #Add localization string for this later
+            await ctx.send(ctx.responses['music_emptyqueue'])
             return
         ctx.voice_state.resume()
-        await ctx.send("Resumed") #Add localization string for this later
+        await ctx.send(ctx.responses['music_resumed'])
         return
         
     @commands.command(name="leave", invoke_without_subcommand=True)
@@ -516,7 +516,7 @@ class MusicCog(commands.Cog):
                     song = Song(source, ctx, info)
 
                     await ctx.voice_state.song_queue.put(song)
-                    await ctx.send('```diff\n+ Queued: {}\n```'.format(str(song)))
+                    await ctx.send(ctx.responses['music_queued'].format(str(song)))
         else:
             await ctx.invoke(self._resume) #If they're not searching, do ;resume instead
 
@@ -528,8 +528,8 @@ class MusicCog(commands.Cog):
 
     @commands.command()
     async def queue(self, ctx): #Yes I know this looks awfully similar to Rythm's 👀. What can I say, Rythm sets a good standard.
-        embed = discord.Embed(title='🎵 Queue 🎵', color=discord.Color.from_rgb(233, 160, 63)) #Add localization string for this later
-        embed.add_field(name='**__Now Playing__**', #Add localization string for this later
+        embed = discord.Embed(title=ctx.responses['music_queue'], color=discord.Color.from_rgb(233, 160, 63))
+        embed.add_field(name='**__' + ctx.responses['music_nowplaying'] + '__**',
                         value=ctx.voice_state.current.get_queue_entry(),
                         inline=False)
         queue_time = ctx.voice_state.current.duration if ctx.voice_state.current.duration else 0 #Why isn't duration a variable yet? idk...
@@ -539,10 +539,10 @@ class MusicCog(commands.Cog):
                 display_str += "{0}. {1}\n\n".format(index+1, song.get_queue_entry()) #Gotta have than human friendly index
                 if song.duration:
                     queue_time += song.duration
-            embed.add_field(name='**__Up Next__**', #Add localization string for this later
+            embed.add_field(name='**__' + ctx.responses['music_upnext'] + '__**',
                         value=display_str)
         if queue_time > 0:
-            embed.set_footer(text='Estimated Length: {0} (sources of unknown length are not included)'.format(Song.parse_duration(queue_time)))
+            embed.set_footer(text=ctx.responses['music_estimatedlength'].format(Song.parse_duration(queue_time)))
         await ctx.send(embed=embed)
 
     @commands.command()
