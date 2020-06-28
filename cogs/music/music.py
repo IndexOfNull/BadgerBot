@@ -66,7 +66,11 @@ FFMPEG_OPTIONS = {
 }
 
 class VoiceError(commands.CommandError): pass
+class NotInSameVoiceChannel(commands.CommandError): pass
+class BotNotInVoice(commands.CommandError): pass
+class UserNotInVoice(commands.CommandError): pass
 class YTDLError(commands.CommandError): pass
+class EmptyQueue(commands.CommandError): pass
 
 class AudioInfoTransformer(discord.AudioSource):
 
@@ -88,8 +92,11 @@ class AudioInfoTransformer(discord.AudioSource):
         self.original.cleanup()
 
     def read(self):
+        a = self.original.read()
+        if self._ms_read == 0 and len(a) == 0: #If we hit the end of the buffer and we haven't read anything
+            raise EOFError("Audio stream ended without reading any data.")
         self._ms_read += 20 #20 is the default discord.py FRAME_LENGTH (see Encoder in discord/opus.py)
-        return self.original.read()
+        return a
 
 class SongQueue(asyncio.Queue):
     def __getitem__(self, item):
@@ -245,6 +252,7 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
         self._keep_skips = False #Flag to tell the after_handler not to discard skips
         self._keep_current = False #Flag to tell the after_handler not to set self.current = None
         self._waiting = False
+        self._expect_skip = False #To be set whenever after_handler is called in an expected manner
 
     @property
     def is_playing(self): #Check if we are playing anything
@@ -295,7 +303,16 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
 
     def after_handler(self, error=None): #callback for when the current playing song finishes
         if error:
-            raise VoiceError(str(error))
+            if isinstance(error, EOFError):
+                self.ctx.bot.loop.create_task(self.ctx.send(self.ctx.responses['music_endedbeforestart']))
+            else:
+                self.ctx.bot.loop.create_task(self.ctx.send('`' + str(error) + '`'))
+        else:
+            if not self._expect_skip and isinstance(self.current.source, AudioInfoTransformer):
+                if self.current.duration:
+                    if self.current.duration - (self.current.source.head / 1000) > 10: #If we end more than 10 seconds early and we weren't expecting a skip
+                        self.ctx.bot.loop.create_task(self.ctx.send(self.ctx.responses['music_endedearly']))
+        self._expect_skip = False        
         self._waiting = True
         if self._paused: #Do nothing if the queue is paused, this may have to be moved to the bottom in the future
             return
@@ -311,6 +328,7 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
     def resume(self): #Resume the current song and queue
         self._paused = False #Lets hope it doesn't error i guess ¯\_(ツ)_/¯, worst case we can manually clear skips and whatnot, but this is more consistent
         if self._waiting:
+            self._expect_skip = True
             self.after_handler()
         else:
             self.voice.resume() #Only resume if we are actually resuming the same track, otherwise it will create a weird sounding blip.
@@ -320,6 +338,7 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
         self._paused = True
 
     def skip(self):
+        self._expect_skip = True
         self.voice.stop() #This stops the current song, do not be confused. This also calls the "after" callback set in self.voice.play()
 
     async def close(self, timeout=False): #Stop audio and disconnect
@@ -415,7 +434,18 @@ class MusicCog(commands.Cog):
         ctx.voice_state = self.get_voice_state(ctx)
 
     async def cog_command_error(self, ctx: commands.Context, e):
-        await ctx.send(str(e))
+        if isinstance(e, BotNotInVoice):
+            await ctx.send(ctx.responses['music_botnotinvoice'])
+        elif isinstance(e, EmptyQueue):
+            await ctx.send(ctx.responses['music_emptyqueue'])
+        elif isinstance(e, UserNotInVoice):
+            await ctx.send(ctx.responses['music_usernotinvoice'])
+        elif isinstance(e, NotInSameVoiceChannel):
+            await ctx.send(ctx.responses['music_notinsamechannel'])
+        elif isinstance(e, VoiceError):
+            await ctx.send(ctx.responses['music_voiceerror'])
+        elif isinstance(e, YTDLError):
+            await ctx.send(ctx.responses['music_ytdlerror'])
         ctx.ignore_errors = True
 
     async def unregister_voice_state(self, id: typing.Union[int, commands.Context], *, auto_close=True):
@@ -504,7 +534,7 @@ class MusicCog(commands.Cog):
     @musicchecks.has_music_perms()
     async def _leave(self, ctx: commands.Context):
         if not ctx.voice_state.voice: #Check if we are connected, if not, throw an error
-            raise VoiceError("Cannot leave unless connected to a channel.")
+            raise BotNotInVoice("Cannot leave unless connected to a channel.")
         await self.unregister_voice_state(ctx, auto_close=True)
 
     @commands.command(name="play")
@@ -568,7 +598,7 @@ class MusicCog(commands.Cog):
         """
 
         if not channel and not ctx.author.voice:
-            raise VoiceError('You are neither connected to a voice channel nor specified a channel to join.')
+            raise UserNotInVoice('You are neither connected to a voice channel nor specified a channel to join.')
 
         destination = channel or ctx.author.voice.channel
         if ctx.voice_state.voice:
@@ -582,7 +612,7 @@ class MusicCog(commands.Cog):
     async def shuffle(self, ctx):
         #Check if there is a non-empty queue
         if len(ctx.voice_state.song_queue) <= 0:
-            raise VoiceError("Song queue must have items in it to be shuffled.")
+            raise EmptyQueue("Song queue must have items in it to be shuffled.")
         ctx.voice_state.song_queue.shuffle()
         
     """
@@ -600,7 +630,7 @@ class MusicCog(commands.Cog):
     @_summon.before_invoke
     async def ensure_user_voice_state(self, ctx: commands.Context):
         if not ctx.author.voice or not ctx.author.voice.channel:
-            raise VoiceError('You must be in a voice channel to use that command.')
+            raise UserNotInVoice('You must be in a voice channel to use that command.')
 
     @skip.before_invoke
     @_pause.before_invoke
@@ -610,10 +640,10 @@ class MusicCog(commands.Cog):
     async def ensure_same_voice_channel(self, ctx: commands.Context):
         if ctx.voice_client is not None and ctx.author.voice is not None:
             if ctx.voice_client.channel != ctx.author.voice.channel:
-                raise VoiceError('You must be in the same voice channel as the bot to use this command.')
+                raise NotInSameVoiceChannel('You must be in the same voice channel as the bot to use this command.')
             return True
         #If neither of them are in a channel
-        raise VoiceError('You must be in the same voice channel as the bot to use this command.')
+        raise NotInSameVoiceChannel('You must be in the same voice channel as the bot to use this command.')
     
     async def close_all(self):
         for voice in self.voice_states.values():

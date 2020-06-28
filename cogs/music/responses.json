@@ -20,7 +20,14 @@
             "music_timebar": "Timebar",
             "music_source": "Source",
             "music_from": "From {0}",
-            "music_fromgeneric": "From an MP3 file, probably..."
+            "music_fromgeneric": "From an MP3 file, probably...",
+            "music_botnotinvoice": ":loudspeaker: The bot must be in a voice channel for you to use your command.",
+            "music_usernotinvoice": ":loudspeaker: You must be in a voice channel to use this command.",
+            "music_notinsamechannel": ":loudspeaker: You must be in the same voice channel as the bot to use this command.",
+            "music_voiceerror": ":fire: Something went wrong while streaming your audio. If the problem persists, try another audio source.",
+            "music_ytdlerror": ":mag: I couldn't find anything that matches your search.",
+            "music_endedbeforestart": ":fire: It looks like the audio stream ended before it started. If this problem persists, try another audio source.",
+            "music_endedearly": ":fire: It looks like the audio stream ended early. If this problem persists, try another audio source."
         }
     }
 }
