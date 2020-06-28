@@ -23,6 +23,7 @@
             "music_fromgeneric": "From an MP3 file, probably...",
             "music_shuffled": ":arrows_counterclockwise: Shuffled",
             "music_cleared": ":boom: The queue has been cleared.",
+            "music_noperms": ":no_entry: You must have music permissions to use that command.",
             "music_botnotinvoice": ":loudspeaker: The bot must be in a voice channel for you to use that command.",
             "music_usernotinvoice": ":loudspeaker: You must be in a voice channel to use that command.",
             "music_notinsamechannel": ":loudspeaker: You must be in the same voice channel as the bot to use that command.",

@@ -447,6 +447,8 @@ class MusicCog(commands.Cog):
             await ctx.send(ctx.responses['music_voiceerror'])
         elif isinstance(e, YTDLError):
             await ctx.send(ctx.responses['music_ytdlerror'])
+        elif isinstance(e, commands.MissingAnyRole):
+            await ctx.send(ctx.responses['music_noperms'])
         ctx.ignore_errors = True
 
     async def unregister_voice_state(self, id: typing.Union[int, commands.Context], *, auto_close=True):
@@ -594,24 +596,6 @@ class MusicCog(commands.Cog):
     @commands.command()
     async def np(self, ctx):
         await ctx.send(embed=ctx.voice_state.current.get_embed())
-
-    @commands.command(name='summon')
-    @musicchecks.has_music_perms()
-    #@commands.has_permissions(move_members=True)
-    async def _summon(self, ctx: commands.Context, *, channel: discord.VoiceChannel = None):
-        """Summons the bot to a voice channel.
-        If no channel was specified, it joins your channel.
-        """
-
-        if not channel and not ctx.author.voice:
-            raise UserNotInVoice('You are neither connected to a voice channel nor specified a channel to join.')
-
-        destination = channel or ctx.author.voice.channel
-        if ctx.voice_state.voice:
-            await ctx.voice_state.voice.move_to(destination)
-            return
-
-        ctx.voice_state.voice = await destination.connect()
 
     @commands.command()
     @musicchecks.has_music_perms()
