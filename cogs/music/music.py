@@ -141,7 +141,7 @@ class Song():
         self.url = ytdl_info.get('webpage_url')
 
     @staticmethod
-    def format_timebar(current=None, duration=None, *, length=25, dash='-', dot='🔵', unknown="Unknown"):
+    def format_timebar(current=None, duration=None, *, length=17, dash='-', dot='🔵', unknown="Unknown"):
         if not duration or not current:
             s = unknown.center(length)
             s = s.replace(' ', dash)
@@ -278,7 +278,7 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
         if member_count <= 1:
             return 1
         else:
-            return member_count // 3 #One third of the users, leaning towards the smaller side
+            return member_count // 2 #One half of the users, leaning towards the smaller side
 
     def __del__(self): #This is a catch to prevent leaks, THIS SHOULD (IDEALLY) NEVER BE CALLED!
         self.audio_player.cancel() #Make sure we stop the audio player task when we clean up
@@ -344,6 +344,7 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
     async def close(self, timeout=False): #Stop audio and disconnect
         self.song_queue.clear()
         if self.voice:
+            self._expect_skip = True
             self.voice.stop()
             await self.voice.disconnect() #Close our connection
             self.voice = None #Destroy our connection
@@ -474,6 +475,9 @@ class MusicCog(commands.Cog):
                 await self.unregister_voice_state(member.guild.id) #Unregister the voice state if we unexpectedly disconnect
                 return
         else: #Not the bot moving
+            if not hasattr(after, 'channel'):
+                state.skips.discard(member.id)
+                return
             if not after.channel == state.voice.channel:
                 state.skips.discard(member.id) #Discard the users vote if they are moving out of the bots channel
 
@@ -543,6 +547,7 @@ class MusicCog(commands.Cog):
         if not ctx.voice_state.voice: #Join if we aren't already connected
             await ctx.invoke(self._join)
         if search:
+            await self.ensure_same_voice_channel(ctx)
             async with ctx.typing():
                 info = await self.ytdl_search(search)
                 try:
@@ -558,6 +563,7 @@ class MusicCog(commands.Cog):
                     await ctx.voice_state.song_queue.put(song)
                     await ctx.send(ctx.responses['music_queued'].format(str(song)))
         else:
+            await self.ensure_same_voice_channel(ctx)
             await ctx.invoke(self._resume) #If they're not searching, do ;resume instead
 
     @commands.command()
@@ -614,12 +620,21 @@ class MusicCog(commands.Cog):
         if len(ctx.voice_state.song_queue) <= 0:
             raise EmptyQueue("Song queue must have items in it to be shuffled.")
         ctx.voice_state.song_queue.shuffle()
+        await ctx.send(ctx.responses['music_shuffled'])
         
+    @commands.command()
+    @musicchecks.has_music_perms()
+    async def clear(self, ctx):
+        if len(ctx.voice_state.song_queue) <= 0:
+            raise EmptyQueue("Song queue must have items in it for it to be cleared.")
+        ctx.voice_state.song_queue.clear()
+        await ctx.send(ctx.responses['music_cleared'])
+
     """
     Joining: Must be in any channel
     Leaving: No requirements
     Pausing: Must be in same channel
-    Playing (Queuing): Must be in same channel (This breaks the join functionality, needs work!)
+    Playing (Queuing): Must be in same channel
     Resuming: Must be in same channel
     Summoning (will be combined with ;join): Must be in any channel
     Shuffling: Must be in same channel
@@ -635,7 +650,6 @@ class MusicCog(commands.Cog):
     @skip.before_invoke
     @_pause.before_invoke
     @_resume.before_invoke
-    @_play.before_invoke
     @shuffle.before_invoke
     async def ensure_same_voice_channel(self, ctx: commands.Context):
         if ctx.voice_client is not None and ctx.author.voice is not None:
@@ -644,7 +658,7 @@ class MusicCog(commands.Cog):
             return True
         #If neither of them are in a channel
         raise NotInSameVoiceChannel('You must be in the same voice channel as the bot to use this command.')
-    
+
     async def close_all(self):
         for voice in self.voice_states.values():
             await voice.close()

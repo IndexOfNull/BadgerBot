@@ -21,13 +21,15 @@
             "music_source": "Source",
             "music_from": "From {0}",
             "music_fromgeneric": "From an MP3 file, probably...",
-            "music_botnotinvoice": ":loudspeaker: The bot must be in a voice channel for you to use your command.",
-            "music_usernotinvoice": ":loudspeaker: You must be in a voice channel to use this command.",
-            "music_notinsamechannel": ":loudspeaker: You must be in the same voice channel as the bot to use this command.",
-            "music_voiceerror": ":fire: Something went wrong while streaming your audio. If the problem persists, try another audio source.",
+            "music_shuffled": ":arrows_counterclockwise: Shuffled",
+            "music_cleared": ":boom: The queue has been cleared.",
+            "music_botnotinvoice": ":loudspeaker: The bot must be in a voice channel for you to use that command.",
+            "music_usernotinvoice": ":loudspeaker: You must be in a voice channel to use that command.",
+            "music_notinsamechannel": ":loudspeaker: You must be in the same voice channel as the bot to use that command.",
+            "music_voiceerror": ":fire: Something went wrong while streaming your audio. Try another audio source if the problem persists.",
             "music_ytdlerror": ":mag: I couldn't find anything that matches your search.",
-            "music_endedbeforestart": ":fire: It looks like the audio stream ended before it started. If this problem persists, try another audio source.",
-            "music_endedearly": ":fire: It looks like the audio stream ended early. If this problem persists, try another audio source."
+            "music_endedbeforestart": ":fire: It looks like the audio stream ended before it started. Try another audio source if the problem persists.",
+            "music_endedearly": ":fire: It looks like the audio stream ended early. Try another audio source if the problem persists."
         }
     }
 }
