@@ -159,16 +159,16 @@ class BuddyBot(commands.Bot):
 			after = "{0} {1} {2}s".format(m1,m2,round(seconds,1))
 			after = after.strip()
 			await ctx.send(ctx.responses['error_cooldown'].format(after))
+		elif type(e) is checks.MissingAdmin: #Admin only
+			await ctx.send(ctx.responses['error_adminonly'])
+		elif type(e) is checks.MissingModerator: #Mod only
+			await ctx.send(ctx.responses['error_modonly'])
 		elif isinstance(e, commands.BotMissingPermissions) or isinstance(e, checks.MissingAnyPermissions) or isinstance(e, commands.MissingPermissions) or isinstance(e, commands.MissingRole) or isinstance(e, commands.BotMissingAnyRole) or isinstance(e, commands.BotMissingRole): #missing permissions or roles
 			await ctx.send(":closed_lock_with_key: " + str(e))
 		elif isinstance(e, commands.NoPrivateMessage): #Server only
 			await ctx.send(ctx.responses['error_serveronly'])
 		elif isinstance(e, commands.PrivateMessageOnly): #DM only
 			await ctx.send(ctx.responses['error_dmonly'])
-		elif isinstance(e, checks.MissingAdmin): #Admin only
-			await ctx.send(ctx.responses['error_adminonly'])
-		elif isinstance(e, checks.MissingModerator): #Mod only
-			await ctx.send(ctx.responses['error_modonly'])
 		elif isinstance(e, commands.DisabledCommand): #Disabled
 			await ctx.send(ctx.responses['error_cmddisabled'])
 		elif isinstance(e, commands.NotOwner): #Owner only

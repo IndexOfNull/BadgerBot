@@ -41,15 +41,25 @@ mod_perms = {"manage_messages": True, "kick_members": True}
 #could it be possible to be an admin and not a mod? That would probably never happen with anyone who knows how to use discord...
 
 #These are the wrappers for the decorators. We can use these to infer if somewhat has admin status in a #general sense.
-def is_admin(**kwargs): #The **kwargs allows us to pass return_predicate=True if we don't want a commands.check decorator
-    try:
-        return has_any_permissions(**admin_perms, **kwargs)
-    except MissingAnyPermissions:
-        raise MissingAdmin
+def is_admin(*, return_predicate=False): #The **kwargs allows us to pass return_predicate=True if we don't want a commands.check decorator
+    actual_pred = has_any_permissions(**admin_perms, return_predicate=True)
+    def predicate(ctx):
+        try:
+             actual_pred(ctx)
+        except MissingAnyPermissions as e:
+            raise MissingAdmin(e.missing_perms)
+    if return_predicate:
+        return predicate
+    return commands.check(predicate)
 
-def is_mod(**kwargs):
-    try:
-        return has_any_permissions(**{**mod_perms, **admin_perms}, **kwargs) #This effectively merges the two dicts and then unpacks the merged dict
-    except MissingAnyPermissions:
-        raise MissingModerator
+def is_mod(*, return_predicate=False):
+    actual_pred = has_any_permissions(**{**admin_perms, **mod_perms}, return_predicate=True)
+    def predicate(ctx):
+        try:
+             actual_pred(ctx)
+        except MissingAnyPermissions as e:
+            raise MissingModerator(e.missing_perms)
+    if return_predicate:
+        return predicate
+    return commands.check(predicate)
 
