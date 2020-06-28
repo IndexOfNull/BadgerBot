@@ -13,6 +13,7 @@ class CustomContext(Context):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.ignore_errors = False #A flag to be set when errors should be ignored
 
     ####Options Code####
     def injectcustom(self):

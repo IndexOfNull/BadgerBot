@@ -140,6 +140,8 @@ class BuddyBot(commands.Bot):
 		print("-------------")
 
 	async def on_command_error(self, ctx, e):
+		if ctx.ignore_errors:
+			return
 		if isinstance(e, commands.BadArgument) or isinstance(e, commands.MissingRequiredArgument):
 			await ctx.send_help(ctx.command)
 		elif isinstance(e, commands.CommandNotFound): #Nonexistent command

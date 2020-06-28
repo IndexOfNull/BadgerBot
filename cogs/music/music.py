@@ -414,6 +414,10 @@ class MusicCog(commands.Cog):
     async def cog_before_invoke(self, ctx: commands.Context): #Get ourselves a music context! (Only accessable throughout this cog)
         ctx.voice_state = self.get_voice_state(ctx)
 
+    async def cog_command_error(self, ctx: commands.Context, e):
+        await ctx.send(str(e))
+        ctx.ignore_errors = True
+
     async def unregister_voice_state(self, id: typing.Union[int, commands.Context], *, auto_close=True):
         if isinstance(id, commands.Context):
             id = id.guild.id
