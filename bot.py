@@ -141,12 +141,13 @@ class BuddyBot(commands.Bot):
 		print("-------------")
 
 	async def on_command_error(self, ctx, e):
-		if ctx.ignore_errors:
+		if ctx.ignore_errors is True:
 			return
 		if isinstance(e, commands.BadArgument) or isinstance(e, commands.MissingRequiredArgument):
 			await ctx.send_help(ctx.command)
+			return
 		elif isinstance(e, commands.CommandNotFound): #Nonexistent command
-			pass
+			return
 		elif isinstance(e, commands.CommandOnCooldown): #On cooldown
 			s = e.retry_after
 			h, rm = divmod(s,3600)
@@ -160,28 +161,36 @@ class BuddyBot(commands.Bot):
 			after = "{0} {1} {2}s".format(m1,m2,round(seconds,1))
 			after = after.strip()
 			await ctx.send(ctx.responses['error_cooldown'].format(after))
+			return
 		elif type(e) is checks.MissingAdmin: #Admin only
 			await ctx.send(ctx.responses['error_adminonly'])
+			return
 		elif type(e) is checks.MissingModerator: #Mod only
 			await ctx.send(ctx.responses['error_modonly'])
+			return
 		elif isinstance(e, commands.BotMissingPermissions) or isinstance(e, checks.MissingAnyPermissions) or isinstance(e, commands.MissingPermissions) or isinstance(e, commands.MissingRole) or isinstance(e, commands.BotMissingAnyRole) or isinstance(e, commands.BotMissingRole): #missing permissions or roles
 			await ctx.send(":closed_lock_with_key: " + str(e))
+			return
 		elif isinstance(e, commands.NoPrivateMessage): #Server only
 			await ctx.send(ctx.responses['error_serveronly'])
+			return
 		elif isinstance(e, commands.PrivateMessageOnly): #DM only
 			await ctx.send(ctx.responses['error_dmonly'])
+			return
 		elif isinstance(e, commands.DisabledCommand): #Disabled
 			await ctx.send(ctx.responses['error_cmddisabled'])
+			return
 		elif isinstance(e, commands.NotOwner): #Owner only
 			await ctx.send(ctx.responses['error_owneronly'])
+			return
 		elif isinstance(e, commands.NSFWChannelRequired): #NSFW only
 			await ctx.send(ctx.responses['error_nsfw'])
+			return
 		elif hasattr(e, 'original'):
 			if isinstance(e.original, funcs.ConfirmationFailed): #We can ignore this as the decorator auto-edits the message
 				return
-		else:
-			await ctx.send("`Unhandled Error: " + str(e) + "`")
-			raise e
+		await ctx.send("`Unhandled Error: " + str(e) + "`")
+		raise e
 
 	async def on_error(self, event, *args, **kwargs):
 		if event == "on_message":
