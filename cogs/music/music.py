@@ -16,6 +16,7 @@ from io import BytesIO
 
 from cogs.music import fftools
 from cogs.music import checks as musicchecks
+from utils import checks
 
 import json, os
 file_path = os.path.dirname(os.path.realpath(__file__))
@@ -364,6 +365,7 @@ class MusicCog(commands.Cog):
 
         if not self.bot.been_ready:
             self.add_responses()
+            self.bot.datamanager.register_option('dj_role', '0')
 
         recommended_demuxers = ('h264', 'h265', 'mp3', 'aac', 'dash', 'webm_dash_manifest', 'matroska,webm')
         missing_demuxers = []
@@ -442,6 +444,7 @@ class MusicCog(commands.Cog):
         ctx.voice_state = self.get_voice_state(ctx)
 
     async def cog_command_error(self, ctx: commands.Context, e):
+        ctx.ignore_errors = True
         if isinstance(e, BotNotInVoice):
             await ctx.send(ctx.responses['music_botnotinvoice'])
         elif isinstance(e, EmptyQueue):
@@ -458,7 +461,9 @@ class MusicCog(commands.Cog):
             await ctx.send(ctx.responses['music_noperms'])
         elif isinstance(e, MissingPerms):
             await ctx.send(ctx.responses['music_botmissingperms'])
-        ctx.ignore_errors = True
+        else:
+            ctx.ignore_errors = False
+            return
 
     async def unregister_voice_state(self, id: typing.Union[int, commands.Context], *, auto_close=True):
         if isinstance(id, commands.Context):
@@ -624,6 +629,32 @@ class MusicCog(commands.Cog):
             raise EmptyQueue("Song queue must have items in it for it to be cleared.")
         ctx.voice_state.song_queue.clear()
         await ctx.send(ctx.responses['music_cleared'])
+
+    @commands.command()
+    @checks.is_admin()
+    async def djrole(self, ctx, role:discord.Role=None):
+        if role:
+            self.bot.datamanager.set_option(ctx.guild.id, 'dj_role', role.id)
+            await ctx.send(ctx.responses['music_djroleset'].format(role))
+        else:
+            if ctx.options['dj_role'].data == "0": #The server hasn't set a DJ role.
+                await ctx.send(ctx.responses['music_nodjrole'])
+                return
+            else:
+                dj_role = ctx.guild.get_role(int(ctx.options['dj_role'].data))
+                if not dj_role:
+                    await ctx.send(ctx.responses['music_ghostdjrole'])
+                    return
+                await ctx.send(ctx.responses['music_djrole'].format(dj_role))
+
+    @commands.command(aliases=['removedjrole', 'nodjrole'])
+    @checks.is_admin()
+    async def unsetdjrole(self, ctx):
+        if ctx.options['dj_role'].data == "0":
+            await ctx.send(ctx.responses['music_nodjrole'])
+            return
+        self.bot.datamanager.remove_option(ctx.guild.id, 'dj_role')
+        await ctx.send(ctx.responses['music_unsetdjrole'])
 
     """
     Joining: Must be in any channel
