@@ -59,6 +59,80 @@ class ProfileCog(commands.Cog):
         else:
             await ctx.send(ctx.responses['badge_notfound'])
 
+    @commands.command(aliases = ['awardmu', 'multiaward'])
+    @commands.guild_only()
+    @checks.is_mod()
+    @commands.cooldown(1, 5, type=commands.BucketType.guild)
+    async def awardmultiuser(self, ctx, badge:str, *users:discord.Member):
+        badgeid = self.badger.name_to_id(ctx.guild.id, badge)
+        if badgeid:
+            badge_statuses = self.badger.users_have_badge(ctx.guild.id, [user.id for user in users], badgeid)
+            award_ids = [user for user in badge_statuses.keys() if badge_statuses[user] is False] #Just get the false values
+            if award_ids:
+                result = self.badger.award_badge(ctx.guild.id, award_ids, badgeid)
+                if not result:
+                    await ctx.send(ctx.responses['badge_error'].format("awarding"))
+                    return
+            else:
+                await ctx.send(ctx.responses['badge_multihasbadge'])
+                return
+            #We'll just say they all got the badge if they already had it to avoid confusion
+            mentions = ", ".join([user.mention for user in users])
+            await ctx.send(ctx.responses['badge_multiaward'].format(mentions, badge))
+        else:
+            await ctx.send(ctx.responses['badge_notfound'])
+
+    @commands.command(aliases = ['revokemu', 'multirevoke'])
+    @commands.guild_only()
+    @checks.is_mod()
+    @commands.cooldown(1, 5, type=commands.BucketType.guild)
+    async def revokemultiuser(self, ctx, badge:str, *users:discord.Member):
+        badgeid = self.badger.name_to_id(ctx.guild.id, badge)
+        if badgeid:
+            badge_statuses = self.badger.users_have_badge(ctx.guild.id, [user.id for user in users], badgeid)
+            revoke_ids = [user for user in badge_statuses.keys() if badge_statuses[user] is True]
+            if revoke_ids:
+                result = self.badger.revoke_badge(ctx.guild.id, revoke_ids, badgeid)
+                if not result:
+                    await ctx.send(ctx.responses['badge_error'].format("revoking"))
+                    return
+            else:
+                await ctx.send(ctx.responses['badge_multinothasbadge'])
+                return
+            mentions = ", ".join([user.mention for user in users])
+            await ctx.send(ctx.responses['badge_multirevoke'].format(mentions, badge))
+        else:
+            await ctx.send(ctx.responses['badge_notfound'])
+
+    @commands.command(aliases = ['stripall'])
+    @commands.guild_only()
+    @checks.is_admin()
+    @commands.cooldown(1, 5, type=commands.BucketType.guild)
+    @funcs.require_confirmation(warning="This will strip the user of all their badges! There is no easy way of undoing this!")
+    async def revokeall(self, ctx, user:discord.Member):
+        result = self.badger.revoke_all(ctx.guild.id, user.id) #result is the number of badges
+        if result > 0:
+            await ctx.send(ctx.responses['badge_revokeall'].format(user, result))
+        else:
+            await ctx.send(ctx.responses['badge_revokeallnone'].format(user))
+
+    @commands.command(aliases = ['badgenuke'])
+    @commands.guild_only()
+    @checks.is_admin()
+    @commands.cooldown(1, 5, type=commands.BucketType.guild)
+    @funcs.require_confirmation(warning="All users will lose this badge! There is no easy way of undoing this!")
+    @funcs.require_confirmation(warning="Are you sure? This is your last chance.") #lol
+    async def revokefromall(self, ctx, badge:str):
+        badgeid = self.badger.name_to_id(ctx.guild.id, badge)
+        if badgeid:
+            result = self.badger.revoke_from_all(ctx.guild.id, badgeid)
+            if result > 0:
+                await ctx.send(ctx.responses['badge_badgenuke'].format(badge, result))
+            else:
+                await ctx.send(ctx.responses['badge_badgenukenone'])
+        else:
+            await ctx.send(ctx.responses['badge_notfound'])
+
     @commands.command(aliases = ['strip'])
     @commands.guild_only()
     @checks.is_mod()

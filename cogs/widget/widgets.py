@@ -49,12 +49,22 @@ class BadgeWidget(WidgetBase):
         if self.build_tables: #Unfortunately this can't be inherited due to each table being created on a different declaritive_base()
             Base.metadata.create_all(self.db.bind)
 
-    def award_badge(self, server_id, discord_id, badge_id):
+    def award_badge(self, server_id, discord_ids, badge_id):
+        single = False
+        if not isinstance(discord_ids, list):
+            discord_ids = [discord_ids]
+            single = True
         try:
-            winner = BadgeWinner(server_id=server_id, discord_id=discord_id, badge_id=badge_id)
-            self.db.add(winner)
+            objects = []
+            for user in discord_ids:
+                winner = BadgeWinner(server_id=server_id, discord_id=user, badge_id=badge_id)
+                objects.append(winner)
+                self.db.add(winner)
             self.db.commit()
-            return winner
+            if single: #return just the object if they passed an int
+                return objects[0]
+            else: #give them the whole list otherwise
+                return objects #Maybe make this return a list later
         except Exception as e: #May need to add exc.IntegrityError. I don't think that's possible with this though
             self.db.rollback()
             raise e
@@ -73,12 +83,44 @@ class BadgeWidget(WidgetBase):
             return True
         return False
 
-    def revoke_badge(self, server_id, discord_id, badge_id):
+    def users_have_badge(self, server_id, discord_ids, badge_id): #Returns a dictionary with user ids as keys with a bool representing if they have a badge
+        result = self.db.query(BadgeWinner.discord_id).filter_by(server_id=server_id, badge_id=badge_id)\
+                    .filter(BadgeWinner.discord_id.in_(discord_ids))\
+                    .all()
+        extracted_ids = [row.discord_id for row in result]
+        d = {}
+        for user in discord_ids:
+            d[user] = user in extracted_ids
+        return d
+
+    def revoke_badge(self, server_id, discord_ids, badge_id):
+        if not isinstance(discord_ids, list):
+            discord_ids = [discord_ids]
         try:
-            result = self.db.query(BadgeWinner).filter_by(server_id=server_id, discord_id=discord_id, badge_id=badge_id).delete()
+            result = self.db.query(BadgeWinner).filter_by(server_id=server_id, badge_id=badge_id)\
+                    .filter(BadgeWinner.discord_id.in_(discord_ids))\
+                    .delete(synchronize_session=False) #We should be able to get away with this because we commit right after. We can always use 'fetch'
             self.db.commit()
             return result
         except Exception as e: #Maybe add exc.IntegrityError
+            self.db.rollback()
+            raise e
+
+    def revoke_all(self, server_id, discord_id):
+        try:
+            result = self.db.query(BadgeWinner).filter_by(server_id=server_id, discord_id=discord_id).delete(synchronize_session=False)
+            self.db.commit()
+            return result
+        except Exception as e:
+            self.db.rollback()
+            raise e
+
+    def revoke_from_all(self, server_id, badge_id):
+        try:
+            result = self.db.query(BadgeWinner).filter_by(server_id=server_id, badge_id=badge_id).delete(synchronize_session=False)
+            self.db.commit()
+            return result
+        except Exception as e:
             self.db.rollback()
             raise e
 
