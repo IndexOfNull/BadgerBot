@@ -78,7 +78,7 @@ class ProfileCog(commands.Cog):
         else:
             await ctx.send(ctx.responses['badge_notfound'])
 
-    @commands.command(aliases = ["addbadge"])
+    @commands.command(aliases = ["addbadge", "makebadge"])
     @commands.guild_only()
     @checks.is_admin()
     @commands.cooldown(1, 10, type=commands.BucketType.guild)
@@ -177,7 +177,7 @@ class ProfileCog(commands.Cog):
         except Exception as e:
             raise e
 
-    @commands.command()
+    @commands.command(aliases=["editbadge", "modifybadge"])
     @commands.guild_only()
     @checks.is_admin()
     @commands.cooldown(1, 10, type=commands.BucketType.guild)
