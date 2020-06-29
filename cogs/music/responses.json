@@ -12,7 +12,7 @@
             "music_alreadyplaying": ":minidisc: I'm already playing.",
             "music_notplaying": ":play_pause: I'm not playing.",
             "music_skipped": ":fast_forward: Skipped!",
-            "music_voted": ":ballot_box: You have voted to skip the current song. (`{0} / {1}`)",
+            "music_voted": ":ballot_box: You have voted to skip the current song. (`{0}/{1}`)",
             "music_alreadyvoted": ":no_entry: You've already voted to skip.",
             "music_unknownduration": "Unknown Duration",
             "music_requestedby": "Requested by",

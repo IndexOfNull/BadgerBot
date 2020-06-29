@@ -45,7 +45,7 @@ def is_admin(*, return_predicate=False): #The **kwargs allows us to pass return_
     actual_pred = has_any_permissions(**admin_perms, return_predicate=True)
     def predicate(ctx):
         try:
-             actual_pred(ctx)
+            return actual_pred(ctx)
         except MissingAnyPermissions as e:
             raise MissingAdmin(e.missing_perms)
     if return_predicate:
@@ -56,7 +56,7 @@ def is_mod(*, return_predicate=False):
     actual_pred = has_any_permissions(**{**admin_perms, **mod_perms}, return_predicate=True)
     def predicate(ctx):
         try:
-             actual_pred(ctx)
+            return actual_pred(ctx)
         except MissingAnyPermissions as e:
             raise MissingModerator(e.missing_perms)
     if return_predicate:

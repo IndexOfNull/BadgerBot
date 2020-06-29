@@ -19,7 +19,8 @@ modules = [
 	"cogs.core",
 	"cogs.fun",
 	"cogs.leveling",
-	"cogs.owner"
+	"cogs.owner",
+	"cogs.music"
 ] #What cogs to load
 
 class BuddyBot(commands.Bot):
