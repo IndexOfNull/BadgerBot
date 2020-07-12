@@ -620,6 +620,9 @@ class MusicCog(commands.Cog):
 
     @commands.command()
     async def queue(self, ctx): #Yes I know this looks awfully similar to Rythm's 👀. What can I say, Rythm sets a good standard.
+        if len(ctx.voice_state.song_queue) == 0 and not ctx.voice_state.current:
+            await ctx.send(ctx.responses['music_notplaying'])
+            return
         embed = discord.Embed(title=ctx.responses['music_queue'], color=discord.Color.from_rgb(233, 160, 63))
         embed.add_field(name='**__' + ctx.responses['music_nowplaying'] + '__**',
                         value=ctx.voice_state.current.get_queue_entry(),
@@ -639,6 +642,9 @@ class MusicCog(commands.Cog):
 
     @commands.command(aliases=['nowplaying', 'playing'])
     async def np(self, ctx):
+        if not ctx.voice_state.current:
+            await ctx.send(ctx.responses['music_notplaying'])
+            return
         await ctx.send(embed=ctx.voice_state.current.get_embed())
 
     @commands.command()

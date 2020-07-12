@@ -20,18 +20,10 @@ def has_music_perms():
                 return True
         elif dj_role_id:
             dj_role = ctx.guild.get_role(dj_role_id)
-            if dj_role: #If it exists
-                return discord.utils.get(ctx.author.roles, id=dj_role_id) is not None
+            if dj_role: #If the role exists
+                if discord.utils.get(ctx.author.roles, id=dj_role_id) is None: #If the author does not have the role
+                    raise commands.MissingAnyRole(dj_role.name)
         else:
             return True #Allow if the bot or the user isn't in a channel
-        if dj_role_id: #Otherwise, check if they have the proper roles/perms
-            if not isinstance(ctx.channel, discord.abc.GuildChannel):
-                raise commands.NoPrivateMessage()
-            roles = set(('DJ', 'Music'))
-            if len(roles.intersection(set([r.name for r in ctx.author.roles]))) > 0:
-                return True
-            else:
-                raise commands.MissingAnyRole(roles)
-            
         return True #Give access if all other restrictions pass
     return commands.check(predicate)
