@@ -107,6 +107,9 @@ class SongQueue(asyncio.Queue):
         else:
             return self._queue[item]
 
+    def __delitem__(self, item): #idk if this supports slices but i don't care
+        del self._queue[item]
+
     def __iter__(self):
         return self._queue.__iter__()
 
@@ -428,6 +431,26 @@ class MusicCog(commands.Cog):
             raise YTDLError('Source not in sources whitelist.')
         return info
 
+    async def remove_duplicates(self, index: int, queue: asyncio.Queue): #removes duplicates of a certain item in the queue
+        #this is inefficient; O(n^2) worst case, O(n log n) best case (I think, could still be totally wrong)
+        reference = queue[index]
+        duplicate_indices = []
+        for i, item in enumerate(queue):
+            if i == index: #Don't dedupe the reference item
+                continue
+            if item is reference: #Dedupe if they are literally the same
+                duplicate_indices.append(i)
+            if item.url == reference.url: #Dedupe if the urls are the same
+                duplicate_indices.append(i)
+        amount = len(duplicate_indices)
+        if amount == 0:
+            return queue, 0
+        while len(duplicate_indices) > 0:
+            del queue[duplicate_indices[0]]
+            duplicate_indices = [x-1 for x in duplicate_indices] #Recompute indices since they've all shifted down one
+            duplicate_indices.pop(0)
+        return queue, amount
+
     def get_voice_state(self, ctx: commands.Context): #Typing in Python? What!
         state = self.voice_states.get(ctx.guild.id)
         if not state:
@@ -559,6 +582,17 @@ class MusicCog(commands.Cog):
             raise BotNotInVoice("Cannot leave unless connected to a channel.")
         await self.unregister_voice_state(ctx, auto_close=True)
 
+    @commands.command(aliases=['dedupe'])
+    @musicchecks.has_music_perms()
+    async def removedupes(self, ctx):
+        if len(ctx.voice_state.song_queue) >= 1: #Just skip the actual dedupe process if there is only one song in the queue
+            current_start = 0
+            while current_start < len(ctx.voice_state.song_queue): #Doing it this way because changing list sizes in for loops scares me (and python sometimes)
+                await self.remove_duplicates(current_start, ctx.voice_state.song_queue) #This is done in place, so who cares
+                current_start += 1
+        await ctx.send(ctx.responses['music_deduped'])
+        
+
     @commands.command(name="play")
     @musicchecks.has_music_perms()
     async def _play(self, ctx, *, search:str=None):
@@ -671,6 +705,7 @@ class MusicCog(commands.Cog):
     @_pause.before_invoke
     @_resume.before_invoke
     @shuffle.before_invoke
+    @removedupes.before_invoke
     async def ensure_same_voice_channel(self, ctx: commands.Context):
         if ctx.voice_client is not None and ctx.author.voice is not None:
             if ctx.voice_client.channel != ctx.author.voice.channel:
