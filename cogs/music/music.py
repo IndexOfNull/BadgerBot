@@ -376,7 +376,7 @@ class MusicCog(commands.Cog):
                     missing_demuxers.append(demuxer)
         if missing_demuxers:
             j = ";".join(missing_demuxers)
-            print("You are missing support to demux the following formats, some sources may not work properly: " + j)
+            print("You are missing demuxing support for the following formats, some sources may not work properly: " + j)
 
     def add_responses(self):
         with open(os.path.join(file_path, "responses.json"), 'r') as f:
@@ -508,7 +508,7 @@ class MusicCog(commands.Cog):
             return
         ctx.voice_state.voice = await channel.connect()
 
-    @commands.command()
+    @commands.command(aliases=['voteskip'])
     async def skip(self, ctx):
         #Check if they have already voted
 
@@ -585,12 +585,6 @@ class MusicCog(commands.Cog):
             await ctx.invoke(self._resume) #If they're not searching, do ;resume instead
 
     @commands.command()
-    async def test(self, ctx):
-        await ctx.invoke(self._play, search="tabloid jargon")
-        await ctx.invoke(self._play, search="https://soundcloud.com/capsadmin/oh_z")
-        await ctx.invoke(self._play, search="purpdaniel")
-
-    @commands.command()
     async def queue(self, ctx): #Yes I know this looks awfully similar to Rythm's 👀. What can I say, Rythm sets a good standard.
         embed = discord.Embed(title=ctx.responses['music_queue'], color=discord.Color.from_rgb(233, 160, 63))
         embed.add_field(name='**__' + ctx.responses['music_nowplaying'] + '__**',
@@ -609,7 +603,7 @@ class MusicCog(commands.Cog):
             embed.set_footer(text=ctx.responses['music_estimatedlength'].format(Song.parse_duration(queue_time)))
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(aliases=['nowplaying', 'playing'])
     async def np(self, ctx):
         await ctx.send(embed=ctx.voice_state.current.get_embed())
 

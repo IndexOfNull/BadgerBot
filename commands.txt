@@ -65,6 +65,22 @@ Command List
         4. (++) Update a tag's contents      : ;updatetag <name> <content>
         5. List the server's tags       : ;tags
 
+    Music (SO):
+        1. Queue a song                 : ;play [url/search query]
+            - This command may also functions like ;resume and ;join depending on if the bot is in a voice channel or is currently playing.
+        2. Pause                        : ;pause
+        3. Resume                       : ;resume
+        4. Vote to skip                 : ;skip
+        5. Summon the bot               : ;join
+        6. Make the bot leave           : ;leave
+        7. View the queue               : ;queue
+        8. See what's playing           : ;[np | playing | nowplaying]
+        9. Shuffle the queue            : ;shuffle
+        10. Clear the queue             : ;clear
+        11. (++) Set/view the DJ role        : ;djrole [role]
+            - All users will have music perms if no DJ role is set.
+        12. (++) Unset the DJ role           : ;unsetdjrole
+
     Bot Management (SO):
         1. View the server's prefix        : ;prefix
         2. (++) Set the server's prefix    : ;prefix <prefix>
