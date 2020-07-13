@@ -599,7 +599,7 @@ class MusicCog(commands.Cog):
             raise BotNotInVoice("Cannot leave unless connected to a channel.")
         await self.unregister_voice_state(ctx, auto_close=True)
 
-    @commands.command(aliases=['dedupe'])
+    @commands.command(aliases=['dedupe', 'deduplicate'])
     @musicchecks.has_music_perms()
     async def removedupes(self, ctx):
         if len(ctx.voice_state.song_queue) >= 1: #Just skip the actual dedupe process if there is only one song in the queue
@@ -608,7 +608,22 @@ class MusicCog(commands.Cog):
                 await self.remove_duplicates(current_start, ctx.voice_state.song_queue) #This is done in place, so who cares
                 current_start += 1
         await ctx.send(ctx.responses['music_deduped'])
-        
+
+    @commands.command()
+    @musicchecks.has_music_perms()
+    async def leavecleanup(self, ctx):
+        connected_users = ctx.voice_client.channel.members
+        remove_indices = []
+        for i, song in enumerate(ctx.voice_state.song_queue):
+            if song.requester not in connected_users:
+                remove_indices.append(i)
+        removed = len(remove_indices)
+        while len(remove_indices) > 0:
+            del ctx.voice_state.song_queue[remove_indices[0]]
+            remove_indices.pop(0)
+            remove_indices = [x-1 for x in remove_indices]
+        await ctx.send(ctx.responses['music_leavecleanup'].format(removed))
+
     @commands.command(name="play")
     @musicchecks.has_music_perms()
     async def _play(self, ctx, *, search:str=None):
@@ -636,6 +651,7 @@ class MusicCog(commands.Cog):
             await ctx.send(ctx.responses['music_hello'])
 
     @commands.command()
+    @musicchecks.has_music_perms()
     async def playtop(self, ctx, *, search:str):
         async with ctx.typing():
             info = await self.ytdl_search(search)
@@ -650,6 +666,7 @@ class MusicCog(commands.Cog):
                 await ctx.send(ctx.responses['music_topqueued'].format(str(song)))
 
     @commands.command()
+    @musicchecks.has_music_perms()
     async def playskip(self, ctx, *, search:str):
         await ctx.invoke(self.playtop, search=search)
         await ctx.invoke(self.skip)
@@ -750,6 +767,7 @@ class MusicCog(commands.Cog):
     @removedupes.before_invoke
     @playtop.before_invoke
     @playskip.before_invoke
+    @leavecleanup.before_invoke
     async def ensure_same_voice_channel(self, ctx: commands.Context):
         if ctx.voice_client is not None and ctx.author.voice is not None:
             if ctx.voice_client.channel != ctx.author.voice.channel:

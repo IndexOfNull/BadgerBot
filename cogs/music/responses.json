@@ -7,6 +7,7 @@
             "music_estimatedlength": "Estimated Length: {0} (sources of unknown length are not included)",
             "music_queued": "```diff\n+ Queued: {}\n```",
             "music_topqueued": "```diff\n+ Queued (Top): {}\n```",
+            "music_leavecleanup": ":door: {} songs from disconnected players have been dequeued.",
             "music_resumed": ":arrow_forward: Resumed",
             "music_paused": ":pause_button: Paused",
             "music_emptyqueue": ":cloud: The queue is empty.",
