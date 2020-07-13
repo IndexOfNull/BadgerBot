@@ -100,7 +100,7 @@ class AudioInfoTransformer(discord.AudioSource):
         self._ms_read += 20 #20 is the default discord.py FRAME_LENGTH (see Encoder in discord/opus.py)
         return a
 
-class SongQueue(asyncio.Queue):
+class SongQueue(asyncio.Queue): #A "FIFO" queue that has some LIFO elements
     def __getitem__(self, item):
         if isinstance(item, slice):
             return list(itertools.islice(self._queue, item.start, item.stop, item.step))
@@ -124,6 +124,21 @@ class SongQueue(asyncio.Queue):
 
     def remove(self, index: int):
         del self._queue[index]
+
+    def _putleft(self, item):
+        self._queue.appendleft(item)
+
+    def putleft_nowait(self, item):
+        """Put an item into the left of the queue without blocking.
+
+        If no free slot is immediately available, raise QueueFull.
+        """
+        if self.full():
+            raise asyncio.queues.QueueFull
+        self._putleft(item)
+        self._unfinished_tasks += 1
+        self._finished.clear()
+        self._wakeup_next(self._getters)
 
 class Song():
 
@@ -530,6 +545,8 @@ class MusicCog(commands.Cog):
             await ctx.voice_state.voice.move_to(channel)
             return
         ctx.voice_state.voice = await channel.connect()
+        if ctx.command is self.bot.get_command("join"):
+            await ctx.send(ctx.responses['music_hello'])
 
     @commands.command(aliases=['voteskip'])
     async def skip(self, ctx):
@@ -592,31 +609,50 @@ class MusicCog(commands.Cog):
                 current_start += 1
         await ctx.send(ctx.responses['music_deduped'])
         
-
     @commands.command(name="play")
     @musicchecks.has_music_perms()
     async def _play(self, ctx, *, search:str=None):
+        joined = False
         if not ctx.voice_state.voice: #Join if we aren't already connected
             await ctx.invoke(self._join)
+            joined = True
         if search:
             await self.ensure_same_voice_channel(ctx)
             async with ctx.typing():
                 info = await self.ytdl_search(search)
                 try:
-                    #source = discord.FFmpegOpusAudio(info['url']) #FFmpegOpusAudio seems faster (going by ear), but incapable of modulating volume on the fly
-                    #fftools.get_codec_info(info['url'])
-                    #source = await CustomOpusSource.from_probe(info['url'])
                     source = AudioInfoTransformer(discord.FFmpegOpusAudio(info['url'], **FFMPEG_OPTIONS))
                 except Exception as e:
                     raise e
                 else:
                     song = Song(source, ctx, info)
 
-                    await ctx.voice_state.song_queue.put(song)
+                    ctx.voice_state.song_queue.put_nowait(song)
                     await ctx.send(ctx.responses['music_queued'].format(str(song)))
-        else:
+        elif not joined: #If they're not searching and we didn't just join, do ;resume instead
             await self.ensure_same_voice_channel(ctx)
-            await ctx.invoke(self._resume) #If they're not searching, do ;resume instead
+            await ctx.invoke(self._resume)
+        else:
+            await ctx.send(ctx.responses['music_hello'])
+
+    @commands.command()
+    async def playtop(self, ctx, *, search:str):
+        async with ctx.typing():
+            info = await self.ytdl_search(search)
+            try:
+                source = AudioInfoTransformer(discord.FFmpegOpusAudio(info['url'], **FFMPEG_OPTIONS))
+            except Exception as e:
+                raise e
+            else:
+                song = Song(source, ctx, info)
+
+                ctx.voice_state.song_queue.putleft_nowait(song)
+                await ctx.send(ctx.responses['music_topqueued'].format(str(song)))
+
+    @commands.command()
+    async def playskip(self, ctx, *, search:str):
+        await ctx.invoke(self.playtop, search=search)
+        await ctx.invoke(self.skip)
 
     @commands.command()
     async def queue(self, ctx): #Yes I know this looks awfully similar to Rythm's 👀. What can I say, Rythm sets a good standard.
@@ -712,6 +748,8 @@ class MusicCog(commands.Cog):
     @_resume.before_invoke
     @shuffle.before_invoke
     @removedupes.before_invoke
+    @playtop.before_invoke
+    @playskip.before_invoke
     async def ensure_same_voice_channel(self, ctx: commands.Context):
         if ctx.voice_client is not None and ctx.author.voice is not None:
             if ctx.voice_client.channel != ctx.author.voice.channel:
