@@ -263,7 +263,7 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
         self.voice = None #This will get set later by the actual music cog
         self.next_event = asyncio.Event() #Event to tell audio coroutine when it needs to move on to the next song
         self.audio_player = self._bot.loop.create_task(self.audio_player_task())
-        self.song_queue = SongQueue()
+        self.song_queue = SongQueue(maxsize=15) #Limit the queue to 15 entires. Will raise asyncio.queues.QueueFull if full.
 
         self.loop = False #Loop the queue? This will be further implemented later
         self.skips = set()
@@ -499,6 +499,9 @@ class MusicCog(commands.Cog):
             await ctx.send(ctx.responses['music_noperms'])
         elif isinstance(e, MissingPerms):
             await ctx.send(ctx.responses['music_botmissingperms'])
+        elif hasattr(e, "original"): #This must be at the end of the elif chain
+            if isinstance(e.original, asyncio.queues.QueueFull):
+                await ctx.send(ctx.responses['music_queuefull'])
         else:
             ctx.ignore_errors = False
             return
