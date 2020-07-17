@@ -20,7 +20,8 @@ settings = {
     "web_ip": "0.0.0.0",
     "web_port": "8080",
     "db_ping_interval": 14400,
-    "web_enable": False
+    "web_enable": False,
+    "dev_mode": False
 }
 
 def write_config(opts):

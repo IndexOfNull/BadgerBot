@@ -73,7 +73,7 @@ Command List
         4.  Vote to skip                      : ;skip
         5.  Summon the bot                    : ;join
         6.  Make the bot leave                : ;leave
-        7.  View the queue                    : ;queue
+        7.  View the queue                    : ;[q | queue]
         8.  See what's playing                : ;[np | playing | nowplaying]
         9.  Shuffle the queue                 : ;shuffle
         10. Play a song, but place it on      : ;playtop <url/search query>

@@ -381,10 +381,16 @@ class MusicCog(commands.Cog):
         self.voice_states = {}
         self.allowed_sources = ('youtube', 'soundcloud', 'vimeo', 'discord')
 
+        #silence ffmpeg if dev mode is disabled
+        if not bot.dev_mode:
+            FFMPEG_OPTIONS['before_options'] = "-v 0 -nostats -hide_banner " + FFMPEG_OPTIONS['before_options']
+
+        #Register the dj_role server option
         if not self.bot.been_ready:
             self.add_responses()
             self.bot.datamanager.register_option('dj_role', '0')
-
+            
+        #Check for any missing demuxers and warn about them. The most important are webm, mp3, h264, and dash.
         recommended_demuxers = ('h264', 'h265', 'mp3', 'aac', 'dash', 'webm_dash_manifest', 'matroska,webm')
         missing_demuxers = []
         demuxers = fftools.get_supported_formats()
@@ -392,6 +398,8 @@ class MusicCog(commands.Cog):
             if demuxer in demuxers:
                 if not demuxers[demuxer][0]:
                     missing_demuxers.append(demuxer)
+            else:
+                missing_demuxers.append(demuxer)
         if missing_demuxers:
             j = ";".join(missing_demuxers)
             print("You are missing demuxing support for the following formats, some sources may not work properly: " + j)
@@ -674,7 +682,7 @@ class MusicCog(commands.Cog):
         await ctx.invoke(self.playtop, search=search)
         await ctx.invoke(self.skip)
 
-    @commands.command()
+    @commands.command(aliases['q'])
     async def queue(self, ctx): #Yes I know this looks awfully similar to Rythm's 👀. What can I say, Rythm sets a good standard.
         if len(ctx.voice_state.song_queue) == 0 and not ctx.voice_state.current:
             await ctx.send(ctx.responses['music_notplaying'])
