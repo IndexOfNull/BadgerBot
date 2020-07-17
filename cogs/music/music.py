@@ -389,7 +389,7 @@ class MusicCog(commands.Cog):
         if not self.bot.been_ready:
             self.add_responses()
             self.bot.datamanager.register_option('dj_role', '0')
-            
+
         #Check for any missing demuxers and warn about them. The most important are webm, mp3, h264, and dash.
         recommended_demuxers = ('h264', 'h265', 'mp3', 'aac', 'dash', 'webm_dash_manifest', 'matroska,webm')
         missing_demuxers = []
@@ -682,7 +682,7 @@ class MusicCog(commands.Cog):
         await ctx.invoke(self.playtop, search=search)
         await ctx.invoke(self.skip)
 
-    @commands.command(aliases['q'])
+    @commands.command(aliases=['q'])
     async def queue(self, ctx): #Yes I know this looks awfully similar to Rythm's 👀. What can I say, Rythm sets a good standard.
         if len(ctx.voice_state.song_queue) == 0 and not ctx.voice_state.current:
             await ctx.send(ctx.responses['music_notplaying'])
