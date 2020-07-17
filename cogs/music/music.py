@@ -34,17 +34,6 @@ If you don't want to run into this, run the bot on Python 3.8. It will set the m
 I may add an option to change this if I can figure out how.
 """
 
-"""
-TODO:
-
-- Fix "Twitch:stream" source (maybe)
-- Source restriction
-"""
-
-#Maybe implement a song class to hold info about a song (like source, who requested it, other metadata, etc)
-
-mcog = None
-
 YTDL_OPTIONS = {
     'format': 'bestaudio/best',
     'extractaudio': True,
@@ -383,7 +372,7 @@ class MusicCog(commands.Cog):
 
         #silence ffmpeg if dev mode is disabled
         if not bot.dev_mode:
-            FFMPEG_OPTIONS['before_options'] = "-v 0 -nostats -hide_banner " + FFMPEG_OPTIONS['before_options']
+            FFMPEG_OPTIONS['options'] = "-v 0 -nostats -hide_banner " + FFMPEG_OPTIONS['options']
 
         #Register the dj_role server option
         if not self.bot.been_ready:
@@ -792,12 +781,8 @@ class MusicCog(commands.Cog):
             await voice.close()
         self.voice_states = {}
 
-def setup(bot):
-    global mcog
-    mcog = MusicCog(bot)
-    bot.add_cog(mcog)
+    def cog_unload(self):
+        self.bot.loop.create_task(self.close_all())
 
-def teardown(bot):
-    global mcog
-    task = bot.loop.create_task(mcog.close_all())
-    bot.loop.run_until_complete(task)
+def setup(bot):
+    bot.add_cog(MusicCog(bot))

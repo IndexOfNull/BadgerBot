@@ -1,29 +1,30 @@
 import discord
 from discord.ext import commands
 
-#Passes if the user is the only one with the bot, the bot is alone, if they have a DJ role, or if DJ roles are disabled
+#Passes if the user has the DJ role (if set), otherwise checks if they (or the bot) are alone with no other users.
 def has_music_perms():
     def predicate(ctx):
         dj_role_id = int(ctx.options['dj_role'].data) #Will be zero if unset
-        if not dj_role_id: #Don't even bother with these other checks if they're supposed to have perms anyway
-            return True
-        #If the user is the only one in the channel with the bot, give them access regardless of roles
-        if ctx.voice_client:
+        if not dj_role_id:
+            return True #Allow if there is no DJ role set
+
+        dj_role = ctx.guild.get_role(dj_role_id)
+        if dj_role: #If the role exists
+            if discord.utils.get(ctx.author.roles, id=dj_role_id) is not None: #If the author has the role
+                return True  
+
+        if ctx.voice_client: 
             bot_channel = ctx.voice_client.channel
-            if len(bot_channel.members) == 1: #If the bot is the only one in the channel
-                return True
-            if ctx.author.voice:
-                if bot_channel == ctx.author.voice.channel and len(bot_channel.members) <= 2: #If the invoker is in the same channel as the bot and they are the only one in it besides the bot
+            if ctx.author.voice: #If the author is in a voice channel...
+                if ctx.author.voice.channel == bot_channel and len(bot_channel.members) <= 2: #and its the same as the bot and there's two or less members
                     return True
-        elif ctx.author.voice: #If the bot isn't in a channel, but the user is.
-            if len(ctx.author.voice.channel.members) == 1: #Allow if they are the only one in the channel
+                else:
+                    raise commands.MissingAnyRole(("DJ"))
+            elif len(bot_channel.members) == 1: #If the bot is the only one in the channel
                 return True
-        elif dj_role_id:
-            dj_role = ctx.guild.get_role(dj_role_id)
-            if dj_role: #If the role exists
-                if discord.utils.get(ctx.author.roles, id=dj_role_id) is None: #If the author does not have the role
-                    raise commands.MissingAnyRole(dj_role.name)
-        else:
-            return True #Allow if the bot or the user isn't in a channel
-        return True #Give access if all other restrictions pass
+        elif ctx.author.voice: #implied 'and not ctx.voice_client' due to above condition
+            if len(ctx.author.voice.channel.members) == 1:
+                return True
+
+        raise commands.MissingAnyRole(("DJ"))
     return commands.check(predicate)
