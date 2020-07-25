@@ -47,12 +47,24 @@ Command List
 
     Profile/Badge (SO):
         1. (+) Award a badge                : ;award <user> <badge>
-        2. (+) Revoke a badge               : ;revoke <user> <badge>
-        3. (++) Create a badge              : ;addbadge <name> <icon> [description]
+        2. (+) Award a badge to multiple    : ;awardmu <badge> <users...>
+                users
+        3. (+) Revoke a badge               : ;revoke <user> <badge>
+        4. (+) Revoke a badge from multiple : ;revokemu <badge> <users...>
+                users
+        5. (++) Revoke all badges from a    : ;revokeall <user>
+                user
+        6. (++) Revoke a badge from         : ;revokefromall <badge>
+                everyone
+        7. (++) Create a badge              : ;addbadge <name> <icon> [description]
             - The 'icon' parameter works best as an emoji
-        4. (!)(++) Delete a badge           : ;delbadge <name>
-        5. (++) Update a badge              : ;updatebadge <name> <newname> [newicon] [newdescription]
-        6. List the server's badges         : ;badges
+        8. (++) Badge Wizard                : ;badgewizard
+            - Walks you through making a badge
+        9. (!)(++) Delete a badge           : ;delbadge <name>
+        10. (++) Update a badge              : ;updatebadge <name> <newname> [newicon] [newdescription]
+        11. List the server's badges         : ;badges
+        12. View a user's profile            : ;profile [user]
+            - Will show your profile if no user is supplied
 
     Leveling Module (SO):
         1. (++) Set a badge's levels        : ;setlevel <badge> <levels>

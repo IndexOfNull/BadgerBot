@@ -25,7 +25,7 @@ class CoreCommandsCog(commands.Cog):
 				self.datamanager.prefixes[str(ctx.guild.id)] = prefix
 			await ctx.send(ctx.responses['prefix_set'].format(prefix))
 
-	@commands.command()
+	@commands.command(aliases=['cmds', 'commands'])
 	async def help(self, ctx, command:str=""):
 		command = command.replace(".", " ")
 		if command:
