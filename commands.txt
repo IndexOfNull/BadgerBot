@@ -83,22 +83,24 @@ Command List
         2.  Pause                             : ;pause
         3.  Resume                            : ;resume
         4.  Vote to skip                      : ;skip
-        5.  Summon the bot                    : ;join
-        6.  Make the bot leave                : ;leave
-        7.  View the queue                    : ;[q | queue]
-        8.  See what's playing                : ;[np | playing | nowplaying]
-        9.  Shuffle the queue                 : ;shuffle
-        10. Play a song, but place it on      : ;playtop <url/search query>
+        5.  Force Skip                        : ;forceskip
+            - Requires DJ perms, skips voting.
+        6.  Summon the bot                    : ;join
+        7.  Make the bot leave                : ;leave
+        8.  View the queue                    : ;[q | queue]
+        9.  See what's playing                : ;[np | playing | nowplaying]
+        10.  Shuffle the queue                 : ;shuffle
+        11. Play a song, but place it on      : ;playtop <url/search query>
                 the top of the queue
-        11. Place a song on the top           : ;playskip <url/search query>
+        12. Place a song on the top           : ;playskip <url/search query>
                 of the queue and skip to it
-        12. Remove song queued by users no    : ;leavecleanup
+        13. Remove song queued by users no    : ;leavecleanup
                 longer in the voice chat
-        13. Clear the queue                   : ;clear
-        14. Clean duplicates                  : ;removedupes
-        15. (++) Set/view the DJ role         : ;djrole [role]
+        14. Clear the queue                   : ;clear
+        15. Clean duplicates                  : ;removedupes
+        16. (++) Set/view the DJ role         : ;djrole [role]
             - All users will have music perms if no DJ role is set.
-        16. (++) Unset the DJ role            : ;unsetdjrole
+        17. (++) Unset the DJ role            : ;unsetdjrole
 
     Bot Management (SO):
         1. View the server's prefix        : ;prefix

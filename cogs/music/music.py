@@ -279,6 +279,7 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
 
     @property
     def skips_required(self): #How many skips are required, returns None if not in a channel
+        return 10
         if not self.voice: #Make sure we actually have a voice state
             return None
         if not self.voice.channel: #Make sure we are connected
@@ -563,22 +564,18 @@ class MusicCog(commands.Cog):
             await ctx.send(ctx.responses['music_alreadyvoted'])
             return
 
-        #Skip if there the DJ role is enabled and the command invoker is a DJ
-        dj_role_id = int(ctx.options['dj_role'].data) 
-        if dj_role_id:
-            dj_role = ctx.guild.get_role(dj_role_id)
-            if dj_role:
-                if discord.utils.get(ctx.author.roles, id=dj_role_id) is not None: #If the author has the role
-                    ctx.voice_state.skip()
-                    await ctx.send(ctx.responses['music_skipped'])
-                    return
-
         ctx.voice_state.skips.add(ctx.author.id)
         if len(ctx.voice_state.skips) >= ctx.voice_state.skips_required:
             ctx.voice_state.skip()
             await ctx.send(ctx.responses['music_skipped'])
             return
         await ctx.send(ctx.responses['music_voted'].format(len(ctx.voice_state.skips), ctx.voice_state.skips_required))
+
+    @commands.command()
+    @musicchecks.has_music_perms()
+    async def forceskip(self, ctx):
+        ctx.voice_state.skip()
+        await ctx.send(ctx.responses['music_skipped'])
 
     @commands.command(name="pause", aliases=["stop"], invoke_without_subcommand=True)
     @musicchecks.has_music_perms()
