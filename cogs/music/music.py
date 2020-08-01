@@ -768,6 +768,7 @@ class MusicCog(commands.Cog):
             raise UserNotInVoice('You must be in a voice channel to use that command.')
 
     @skip.before_invoke
+    @forceskip.before_invoke
     @_pause.before_invoke
     @_resume.before_invoke
     @shuffle.before_invoke
