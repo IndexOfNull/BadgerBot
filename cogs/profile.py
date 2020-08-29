@@ -304,9 +304,6 @@ class ProfileCog(commands.Cog):
     async def badges(self, ctx, page:int=1):
         if not self.levelingwidget:
             self.levelingwidget = self.manager.get_widget("LevelWidget")
-        page -= 1 #So that we can be comfy while the user is
-        if page < 0: #Make it so they can't go lower than 0
-            page = 0
         if ble and be and self.levelingwidget:
             server_badges = self.bot.db.query(BadgeEntry, BadgeLevelEntry.levels)\
                 .filter_by(server_id=ctx.guild.id)\
@@ -318,11 +315,10 @@ class ProfileCog(commands.Cog):
         if pc == 0:
             await ctx.send(ctx.responses['badge_nobadges'])
             return
-        if page + 1 > pc:
-            page = pc - 1 #Cap the pages argument to the actual amount of pages
+        page = funcs.clamp(page, 1, pc)
         line = "{0.text} **{0.name}**{1} {0.description}\n"
-        finalstr = "> Badges `|` (Page " + str(page+1) + " of " + str(pc) + ")\n" #Could use a localization string
-        page_list = paginator.get_page(page)
+        finalstr = "> Badges `|` (Page " + str(page) + " of " + str(pc) + ")\n" #Could use a localization string
+        page_list = paginator.get_page(page-1)
         for row in page_list:
             if ble and be and self.levelingwidget: #This could be optimized by making two for loops inside an if statement instead of this way
                 finalstr += line.format(row.BadgeEntry, ((" [**" + str(row.levels) + "**]") if row.levels else "") + (":" if row.BadgeEntry.description else ""))

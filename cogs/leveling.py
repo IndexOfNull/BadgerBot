@@ -11,7 +11,7 @@ from discord.ext import commands
 
 from cogs.widget.classes import WidgetBase
 from cogs.widget.widgets import BadgeEntry, BadgeWinner
-from utils import checks
+from utils import checks, funcs
 
 Base = declarative_base()
 class BadgeLevelEntry(Base):
@@ -120,15 +120,16 @@ class LevelCog(commands.Cog):
 
     @commands.command()
     @commands.cooldown(1, 10, type=commands.BucketType.channel)
-    async def leaderboard(self, ctx):
+    async def leaderboard(self, ctx, page:int=1):
         lbd = self.db.query(BadgeWinner.server_id, BadgeWinner.discord_id, sa.func.sum(BadgeLevelEntry.levels)\
             .label("levels"))\
             .join(BadgeLevelEntry, sa.and_(BadgeWinner.badge_id == BadgeLevelEntry.badge_id, BadgeWinner.server_id == ctx.guild.id))\
             .group_by(BadgeWinner.discord_id)\
-            .order_by(sa.desc("levels"))\
-            .limit(10)
-        rows = lbd.all()
-        header = "```md\n> {0}\n================\n".format(ctx.responses['leaderboard_strings']['leaderboard'])
+            .order_by(sa.desc("levels"))
+        pager = funcs.Paginator(lbd, items_per_page=10)
+        page = funcs.clamp(page, 1, pager.page_count) #Clamp page so that we can't pick a page past the last page
+        rows = pager.get_page(page-1) #Subtract one for computer friendliness
+        header = "```md\n> {0}\n================\n".format( ctx.responses['leaderboard_strings']['leaderboard'].format(page, pager.page_count) )
         footer = "\n```"
         entry = "<{num}: {user}> {levels} levels\n"
         final = header
@@ -138,7 +139,7 @@ class LevelCog(commands.Cog):
                 u = ctx.responses['leaderboard_strings']['unknown_user'] + "#" + str(row.discord_id)
             else:
                 u = str(user)
-            final += entry.format(num=position+1, user=u, levels=row.levels)
+            final += entry.format(num=position + (page-1)*pager.items_per_page + 1, user=u, levels=row.levels)
         if final == header:
             final += ctx.responses['leaderboard_strings']['nothing']
         final.rstrip()

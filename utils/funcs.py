@@ -10,6 +10,9 @@ from io import BytesIO
 from sqlalchemy.orm.query import Query as saQuery
 import math
 
+def clamp(n, smallest, largest):
+    return max(smallest, min(n, largest))
+
 def discord_obj_tostring(obj):
     if isinstance(obj, discord.User) or isinstance(obj, discord.Member):
         return obj.name + "#" + obj.discriminator
