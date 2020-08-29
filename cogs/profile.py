@@ -313,7 +313,7 @@ class ProfileCog(commands.Cog):
                 .outerjoin(BadgeLevelEntry, BadgeEntry.id == BadgeLevelEntry.badge_id)
         else:
             server_badges = self.badger.get_server_badges(ctx.guild.id)
-        paginator = funcs.Paginator(server_badges, items_per_page=10)
+        paginator = funcs.Paginator(server_badges, items_per_page=20)
         pc = paginator.page_count
         if pc == 0:
             await ctx.send(ctx.responses['badge_nobadges'])
