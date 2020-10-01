@@ -279,7 +279,6 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
 
     @property
     def skips_required(self): #How many skips are required, returns None if not in a channel
-        return 10
         if not self.voice: #Make sure we actually have a voice state
             return None
         if not self.voice.channel: #Make sure we are connected
@@ -356,7 +355,8 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
         if self.voice:
             self._expect_skip = True
             self.voice.stop()
-            await self.voice.disconnect() #Close our connection
+            if self.voice.is_connected():
+                await self.voice.disconnect() #Close our connection if it is open.
             self.voice = None #Destroy our connection
         if self.audio_player:
             self.audio_player.cancel()
