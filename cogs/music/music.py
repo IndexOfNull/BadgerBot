@@ -90,11 +90,15 @@ class AudioInfoTransformer(discord.AudioSource):
         return a
 
 class SongQueue(asyncio.Queue): #A "FIFO" queue that has some LIFO elements
+
     def __getitem__(self, item):
         if isinstance(item, slice):
             return list(itertools.islice(self._queue, item.start, item.stop, item.step))
         else:
             return self._queue[item]
+
+    def swap(self, ind1, ind2):
+        self._queue[ind1], self._queue[ind2] = self._queue[ind2], self._queue[ind1]
 
     def __delitem__(self, item): #idk if this supports slices but i don't care
         del self._queue[item]
@@ -500,6 +504,8 @@ class MusicCog(commands.Cog):
         elif hasattr(e, "original"): #This must be at the end of the elif chain
             if isinstance(e.original, asyncio.queues.QueueFull):
                 await ctx.send(ctx.responses['music_queuefull'])
+                return
+            ctx.ignore_errors = False
         else:
             ctx.ignore_errors = False
             return
@@ -678,6 +684,25 @@ class MusicCog(commands.Cog):
         await ctx.invoke(self.playtop, search=search)
         await ctx.invoke(self.skip)
 
+    @commands.command()
+    @musicchecks.has_music_perms()
+    async def qswap(self, ctx, pos1:int, pos2:int):
+        if pos1 > len(ctx.voice_state.song_queue) or pos2 > len(ctx.voice_state.song_queue) or pos1 - 1 < 0 or pos2 - 1 < 0: #Bounds checking
+            await ctx.send(ctx.responses['music_indexoutofrange'])
+            return
+        ctx.voice_state.song_queue.swap(pos1 - 1, pos2 - 1)
+        await ctx.send(ctx.responses['music_swapped'].format(pos1, pos2))
+
+    @commands.command()
+    @musicchecks.has_music_perms()
+    async def qremove(self, ctx, pos:int):
+        pos = pos - 1
+        if pos > len(ctx.voice_state.song_queue) - 1 or pos < 0: #Bounds checking
+            await ctx.send(ctx.responses['music_indexoutofrange'])
+            return
+        await ctx.send(ctx.responses['music_removed'].format(ctx.voice_state.song_queue[pos]))
+        del ctx.voice_state.song_queue[pos]
+
     @commands.command(aliases=['q'])
     async def queue(self, ctx): #Yes I know this looks awfully similar to Rythm's 👀. What can I say, Rythm sets a good standard.
         if len(ctx.voice_state.song_queue) == 0 and not ctx.voice_state.current:
@@ -776,6 +801,9 @@ class MusicCog(commands.Cog):
     @playtop.before_invoke
     @playskip.before_invoke
     @leavecleanup.before_invoke
+    @_leave.before_invoke
+    @qswap.before_invoke
+    @qremove.before_invoke
     async def ensure_same_voice_channel(self, ctx: commands.Context):
         if ctx.voice_client is not None and ctx.author.voice is not None:
             if ctx.voice_client.channel != ctx.author.voice.channel:
