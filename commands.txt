@@ -61,21 +61,21 @@ Command List
         8. (++) Badge Wizard                : ;badgewizard
             - Walks you through making a badge
         9. (!)(++) Delete a badge           : ;delbadge <name>
-        10. (++) Update a badge              : ;updatebadge <name> <newname> [newicon] [newdescription]
-        11. List the server's badges         : ;badges
-        12. View a user's profile            : ;profile [user]
+        10. (++) Update a badge             : ;updatebadge <name> <newname> [newicon] [newdescription]
+        11. List the server's badges        : ;badges
+        12. View a user's profile           : ;profile [user]
             - Will show your profile if no user is supplied
 
     Leveling Module (SO):
         1. (++) Set a badge's levels        : ;setlevel <badge> <levels>
-        2. View the server leaderboard              : ;leaderboard
+        2. View the server leaderboard      : ;leaderboard
 
     Tags (SO):
-        1. View a tag's contents        : ;tag <tag>
-        2. (++) Create a tag                 : ;[createtag | addtag] <name> <content>
-        3. (++) Delete a tag                 : ;[removetag | deltag] <name>
-        4. (++) Update a tag's contents      : ;updatetag <name> <content>
-        5. List the server's tags       : ;tags
+        1. View a tag's contents          : ;tag <tag>
+        2. (++) Create a tag              : ;[createtag | addtag] <name> <content>
+        3. (++) Delete a tag              : ;[removetag | deltag] <name>
+        4. (++) Update a tag's contents   : ;updatetag <name> <content>
+        5. List the server's tags         : ;tags
 
     Music (SO):
         1.  Queue a song                      : ;play [url/search query]
@@ -89,18 +89,20 @@ Command List
         7.  Make the bot leave                : ;leave
         8.  View the queue                    : ;[q | queue]
         9.  See what's playing                : ;[np | playing | nowplaying]
-        10.  Shuffle the queue                 : ;shuffle
+        10.  Shuffle the queue                : ;shuffle
         11. Play a song, but place it on      : ;playtop <url/search query>
                 the top of the queue
         12. Place a song on the top           : ;playskip <url/search query>
                 of the queue and skip to it
-        13. Remove song queued by users no    : ;leavecleanup
+        13. Swap two songs                    : ;qswap <pos1> <pos2>
+        14. Remove a song from the queue      : ;qremove <pos>
+        15. Remove song queued by users no    : ;leavecleanup
                 longer in the voice chat
-        14. Clear the queue                   : ;clear
-        15. Clean duplicates                  : ;removedupes
-        16. (++) Set/view the DJ role         : ;djrole [role]
+        16. Clear the queue                   : ;clear
+        17. Clean duplicates                  : ;removedupes
+        18. (++) Set/view the DJ role         : ;djrole [role]
             - All users will have music perms if no DJ role is set.
-        17. (++) Unset the DJ role            : ;unsetdjrole
+        19. (++) Unset the DJ role            : ;unsetdjrole
 
     Bot Management (SO):
         1. View the server's prefix        : ;prefix
