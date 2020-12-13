@@ -28,7 +28,13 @@ class BuddyBot(commands.Bot):
 	def __init__(self, *args, **kwargs):
 		command_prefix = commands.when_mentioned_or(";")
 		help_command = classes.CustomHelpCommand()
-		super().__init__(command_prefix = command_prefix, help_command = help_command, *args, **kwargs)
+
+		intents = discord.Intents.default()
+		privileged_intents = kwargs.pop("privileged_intents", [])
+		intents.members = ("members" in privileged_intents)
+		intents.presences = ("presences" in privileged_intents)
+
+		super().__init__(command_prefix = command_prefix, help_command = help_command, intents = intents, *args, **kwargs)
 		self.prefix = ";"
 		self.token = kwargs.pop("token")
 		self.owner = None #Retrieved later in on_ready

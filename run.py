@@ -1,4 +1,5 @@
 from bot import BuddyBot
+import discord
 import json
 import os
 import argparse
@@ -21,7 +22,8 @@ settings = {
     "web_port": "8080",
     "db_ping_interval": 14400,
     "web_enable": False,
-    "dev_mode": False
+    "dev_mode": False,
+    "privileged_intents": ["members"]
 }
 
 def write_config(opts):
@@ -57,6 +59,8 @@ buddy = BuddyBot(**config)
 if __name__ == "__main__":
     try:
         buddy.run()
+    except discord.errors.PrivilegedIntentsRequired:
+        print("You are trying to use privileged intents that have not been enabled in the Discord developer portal. Consider explicitly enabling the privileged intents. If doing so is not possible, consider disabling the intents in your config file.")
     except KeyboardInterrupt:
         task = buddy.loop.create_task(buddy.close())
         buddy.loop.run_until_complete(buddy.close())

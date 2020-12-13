@@ -59,11 +59,11 @@ This option enables or disables the internal webserver.
 *  **web_secret**:
 This is a token that authenticates requests made to the bot's internal webserver. The pre-filled value is unique to your installation, so the value filled in by default should be fine.
 
-  *  **web_ip**:
+*  **web_ip**:
 `Default: 0.0.0.0`
 The IP of the network interface you want the internal webserver to listen on. You will probably want to change this if your computer/server has multiple network controllers.
 
-  *  **web_port**:
+*  **web_port**:
 `Default: 8080`
 The port the webserver should listen on. You may want to change this if you are running other webservers alongside the bot.
 
@@ -71,6 +71,11 @@ The port the webserver should listen on. You may want to change this if you are 
 *  **db_ping_interval**:
 `Default: 14400`
 How often should we ping the database before it 
+
+*  **privileged_intents**:
+`Default: ["members"]`
+`Options: "members", "presences"`
+What gateway intents we should enable. You must enable these in the Discord developer portal as well. The members intent is required for the leaderboard to work. See [here](https://discordpy.readthedocs.io/en/latest/intents.html) for more info.
 
 ### Updates and the `config.json`
 
