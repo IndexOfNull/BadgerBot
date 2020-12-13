@@ -273,7 +273,7 @@ class ProfileCog(commands.Cog):
             if icon:
                 args['text'] = icon
             if description:
-                args['description'] = description
+                args['description'] = ('' if description.lower() in ('none', 'nothing') else description)
             updated = self.badger.update_badge(ctx.guild.id, name, newname=newname, **args)
             if updated:
                 await ctx.send(ctx.responses['badge_updated'])

@@ -62,6 +62,7 @@ Command List
             - Walks you through making a badge
         9. (!)(++) Delete a badge           : ;delbadge <name>
         10. (++) Update a badge             : ;updatebadge <name> <newname> [newicon] [newdescription]
+            - Typing in 'none' or 'nothing' for [newdescription] will make it blank.
         11. List the server's badges        : ;badges
         12. View a user's profile           : ;profile [user]
             - Will show your profile if no user is supplied
