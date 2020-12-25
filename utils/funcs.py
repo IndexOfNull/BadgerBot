@@ -10,6 +10,8 @@ from io import BytesIO
 from sqlalchemy.orm.query import Query as saQuery
 import math
 
+import re
+
 def clamp(n, smallest, largest):
     return max(smallest, min(n, largest))
 
@@ -61,6 +63,8 @@ def img_to_bytesio(img, *args):
     b.seek(0)
     return b
 
+def emoji_escape(text: str):
+    return re.sub(r'\[;(\w*?);(\d*?)\]', r'<:\1:\2>', text)
 class Paginator():
 
     #This is a needlessly complicated system for pagination

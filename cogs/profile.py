@@ -6,6 +6,7 @@ from cogs.widget.widgets import BadgeWidget, DateJoinedWidget, AccountAgeWidget
 from cogs.widget.classes import RenderManager
 from cogs.widget import themes
 from utils import checks, funcs
+from utils.funcs import emoji_escape
 
 from io import BytesIO
 
@@ -156,7 +157,7 @@ class ProfileCog(commands.Cog):
     @commands.guild_only()
     @checks.is_admin()
     @commands.cooldown(1, 10, type=commands.BucketType.guild)
-    async def createbadge(self, ctx, name:str, icon:str, *, description:str=""):
+    async def createbadge(self, ctx, name:str, icon:emoji_escape, *, description:str=""):
         #Impose some limits on the parameters
         if len(name) > self.badge_limits['name']:
             await ctx.send(ctx.responses['badge_limits'].format("name", self.badge_limits['name']))
@@ -218,7 +219,7 @@ class ProfileCog(commands.Cog):
                 if len(message.content) > self.badge_limits['icon']:
                     msgs.append(await ctx.send(maxmsg.format("icon", self.badge_limits['icon'])))
                     continue
-                icon = message.content
+                icon = emoji_escape(message.content)
             msgs.append(await ctx.send(strs['description'].format(self.badge_limits['description'])))
             while not description: #get the description
                 msg = await self.bot.wait_for("message", check=message_check, timeout=maxtime)
@@ -271,7 +272,7 @@ class ProfileCog(commands.Cog):
         if badge_exists:
             args = {}
             if icon:
-                args['text'] = icon
+                args['text'] = emoji_escape(icon)
             if description:
                 args['description'] = ('' if description.lower() in ('none', 'nothing') else description)
             updated = self.badger.update_badge(ctx.guild.id, name, newname=newname, **args)
