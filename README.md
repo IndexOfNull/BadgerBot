@@ -70,7 +70,7 @@ The port the webserver should listen on. You may want to change this if you are 
 
 *  **db_ping_interval**:
 `Default: 14400`
-How often should we ping the database before it 
+How often should we ping the database (just running `SELECT 1`) before it kills our connection for inactivity. Set this to `0` to disable.
 
 *  **privileged_intents**:
 `Default: ["members"]`
