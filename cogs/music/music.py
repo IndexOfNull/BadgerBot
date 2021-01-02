@@ -266,6 +266,7 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
         self._keep_current = False #Flag to tell the after_handler not to set self.current = None
         self._waiting = False
         self._expect_skip = False #To be set whenever after_handler is called in an expected manner
+        self._decaying = False #if this state is on death row due to inactivity, etc.
 
     @property
     def is_playing(self): #Check if we are playing anything
@@ -295,6 +296,17 @@ class VoiceState(): #Responsible for managing all audio activity in a guild
 
     def __del__(self): #This is a catch to prevent leaks, THIS SHOULD (IDEALLY) NEVER BE CALLED!
         self.audio_player.cancel() #Make sure we stop the audio player task when we clean up
+
+    async def start_decay(self, wait):
+        if self._decaying: #If we are already decaying, return as to not needlessly create an asyncio task
+            return
+        self._decaying = True
+        await asyncio.sleep(wait)
+        if self._decaying: #If the decaying flag wasn't cleared by something else, we should go ahead
+            await self.close(True)
+
+    def clear_decay(self):
+        self._decaying = False
 
     async def audio_player_task(self):
         while True:
@@ -531,6 +543,8 @@ class MusicCog(commands.Cog):
         state = self.voice_states.get(member.guild.id)
         if not state:
             return #Do nothing if there is no voice state for the guild
+
+        #Handle unexpected bot disconnects and vote discarding
         if member == self.bot.user:
             if after.channel is None: #If it is the bot and if it left (this should catch all disconnects not already handled)
                 await self.unregister_voice_state(member.guild.id) #Unregister the voice state if we unexpectedly disconnect
@@ -540,6 +554,15 @@ class MusicCog(commands.Cog):
                 return
             if not after.channel == state.voice.channel:
                 state.skips.discard(member.id) #Discard the users vote if they are moving out of the bots channel
+
+        #Handle leaving if the channel is empty
+        if not state.voice:
+            return
+        if state.voice.channel:
+            if len(state.voice.channel.members) <= 1:
+                await state.start_decay(60) #Leave after 60 seconds if the bot is left alone in a channel
+            else:
+                state.clear_decay()
 
     @commands.command(name="join", invoke_without_subcommand=True)
     @musicchecks.has_music_perms()
