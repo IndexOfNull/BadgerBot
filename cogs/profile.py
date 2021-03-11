@@ -110,7 +110,7 @@ class ProfileCog(commands.Cog):
     @checks.is_admin()
     @commands.cooldown(1, 5, type=commands.BucketType.guild)
     @funcs.require_confirmation(warning="This will strip the user of all their badges! There is no easy way of undoing this!")
-    async def revokeall(self, ctx, user:discord.Member):
+    async def revokeall(self, ctx, user:discord.User):
         result = self.badger.revoke_all(ctx.guild.id, user.id) #result is the number of badges
         if result > 0:
             await ctx.send(ctx.responses['badge_revokeall'].format(user, result))
