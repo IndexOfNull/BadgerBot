@@ -9,9 +9,9 @@ sqlalchemy = "*"
 pymysql = "*"
 pillow = "*"
 pynacl = "*"
-discord-py = "*"
 async-timeout = "*"
 youtube-dl = "*"
+"discord.py" = "*"
 
 [dev-packages]
 pylint = "*"
