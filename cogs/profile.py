@@ -6,7 +6,7 @@ from cogs.widget.widgets import BadgeWidget, DateJoinedWidget, AccountAgeWidget
 from cogs.widget.classes import RenderManager
 from cogs.widget import themes
 from utils import checks, funcs
-from utils.funcs import emoji_escape
+from utils.funcs import emoji_escape, emoji_format
 
 from io import BytesIO
 
@@ -343,6 +343,17 @@ class ProfileCog(commands.Cog):
             return
         e = self.maintheme.get_embed(ctx, user)
         await ctx.send(embed=e)
+
+    @commands.command()
+    async def emoji(self, ctx, *, emoji:discord.Emoji):
+        emoji_str = "<:{0}:{1}>".format(emoji.name, emoji.id)
+        title = ("Emoji Info " + emoji_str) if emoji.is_usable() else "Emoji Info"
+        embed = discord.Embed(title=title, type="Rich", color=discord.Color.blue())
+        embed.set_thumbnail(url=emoji.url)
+        embed.add_field(name="Name", value=emoji.name)
+        embed.add_field(name="ID", value=emoji.id)
+        embed.add_field(name="Non-Nitro Copy-Paste (For badge creation)", value="`" + emoji_format(emoji_str) + "`", inline=False)
+        await ctx.send(embed=embed)
 
 def setup(bot):
     bot.add_cog(ProfileCog(bot))
