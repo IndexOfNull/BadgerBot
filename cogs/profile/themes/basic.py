@@ -1,7 +1,7 @@
-from cogs.widget import classes
+from .base import ThemeBase
 import discord
 
-class MainTheme(classes.ThemeBase):
+class BasicTheme(ThemeBase):
 
     def get_embed(self, ctx, user):
         embed = discord.Embed(title=user.name + "#" + user.discriminator, type="rich", color=discord.Color.light_grey())

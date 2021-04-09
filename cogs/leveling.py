@@ -9,8 +9,7 @@ from datetime import datetime
 import discord
 from discord.ext import commands
 
-from cogs.widget.classes import WidgetBase
-from cogs.widget.widgets import BadgeEntry, BadgeWinner
+from cogs.profile.widgets import WidgetBase, BadgeEntry, BadgeWinner
 from utils import checks, funcs
 
 Base = declarative_base()

@@ -1,10 +1,10 @@
 import discord
 from discord.ext import commands
-import asyncio
 
-from cogs.widget.widgets import BadgeWidget, DateJoinedWidget, AccountAgeWidget
-from cogs.widget.classes import RenderManager
-from cogs.widget import themes
+from .widgets import BadgeWidget, DateJoinedWidget, AccountAgeWidget
+from .renderer import RenderManager
+from .themes import BasicTheme
+
 from utils import checks, funcs
 from utils.funcs import emoji_escape, emoji_format
 
@@ -21,7 +21,7 @@ except:
     ble = None
 
 try:
-    from cogs.widget.widgets import BadgeEntry
+    from .widgets import BadgeEntry
     be = BadgeEntry
 except:
     be = None
@@ -34,7 +34,7 @@ class ProfileCog(commands.Cog):
         self.badger = self.manager.register_widget(BadgeWidget)
         self.manager.register_widget(DateJoinedWidget)
         self.manager.register_widget(AccountAgeWidget)
-        self.maintheme = self.manager.register_theme(themes.MainTheme)
+        self.maintheme = self.manager.register_theme(BasicTheme)
         #Refactor todo: find a way to get levelingwidget setup on load
         self.levelingwidget = None
         self.badge_limits = {

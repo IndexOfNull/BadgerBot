@@ -1,19 +1,9 @@
-from sqlalchemy.types import TIMESTAMP
-from sqlalchemy import Column, Integer, BigInteger, SmallInteger, String, ForeignKey, Text, exc
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, BigInteger, SmallInteger, String, ForeignKey, Text, TIMESTAMP
 from sqlalchemy.orm import relationship
+from datetime import datetime
 
-import discord
-
-from datetime import datetime, timezone
-def utc_to_local(utc_dt):
-    return utc_dt.replace(tzinfo=timezone.utc).astimezone(tz=None)
-
-def aslocaltimestr(utc_dt):
-    return utc_to_local(utc_dt).strftime('%Y-%m-%d %H:%M:%S')
-
-
-from .classes import WidgetBase
+from .base import WidgetBase
 
 Base = declarative_base()
 
@@ -185,31 +175,3 @@ class BadgeWidget(WidgetBase):
         icons = icons if icons else "No Badges"
         embed.add_field(name="Badges [" + str(count) + "]", value="".join(icons).strip(), inline=False)
         return embed
-
-class DateJoinedWidget(WidgetBase):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.embed_only = True
-
-    def handle_embed(self, ctx, user, embed):
-        if not isinstance(user, discord.Member): #If we don't have a member object
-            return
-        t = user.joined_at
-        if t: #user.joined_at can sometimes return None
-            converted_time = t.strftime('%Y-%m-%d %H:%M:%S') + " UTC"
-            embed.add_field(name="Date Joined", value=converted_time)
-
-class AccountAgeWidget(WidgetBase):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.embed_only = True
-
-    def handle_embed(self, ctx, user, embed):
-        if not isinstance(user, discord.User) and not isinstance(user, discord.Member): #If we don't have a user-like object
-            return
-        t = user.created_at
-        if t: #user.joined_at can sometimes return None
-            converted_time = t.strftime('%Y-%m-%d %H:%M:%S') + " UTC"
-            embed.add_field(name="Account Created", value=converted_time)
