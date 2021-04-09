@@ -162,6 +162,19 @@ class BadgeWidget(WidgetBase):
             self.db.rollback()
             raise e
 
+    def badge_search(self, server_id, query):
+        try:
+            #Build the SQL "LIKE" query
+            base_query = self.db.query(BadgeEntry)
+            q1 = base_query.filter(BadgeEntry.name.like("%{}%".format(query)))
+            q2 = base_query.filter(BadgeEntry.text.like("%{}%".format(query)))
+            final_query = q1.union(q2)
+
+            return final_query
+        except Exception as e:
+            self.db.rollback()
+            raise e
+
     def handle_embed(self, ctx, user, embed):
         ubadges = self.get_user_badges(ctx.guild.id, user.id)
         icons = []

@@ -8,6 +8,8 @@ from cogs.widget import themes
 from utils import checks, funcs
 from utils.funcs import emoji_escape, emoji_format
 
+import re
+
 from io import BytesIO
 
 #This is super hacky
@@ -33,6 +35,7 @@ class ProfileCog(commands.Cog):
         self.manager.register_widget(DateJoinedWidget)
         self.manager.register_widget(AccountAgeWidget)
         self.maintheme = self.manager.register_theme(themes.MainTheme)
+        #Refactor todo: find a way to get levelingwidget setup on load
         self.levelingwidget = None
         self.badge_limits = {
             "name": 32,
@@ -40,6 +43,17 @@ class ProfileCog(commands.Cog):
             "icon": 55,
             "serverbadges": 80
         }
+
+    def make_badge_list(self, badges, *, line="{0.text} **{0.name}**{1} {0.description}\n", header="", footer=""):
+        if len(header) > 0: header += "\n"
+        if len(footer) > 0: footer += "\n"
+        finalstr = "" #Could use a localization string
+        for row in badges:
+            if ble and be and self.levelingwidget: #This could be optimized by making two for loops inside an if statement instead of this way
+                finalstr += line.format(row.BadgeEntry, ((" [**" + str(row.levels) + "**]") if row.levels else "") + (":" if row.BadgeEntry.description else ""))
+            else:
+                finalstr += line.format(row, (":" if row.description else ""))
+        return header + finalstr + footer
 
     @commands.command(aliases = ['givebadge', 'give'])
     @commands.guild_only()
@@ -301,7 +315,7 @@ class ProfileCog(commands.Cog):
 
     @commands.command(aliases = ["listbadges", "listbadge", "badgeslist", "badgelist"])
     @commands.guild_only()
-    @commands.cooldown(1, 5, type=commands.BucketType.channel)
+    @commands.cooldown(1, 3, type=commands.BucketType.channel)
     async def badges(self, ctx, page:int=1):
         if not self.levelingwidget:
             self.levelingwidget = self.manager.get_widget("LevelWidget")
@@ -317,21 +331,38 @@ class ProfileCog(commands.Cog):
             await ctx.send(ctx.responses['badge_nobadges'])
             return
         page = funcs.clamp(page, 1, pc)
-        line = "{0.text} **{0.name}**{1} {0.description}\n"
-        finalstr = "> Badges `|` (Page " + str(page) + " of " + str(pc) + ")\n" #Could use a localization string
         page_list = paginator.get_page(page-1)
-        for row in page_list:
-            if ble and be and self.levelingwidget: #This could be optimized by making two for loops inside an if statement instead of this way
-                finalstr += line.format(row.BadgeEntry, ((" [**" + str(row.levels) + "**]") if row.levels else "") + (":" if row.BadgeEntry.description else ""))
-            else:
-                finalstr += line.format(row, (":" if row.description else ""))
-        finalstr += "\n" + ctx.responses['page_strings']['footer'].format(ctx.prefix + ctx.invoked_with)
+        page_header = "> Badges `|` (Page " + str(page) + " of " + str(pc) + ")" #Could use a localization string
+        page_footer = "\n" + ctx.responses['page_strings']['footer'].format(ctx.prefix + ctx.invoked_with)
+        finalstr = self.make_badge_list(page_list, header=page_header, footer=page_footer)
         if len(finalstr) > 2000: #This is a bit of jank hack, I know. But it's far more elegant than erroring and it lets server administrators fix the problem.
             f = discord.File(BytesIO(finalstr.encode("utf-8")), filename="badgelist-pg" + str(page) + ".txt")
             await ctx.send(ctx.responses['badgelist_toolarge'], file=f)
         else:
             await ctx.send(finalstr)
         
+    @commands.command(aliases=['search'])
+    @commands.guild_only()
+    @commands.cooldown(1, 5, type=commands.BucketType.channel)
+    async def badge_search(self, ctx, search:str):
+        if ble and be and self.levelingwidget:
+            base_query = self.bot.db.query(BadgeEntry, BadgeLevelEntry.levels)
+            q1 = base_query.filter(BadgeEntry.name.like("%{}%".format(search)))
+            q2 = base_query.filter(BadgeEntry.text.like("%{}%".format(search)))
+            final_query = q1.union(q2)
+            results = final_query.outerjoin(BadgeLevelEntry, BadgeEntry.id == BadgeLevelEntry.badge_id).all()
+        else:
+            results = self.badger.badge_search(ctx.guild.id, query=search).all()
+        header = "> Badges `|` (Showing results for: " + search + ")\n"
+        finalstr = self.make_badge_list(results)
+        finalstr = discord.utils.remove_markdown(finalstr)
+        
+        replace_re = re.compile(re.escape(search), re.IGNORECASE)
+        finalstr = replace_re.sub(lambda x: "**" + x.group(0) + "**", finalstr)
+
+        finalstr = header + finalstr
+        await ctx.send(finalstr)
+
     @commands.command()
     @commands.guild_only()
     @commands.cooldown(1, 3, type=commands.BucketType.user)
