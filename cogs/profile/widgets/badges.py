@@ -13,11 +13,11 @@ class BadgeEntry(Base):
     server_id = Column(BigInteger(), nullable=False)
     name = Column(String(255, collation="utf8mb4_unicode_ci"), nullable=False)
     description = Column(Text(collation="utf8mb4_unicode_ci"), default="")
-    text = Column(Text(collation="utf8mb4_unicode_ci"), nullable=False) #A piece of text. For use in rendering out to text. Also use utf8mb4 for full unicode support.
+    icon = Column(Text(collation="utf8mb4_unicode_ci"), nullable=False) #A badge icon. Use utf8mb4 for full unicode support (emojis and stuff).
     created_on = Column(TIMESTAMP, default=datetime.now()) #a timestamp to keep track of when the row was added
-    
+
     def __repr__(self):
-        return "<BadgeEntry(id='%s', text='%s', created_on='%s')>" % (self.id, self.text, self.created_on)
+        return "<BadgeEntry(id='%s', text='%s', created_on='%s')>" % (self.id, self.icon, self.created_on)
 
 class BadgeWinner(Base):
     __tablename__ = "badgewinners"
@@ -130,9 +130,9 @@ class BadgeWidget(WidgetBase):
             self.db.rollback()
             raise e
 
-    def create_badge(self, server_id, name, text, **kwargs):
+    def create_badge(self, server_id, name, icon, **kwargs):
         try:
-            badge = BadgeEntry(server_id=server_id, name=name, text=text, **kwargs)
+            badge = BadgeEntry(server_id=server_id, name=name, icon=icon, **kwargs)
             self.db.add(badge)
             self.db.commit()
             return badge
@@ -144,7 +144,7 @@ class BadgeWidget(WidgetBase):
         try:
             badge = self.db.query(BadgeEntry).filter_by(server_id=server_id, name=name).first()
             badge.name = kwargs.pop("newname", badge.name)
-            badge.text = kwargs.pop("text", badge.text)
+            badge.icon = kwargs.pop("icon", badge.icon)
             badge.description = kwargs.pop("description", badge.description)
             self.db.commit()
             return badge
@@ -157,7 +157,7 @@ class BadgeWidget(WidgetBase):
             #Build the SQL "LIKE" query
             base_query = self.db.query(BadgeEntry)
             q1 = base_query.filter(BadgeEntry.name.like("%{}%".format(query)))
-            q2 = base_query.filter(BadgeEntry.text.like("%{}%".format(query)))
+            q2 = base_query.filter(BadgeEntry.icon.like("%{}%".format(query)))
             final_query = q1.union(q2)
 
             return final_query
@@ -170,7 +170,7 @@ class BadgeWidget(WidgetBase):
         icons = []
         count = 0
         for winentry in ubadges:
-            icons.append(winentry.badge.text + " ")
+            icons.append(winentry.badge.icon + " ")
             count += 1
         icons = icons if icons else "No Badges"
         embed.add_field(name="Badges [" + str(count) + "]", value="".join(icons).strip(), inline=False)

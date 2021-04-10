@@ -44,7 +44,7 @@ class ProfileCog(commands.Cog):
             "serverbadges": 80
         }
 
-    def make_badge_list(self, badges, *, line="{0.text} **{0.name}**{1} {0.description}\n", header="", footer=""):
+    def make_badge_list(self, badges, *, line="{0.icon} **{0.name}**{1} {0.description}\n", header="", footer=""):
         if len(header) > 0: header += "\n"
         if len(footer) > 0: footer += "\n"
         finalstr = "" #Could use a localization string
@@ -286,7 +286,7 @@ class ProfileCog(commands.Cog):
         if badge_exists:
             args = {}
             if icon:
-                args['text'] = emoji_escape(icon)
+                args['icon'] = emoji_escape(icon)
             if description:
                 args['description'] = ('' if description.lower() in ('none', 'nothing') else description)
             updated = self.badger.update_badge(ctx.guild.id, name, newname=newname, **args)
@@ -348,7 +348,7 @@ class ProfileCog(commands.Cog):
         if ble and be and self.levelingwidget:
             base_query = self.bot.db.query(BadgeEntry, BadgeLevelEntry.levels)
             q1 = base_query.filter(BadgeEntry.name.like("%{}%".format(search)))
-            q2 = base_query.filter(BadgeEntry.text.like("%{}%".format(search)))
+            q2 = base_query.filter(BadgeEntry.icon.like("%{}%".format(search)))
             final_query = q1.union(q2)
             results = final_query.outerjoin(BadgeLevelEntry, BadgeEntry.id == BadgeLevelEntry.badge_id).all()
         else:
