@@ -12,20 +12,6 @@ import re
 
 from io import BytesIO
 
-#This is super hacky
-import sqlalchemy as sa
-try:
-    from cogs.leveling import BadgeLevelEntry
-    ble = BadgeLevelEntry
-except:
-    ble = None
-
-try:
-    from .widgets import BadgeEntry
-    be = BadgeEntry
-except:
-    be = None
-
 class ProfileCog(commands.Cog):
 
     def __init__(self, bot):
@@ -36,21 +22,21 @@ class ProfileCog(commands.Cog):
         self.manager.register_widget(AccountAgeWidget)
         self.maintheme = self.manager.register_theme(BasicTheme)
         #Refactor todo: find a way to get levelingwidget setup on load
-        self.levelingwidget = None
         self.badge_limits = {
             "name": 32,
             "description": 175,
             "icon": 55,
-            "serverbadges": 80
+            "serverbadges": 80,
+            "levels": 200 #Is compared with absolute value (+ or - 200)
         }
 
-    def make_badge_list(self, badges, *, line="{0.icon} **{0.name}**{1} {0.description}\n", header="", footer=""):
+    def make_badge_list(self, badge_entries, *, line="{0.icon} **{0.name}**{1} {0.description}\n", header="", footer=""):
         if len(header) > 0: header += "\n"
         if len(footer) > 0: footer += "\n"
         finalstr = "" #Could use a localization string
-        for row in badges:
-            if ble and be and self.levelingwidget: #This could be optimized by making two for loops inside an if statement instead of this way
-                finalstr += line.format(row.BadgeEntry, ((" [**" + str(row.levels) + "**]") if row.levels else "") + (":" if row.BadgeEntry.description else ""))
+        for row in badge_entries:
+            if row.levels > 0:
+                finalstr += line.format(row, ((" [**" + str(row.levels) + "**]") if row.levels else "") + (":" if row.description else ""))
             else:
                 finalstr += line.format(row, (":" if row.description else ""))
         return header + finalstr + footer
@@ -184,7 +170,7 @@ class ProfileCog(commands.Cog):
             return
         badge_exists = self.badger.name_to_id(ctx.guild.id, name)
         if not badge_exists: #This should be None if there is no row matching our criteria
-            badge_count = self.badger.get_server_badges(ctx.guild.id).count()
+            badge_count = self.badger.get_badge_entries(server_id=ctx.guild.id).count()
             if badge_count < self.badge_limits['serverbadges']: #Limit badges
                 result = self.badger.create_badge(ctx.guild.id, name, icon, description=description)
                 if result:
@@ -201,8 +187,7 @@ class ProfileCog(commands.Cog):
     @checks.is_admin()
     @commands.cooldown(1, 10, type=commands.BucketType.guild)
     async def badgewizard(self, ctx):
-
-        badge_count = self.badger.get_server_badges(ctx.guild.id).count()
+        badge_count = self.badger.get_badge_entries(server_id=ctx.guild.id).count()
         if badge_count > self.badge_limits['serverbadges']:
             await ctx.send(ctx.responses['badge_maxbadgeslimit'])
             return
@@ -317,14 +302,7 @@ class ProfileCog(commands.Cog):
     @commands.guild_only()
     @commands.cooldown(1, 3, type=commands.BucketType.channel)
     async def badges(self, ctx, page:int=1):
-        if not self.levelingwidget:
-            self.levelingwidget = self.manager.get_widget("LevelWidget")
-        if ble and be and self.levelingwidget:
-            server_badges = self.bot.db.query(BadgeEntry, BadgeLevelEntry.levels)\
-                .filter_by(server_id=ctx.guild.id)\
-                .outerjoin(BadgeLevelEntry, BadgeEntry.id == BadgeLevelEntry.badge_id)
-        else:
-            server_badges = self.badger.get_server_badges(ctx.guild.id)
+        server_badges = self.badger.get_badge_entries(server_id=ctx.guild.id)
         paginator = funcs.Paginator(server_badges, items_per_page=20)
         pc = paginator.page_count
         if pc == 0:
@@ -345,14 +323,7 @@ class ProfileCog(commands.Cog):
     @commands.guild_only()
     @commands.cooldown(1, 5, type=commands.BucketType.channel)
     async def badge_search(self, ctx, search:str):
-        if ble and be and self.levelingwidget:
-            base_query = self.bot.db.query(BadgeEntry, BadgeLevelEntry.levels)
-            q1 = base_query.filter(BadgeEntry.name.like("%{}%".format(search)))
-            q2 = base_query.filter(BadgeEntry.icon.like("%{}%".format(search)))
-            final_query = q1.union(q2)
-            results = final_query.outerjoin(BadgeLevelEntry, BadgeEntry.id == BadgeLevelEntry.badge_id).all()
-        else:
-            results = self.badger.badge_search(ctx.guild.id, query=search).all()
+        results = self.badger.badge_search(ctx.guild.id, query=search).all()
         header = "> Badges `|` (Showing results for: " + search + ")\n"
         finalstr = self.make_badge_list(results)
         finalstr = discord.utils.remove_markdown(finalstr)
@@ -374,6 +345,47 @@ class ProfileCog(commands.Cog):
             return
         e = self.maintheme.get_embed(ctx, user)
         await ctx.send(embed=e)
+
+    @commands.command(aliases=["setlevel", "badgelevel", "setlevels", "badgelevels", "assignlevel"])
+    @checks.is_admin()
+    @commands.cooldown(1, 5, type=commands.BucketType.guild)
+    async def assignlevels(self, ctx, badge:str, levels:int):
+        if abs(levels) > self.badge_limits['levels']:
+            await ctx.send(ctx.responses['badgelevels_limit'].format(self.badge_limits['levels']))
+            return
+        badge_id = self.badger.name_to_id(ctx.guild.id, badge)
+        if not badge_id:
+            await ctx.send(ctx.responses['badge_notfound'])
+            return
+        self.badger.set_badge_levels(ctx.guild.id, badge_id, levels)
+        if levels == 0:
+            await ctx.send(ctx.responses['badgelevels_remove'].format(badge))
+        else:
+            await ctx.send(ctx.responses['badgelevels_set'].format(badge, levels))
+
+    @commands.command()
+    @commands.cooldown(1, 10, type=commands.BucketType.channel)
+    async def leaderboard(self, ctx, page:int=1):
+        lbd = self.badger.get_server_leaderboard(ctx.guild.id)
+        pager = funcs.Paginator(lbd, items_per_page=10)
+        page = funcs.clamp(page, 1, pager.page_count) #Clamp page so that we can't pick a page past the last page
+        rows = pager.get_page(page-1) #Subtract one for computer friendliness
+        header = "```md\n> {0}\n================\n".format( ctx.responses['leaderboard_strings']['leaderboard'].format(page, pager.page_count) )
+        footer = "\n```"
+        entry = "<{num}: {user}> {levels} levels\n"
+        final = header
+        for position, row in enumerate(rows):
+            user = self.bot.get_user(row.discord_id)
+            if not user:
+                u = ctx.responses['leaderboard_strings']['unknown_user'] + "#" + str(row.discord_id)
+            else:
+                u = str(user)
+            final += entry.format(num=position + (page-1)*pager.items_per_page + 1, user=u, levels=row.levels)
+        if final == header:
+            final += ctx.responses['leaderboard_strings']['nothing']
+        final.rstrip()
+        final += footer
+        await ctx.send(final)
 
     @commands.command()
     async def emoji(self, ctx, *, emoji:discord.Emoji):

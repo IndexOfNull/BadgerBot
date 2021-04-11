@@ -3,6 +3,8 @@ from sqlalchemy import Column, Integer, BigInteger, SmallInteger, String, Foreig
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
+import sqlalchemy as sa
+
 from .base import WidgetBase
 
 Base = declarative_base()
@@ -15,6 +17,8 @@ class BadgeEntry(Base):
     description = Column(Text(collation="utf8mb4_unicode_ci"), default="")
     icon = Column(Text(collation="utf8mb4_unicode_ci"), nullable=False) #A badge icon. Use utf8mb4 for full unicode support (emojis and stuff).
     created_on = Column(TIMESTAMP, default=datetime.now()) #a timestamp to keep track of when the row was added
+
+    levels = Column(Integer, default=0, nullable=False) #Used to be in its own module, decided to move it here
 
     def __repr__(self):
         return "<BadgeEntry(id='%s', text='%s', created_on='%s')>" % (self.id, self.icon, self.created_on)
@@ -59,13 +63,25 @@ class BadgeWidget(WidgetBase):
             self.db.rollback()
             raise e
 
-    def get_server_badges(self, server_id):
-        rows = self.db.query(BadgeEntry).filter_by(server_id=server_id)
+    def get_badge_entries(self, **filters): #Be careful with this or you'll get ALL badge entries.
+        rows = self.db.query(BadgeEntry).filter_by(**filters)
         return rows
 
-    def get_user_badges(self, server_id, discord_id):
-        rows = self.db.query(BadgeWinner).filter_by(server_id=server_id, discord_id=discord_id)
+    def get_award_entries(self, **filters): #Be careful with this or you'll get ALL award entries.
+        rows = self.db.query(BadgeWinner, BadgeEntry)\
+            .filter_by(**filters)\
+            .outerjoin(BadgeEntry, BadgeWinner.badge_id == BadgeEntry.id)
         return rows
+
+    def get_server_leaderboard(self, server_id, *, order="desc"):
+        if order not in ("desc", "asc"):
+            raise Exception("Order must be 'asc' or 'desc'.")
+        results = self.db.query(BadgeWinner.server_id, BadgeWinner.discord_id, sa.func.sum(BadgeEntry.levels).label("levels"))\
+            .outerjoin(BadgeEntry, BadgeEntry.id == BadgeWinner.badge_id)\
+            .group_by(BadgeWinner.discord_id)\
+            .filter_by(server_id=server_id)\
+            .order_by(sa.desc("levels"))
+        return results
 
     def user_has_badge(self, server_id, discord_id, badge_id):
         result = self.db.query(BadgeWinner).filter_by(server_id=server_id, discord_id=discord_id, badge_id=badge_id).first()
@@ -155,7 +171,7 @@ class BadgeWidget(WidgetBase):
     def badge_search(self, server_id, query):
         try:
             #Build the SQL "LIKE" query
-            base_query = self.db.query(BadgeEntry)
+            base_query = self.db.query(BadgeEntry).filter_by(server_id=server_id)
             q1 = base_query.filter(BadgeEntry.name.like("%{}%".format(query)))
             q2 = base_query.filter(BadgeEntry.icon.like("%{}%".format(query)))
             final_query = q1.union(q2)
@@ -165,13 +181,24 @@ class BadgeWidget(WidgetBase):
             self.db.rollback()
             raise e
 
+    def set_badge_levels(self, server_id, badge_id, levels):
+        try:
+            badge = self.db.query(BadgeEntry).filter_by(server_id=server_id, id=badge_id).first()
+            badge.levels = levels
+            self.db.commit()
+            return badge
+        except Exception as e:
+            self.db.rollback()
+            raise e
+
     def handle_embed(self, ctx, user, embed):
-        ubadges = self.get_user_badges(ctx.guild.id, user.id)
-        icons = []
-        count = 0
-        for winentry in ubadges:
-            icons.append(winentry.badge.icon + " ")
-            count += 1
+        ubadges = self.get_award_entries(server_id=ctx.guild.id, discord_id=user.id).all()
+
+        icons = "".join([x.BadgeEntry.icon for x in ubadges]).strip()
+        level = sum([x.BadgeEntry.levels for x in ubadges])
+
         icons = icons if icons else "No Badges"
-        embed.add_field(name="Badges [" + str(count) + "]", value="".join(icons).strip(), inline=False)
+        embed.add_field(name="Badges [" + str(len(ubadges)) + "]", value="".join(icons).strip(), inline=False)
+        if level > 0:
+            embed.add_field(name="Level", value=str(level), inline=True)
         return embed

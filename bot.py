@@ -18,7 +18,6 @@ modules = [
 	"cogs.tags",
 	"cogs.core",
 	"cogs.fun",
-	"cogs.leveling",
 	"cogs.owner",
 	"cogs.music"
 ] #What cogs to load
