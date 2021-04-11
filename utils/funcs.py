@@ -63,11 +63,13 @@ def img_to_bytesio(img, *args):
     b.seek(0)
     return b
 
+emoji_regex = re.compile(r'\<:(\w*?):(\d*?)\>')
+
 def emoji_escape(text: str):
     return re.sub(r'\[;(\w*?);(\d*?)\]', r'<:\1:\2>', text)
 
 def emoji_format(text: str):
-    return re.sub(r'\<:(\w*?):(\d*?)\>', r'[;\1;\2]', text)
+    return re.sub(emoji_regex, r'[;\1;\2]', text)
     
 class Paginator():
 

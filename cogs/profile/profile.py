@@ -322,17 +322,38 @@ class ProfileCog(commands.Cog):
     @commands.command(aliases=['search'])
     @commands.guild_only()
     @commands.cooldown(1, 5, type=commands.BucketType.channel)
-    async def badge_search(self, ctx, search:str):
+    async def badgesearch(self, ctx, *, search:str):
+        max_results = 10
         results = self.badger.badge_search(ctx.guild.id, query=search).all()
-        header = "> Badges `|` (Showing results for: " + search + ")\n"
-        finalstr = self.make_badge_list(results)
-        finalstr = discord.utils.remove_markdown(finalstr)
-        
-        replace_re = re.compile(re.escape(search), re.IGNORECASE)
-        finalstr = replace_re.sub(lambda x: "**" + x.group(0) + "**", finalstr)
+        if not results:
+            await ctx.send_response('badgesearch_noresults')
+            return
+        results = results[:max_results] #Truncate at 10 entries
+        if len(results) == 1:
+            badge = results[0]
+            embed = discord.Embed(title="**" + badge.name + "**", type="rich", color=discord.Color.blue())
+            embed.add_field(name="Icon", value=badge.icon)
+            embed.add_field(name="Levels", value=str(badge.levels))
+            if badge.description:
+                embed.add_field(name="Description", value=badge.description, inline=False)
 
-        finalstr = header + finalstr
-        await ctx.send(finalstr)
+            custom_emoji_match = funcs.emoji_regex.match(badge.icon) #Matches the first, which is okay
+            if custom_emoji_match:
+                resolved_emoji = self.bot.get_emoji(int(custom_emoji_match.groups(0)[1]))
+                if resolved_emoji:
+                    embed.set_thumbnail(url=resolved_emoji.url)
+
+            await ctx.send(embed=embed)
+        else:
+            header = "> Badges `|` (Showing {0} results for: {1})\n".format(max_results, search)
+            finalstr = self.make_badge_list(results)
+            finalstr = discord.utils.remove_markdown(finalstr)
+            
+            replace_re = re.compile(re.escape(search), re.IGNORECASE)
+            finalstr = replace_re.sub(lambda x: "**" + x.group(0) + "**", finalstr)
+
+            finalstr = header + finalstr
+            await ctx.send(finalstr)
 
     @commands.command()
     @commands.guild_only()

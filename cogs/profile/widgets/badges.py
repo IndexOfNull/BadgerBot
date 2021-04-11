@@ -13,9 +13,13 @@ class BadgeEntry(Base):
     __tablename__ = "badges"
     id = Column(SmallInteger, primary_key=True) #You know why this is here
     server_id = Column(BigInteger(), nullable=False)
+    
+    #These three should have indexes on them for search functionality 
+    #It should be okay as long as servers don't have too many badges
     name = Column(String(255, collation="utf8mb4_unicode_ci"), nullable=False)
     description = Column(Text(collation="utf8mb4_unicode_ci"), default="")
     icon = Column(Text(collation="utf8mb4_unicode_ci"), nullable=False) #A badge icon. Use utf8mb4 for full unicode support (emojis and stuff).
+    
     created_on = Column(TIMESTAMP, default=datetime.now()) #a timestamp to keep track of when the row was added
 
     levels = Column(Integer, default=0, nullable=False) #Used to be in its own module, decided to move it here
@@ -27,7 +31,7 @@ class BadgeWinner(Base):
     __tablename__ = "badgewinners"
     itemid = Column(Integer, primary_key=True) # A unique index for cataloging the event
     server_id = Column(BigInteger(), nullable=False)
-    discord_id = Column(BigInteger(), nullable=False) # 0 -> 2^63 - 1
+    discord_id = Column(BigInteger(), nullable=False) # 0 -> 2^63 - 1, to be clear, this is the users discord_id
     badge_id = Column(SmallInteger, ForeignKey(BadgeEntry.id, ondelete="CASCADE"), nullable=False) # -16000 -> ~16,000, keeps track of what badge
     awarded = Column(TIMESTAMP, default=datetime.now()) #a timestamp to keep track of when the row was added
 

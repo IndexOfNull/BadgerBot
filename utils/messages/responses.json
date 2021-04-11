@@ -80,7 +80,8 @@
                 "description": ":label: Give a description to your badge (max of {0} characters). Reply with `none` or `blank` to leave it empty.",
                 "levels": ":arrow_up: How many levels do you want this badge to be worth? You can type `0`, `none`, or `blank` to make it worth 0 levels.",
                 "limit": ":red_circle: The {0} for your badge is more than {1} characters. Try again."
-            }
+            },
+            "badgesearch_noresults": ":mag: I didn't find any badges matching your search."
         }
     }
 }
