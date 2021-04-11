@@ -11,7 +11,7 @@ Base = declarative_base()
 
 class BadgeEntry(Base):
     __tablename__ = "badges"
-    id = Column(SmallInteger, primary_key=True) #You know why this is here
+    id = Column(Integer, primary_key=True) #You know why this is here
     server_id = Column(BigInteger(), nullable=False)
     
     #These three should have indexes on them for search functionality 
@@ -29,7 +29,7 @@ class BadgeEntry(Base):
 
 class BadgeWinner(Base):
     __tablename__ = "badgewinners"
-    itemid = Column(Integer, primary_key=True) # A unique index for cataloging the event
+    id = Column(Integer, primary_key=True) # A unique index for cataloging the event
     server_id = Column(BigInteger(), nullable=False)
     discord_id = Column(BigInteger(), nullable=False) # 0 -> 2^63 - 1, to be clear, this is the users discord_id
     badge_id = Column(SmallInteger, ForeignKey(BadgeEntry.id, ondelete="CASCADE"), nullable=False) # -16000 -> ~16,000, keeps track of what badge
