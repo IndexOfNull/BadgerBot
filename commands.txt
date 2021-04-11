@@ -64,7 +64,9 @@ Command List
         10. (++) Update a badge             : ;updatebadge <name> <newname> [newicon] [newdescription]
             - Typing in 'none' or 'nothing' for [newdescription] will make it blank.
         11. List the server's badges        : ;badges
-        12. View a user's profile           : ;profile [user]
+        12. Search for a badge              : ;search <search>
+            - The search parameter will search for names and icons (so you can put either)
+        13. View a user's profile           : ;profile [user]
             - Will show your profile if no user is supplied
 
     Leveling Module (SO):
