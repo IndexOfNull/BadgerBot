@@ -32,7 +32,7 @@ class BadgeWinner(Base):
     id = Column(Integer, primary_key=True) # A unique index for cataloging the event
     server_id = Column(BigInteger(), nullable=False)
     discord_id = Column(BigInteger(), nullable=False) # 0 -> 2^63 - 1, to be clear, this is the users discord_id
-    badge_id = Column(SmallInteger, ForeignKey(BadgeEntry.id, ondelete="CASCADE"), nullable=False) # -16000 -> ~16,000, keeps track of what badge
+    badge_id = Column(Integer, ForeignKey(BadgeEntry.id, ondelete="CASCADE"), nullable=False) # -16000 -> ~16,000, keeps track of what badge
     awarded = Column(TIMESTAMP, default=datetime.now()) #a timestamp to keep track of when the row was added
 
     badge = relationship("BadgeEntry", foreign_keys="BadgeWinner.badge_id") #Make a reference to the badge in question
