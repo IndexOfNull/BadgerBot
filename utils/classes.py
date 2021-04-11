@@ -29,3 +29,15 @@ class CustomContext(Context):
                 return
         #Default if for some reason the selected language or response set doesn't exist anymore
         self.responses = self.bot.responses['en']['default']
+
+    def get_response(self, key):
+        path_keys = key.split(".")
+        current_location = self.responses
+        for ind in range(len(path_keys)):
+            key = path_keys.pop(0)
+            current_location = current_location[key]
+        return current_location
+
+    async def send_response(self, key, *formats):
+        response = self.get_response(key)
+        await self.send(response.format(*formats))

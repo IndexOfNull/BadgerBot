@@ -165,31 +165,31 @@ class BuddyBot(commands.Bot):
 				m2 = "{0}h".format(m)
 			after = "{0} {1} {2}s".format(m1,m2,round(seconds,1))
 			after = after.strip()
-			await ctx.send(ctx.responses['error_cooldown'].format(after))
+			await ctx.send_response('error_cooldown', after)
 			return
 		elif type(e) is checks.MissingAdmin: #Admin only
-			await ctx.send(ctx.responses['error_adminonly'])
+			await ctx.send_response('error_adminonly')
 			return
 		elif type(e) is checks.MissingModerator: #Mod only
-			await ctx.send(ctx.responses['error_modonly'])
+			await ctx.send_response('error_modonly')
 			return
 		elif isinstance(e, commands.BotMissingPermissions) or isinstance(e, checks.MissingAnyPermissions) or isinstance(e, commands.MissingPermissions) or isinstance(e, commands.MissingRole) or isinstance(e, commands.BotMissingAnyRole) or isinstance(e, commands.BotMissingRole): #missing permissions or roles
-			await ctx.send(":closed_lock_with_key: " + str(e))
+			await ctx.send(":closed_lock_with_key: " + str(e)) #Localization!
 			return
 		elif isinstance(e, commands.NoPrivateMessage): #Server only
-			await ctx.send(ctx.responses['error_serveronly'])
+			await ctx.send_response('error_serveronly')
 			return
 		elif isinstance(e, commands.PrivateMessageOnly): #DM only
-			await ctx.send(ctx.responses['error_dmonly'])
+			await ctx.send_response('error_dmonly')
 			return
 		elif isinstance(e, commands.DisabledCommand): #Disabled
-			await ctx.send(ctx.responses['error_cmddisabled'])
+			await ctx.send_response('error_cmddisabled')
 			return
 		elif isinstance(e, commands.NotOwner): #Owner only
-			await ctx.send(ctx.responses['error_owneronly'])
+			await ctx.send_response('error_owneronly')
 			return
 		elif isinstance(e, commands.NSFWChannelRequired): #NSFW only
-			await ctx.send(ctx.responses['error_nsfw'])
+			await ctx.send_response('error_nsfw')
 			return
 		elif hasattr(e, 'original'):
 			if isinstance(e.original, funcs.ConfirmationFailed): #We can ignore this as the decorator auto-edits the message

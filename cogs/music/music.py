@@ -498,24 +498,24 @@ class MusicCog(commands.Cog):
     async def cog_command_error(self, ctx: commands.Context, e):
         ctx.ignore_errors = True
         if isinstance(e, BotNotInVoice):
-            await ctx.send(ctx.responses['music_botnotinvoice'])
+            await ctx.send_response('music_botnotinvoice')
         elif isinstance(e, EmptyQueue):
-            await ctx.send(ctx.responses['music_emptyqueue'])
+            await ctx.send_response('music_emptyqueue')
         elif isinstance(e, UserNotInVoice):
-            await ctx.send(ctx.responses['music_usernotinvoice'])
+            await ctx.send_response('music_usernotinvoice')
         elif isinstance(e, NotInSameVoiceChannel):
-            await ctx.send(ctx.responses['music_notinsamechannel'])
+            await ctx.send_response('music_notinsamechannel')
         elif isinstance(e, VoiceError):
-            await ctx.send(ctx.responses['music_voiceerror'])
+            await ctx.send_response('music_voiceerror')
         elif isinstance(e, YTDLError):
-            await ctx.send(ctx.responses['music_ytdlerror'])
+            await ctx.send_response('music_ytdlerror')
         elif isinstance(e, commands.MissingAnyRole):
-            await ctx.send(ctx.responses['music_noperms'])
+            await ctx.send_response('music_noperms')
         elif isinstance(e, MissingPerms):
-            await ctx.send(ctx.responses['music_botmissingperms'])
+            await ctx.send_response('music_botmissingperms')
         elif hasattr(e, "original"): #This must be at the end of the elif chain
             if isinstance(e.original, asyncio.queues.QueueFull):
-                await ctx.send(ctx.responses['music_queuefull'])
+                await ctx.send_response('music_queuefull')
                 return
             ctx.ignore_errors = False
         else:
@@ -576,7 +576,7 @@ class MusicCog(commands.Cog):
             return
         ctx.voice_state.voice = await channel.connect()
         if ctx.command is self.bot.get_command("join"):
-            await ctx.send(ctx.responses['music_hello'])
+            await ctx.send_response('music_hello')
 
     @commands.command(aliases=['voteskip'])
     async def skip(self, ctx):
@@ -587,45 +587,45 @@ class MusicCog(commands.Cog):
             await ctx.send("Bot must be playing in order to skip.") #Add localization string for this later
             return"""
         if ctx.voice_state.is_empty:
-            await ctx.send(ctx.responses['music_emptyqueue'])
+            await ctx.send_response('music_emptyqueue')
             return
         if ctx.author.id in ctx.voice_state.skips:
-            await ctx.send(ctx.responses['music_alreadyvoted'])
+            await ctx.send_response('music_alreadyvoted')
             return
 
         ctx.voice_state.skips.add(ctx.author.id)
         if len(ctx.voice_state.skips) >= ctx.voice_state.skips_required:
             ctx.voice_state.skip()
-            await ctx.send(ctx.responses['music_skipped'])
+            await ctx.send_response('music_skipped')
             return
-        await ctx.send(ctx.responses['music_voted'].format(len(ctx.voice_state.skips), ctx.voice_state.skips_required))
+        await ctx.send_response('music_voted', len(ctx.voice_state.skips), ctx.voice_state.skips_required)
 
     @commands.command()
     @musicchecks.has_music_perms()
     async def forceskip(self, ctx):
         ctx.voice_state.skip()
-        await ctx.send(ctx.responses['music_skipped'])
+        await ctx.send_response('music_skipped')
 
     @commands.command(name="pause", aliases=["stop"], invoke_without_subcommand=True)
     @musicchecks.has_music_perms()
     async def _pause(self, ctx: commands.Context):
         if ctx.voice_state.is_playing:
             ctx.voice_state.pause()
-            await ctx.send(ctx.responses['music_paused'])
+            await ctx.send_response('music_paused')
             return
-        await ctx.send(ctx.responses['music_notplaying'])
+        await ctx.send_response('music_notplaying')
     
     @commands.command(name="resume", invoke_without_subcommand=True)
     @musicchecks.has_music_perms()
     async def _resume(self, ctx: commands.Context):
         if ctx.voice_state.is_playing:
-            await ctx.send(ctx.responses['music_alreadyplaying'])
+            await ctx.send_response('music_alreadyplaying')
             return
         if ctx.voice_state.is_empty:
-            await ctx.send(ctx.responses['music_emptyqueue'])
+            await ctx.send_response('music_emptyqueue')
             return
         ctx.voice_state.resume()
-        await ctx.send(ctx.responses['music_resumed'])
+        await ctx.send_response('music_resumed')
         return
         
     @commands.command(name="leave", invoke_without_subcommand=True)
@@ -643,7 +643,7 @@ class MusicCog(commands.Cog):
             while current_start < len(ctx.voice_state.song_queue): #Doing it this way because changing list sizes in for loops scares me (and python sometimes)
                 await self.remove_duplicates(current_start, ctx.voice_state.song_queue) #This is done in place, so who cares
                 current_start += 1
-        await ctx.send(ctx.responses['music_deduped'])
+        await ctx.send_response('music_deduped')
 
     @commands.command()
     @musicchecks.has_music_perms()
@@ -658,7 +658,7 @@ class MusicCog(commands.Cog):
             del ctx.voice_state.song_queue[remove_indices[0]]
             remove_indices.pop(0)
             remove_indices = [x-1 for x in remove_indices]
-        await ctx.send(ctx.responses['music_leavecleanup'].format(removed))
+        await ctx.send_response('music_leavecleanup', removed)
 
     @commands.command(name="play")
     @musicchecks.has_music_perms()
@@ -679,12 +679,12 @@ class MusicCog(commands.Cog):
                     song = Song(source, ctx, info)
 
                     ctx.voice_state.song_queue.put_nowait(song)
-                    await ctx.send(ctx.responses['music_queued'].format(str(song)))
+                    await ctx.send_response('music_queued', str(song))
         elif not joined: #If they're not searching and we didn't just join, do ;resume instead
             await self.ensure_same_voice_channel(ctx)
             await ctx.invoke(self._resume)
         else:
-            await ctx.send(ctx.responses['music_hello'])
+            await ctx.send_response('music_hello')
 
     @commands.command()
     @musicchecks.has_music_perms()
@@ -699,7 +699,7 @@ class MusicCog(commands.Cog):
                 song = Song(source, ctx, info)
 
                 ctx.voice_state.song_queue.putleft_nowait(song)
-                await ctx.send(ctx.responses['music_topqueued'].format(str(song)))
+                await ctx.send_response('music_topqueued', str(song))
 
     @commands.command()
     @musicchecks.has_music_perms()
@@ -711,25 +711,25 @@ class MusicCog(commands.Cog):
     @musicchecks.has_music_perms()
     async def qswap(self, ctx, pos1:int, pos2:int):
         if pos1 > len(ctx.voice_state.song_queue) or pos2 > len(ctx.voice_state.song_queue) or pos1 - 1 < 0 or pos2 - 1 < 0: #Bounds checking
-            await ctx.send(ctx.responses['music_indexoutofrange'])
+            await ctx.send_response('music_indexoutofrange')
             return
         ctx.voice_state.song_queue.swap(pos1 - 1, pos2 - 1)
-        await ctx.send(ctx.responses['music_swapped'].format(pos1, pos2))
+        await ctx.send_response('music_swapped', pos1, pos2)
 
     @commands.command()
     @musicchecks.has_music_perms()
     async def qremove(self, ctx, pos:int):
         pos = pos - 1
         if pos > len(ctx.voice_state.song_queue) - 1 or pos < 0: #Bounds checking
-            await ctx.send(ctx.responses['music_indexoutofrange'])
+            await ctx.send_response('music_indexoutofrange')
             return
-        await ctx.send(ctx.responses['music_removed'].format(ctx.voice_state.song_queue[pos]))
+        await ctx.send_response('music_removed', ctx.voice_state.song_queue[pos])
         del ctx.voice_state.song_queue[pos]
 
     @commands.command(aliases=['q'])
     async def queue(self, ctx): #Yes I know this looks awfully similar to Rythm's 👀. What can I say, Rythm sets a good standard.
         if len(ctx.voice_state.song_queue) == 0 and not ctx.voice_state.current:
-            await ctx.send(ctx.responses['music_notplaying'])
+            await ctx.send_response('music_notplaying')
             return
         embed = discord.Embed(title=ctx.responses['music_queue'], color=discord.Color.from_rgb(233, 160, 63))
         embed.add_field(name='**__' + ctx.responses['music_nowplaying'] + '__**',
@@ -751,7 +751,7 @@ class MusicCog(commands.Cog):
     @commands.command(aliases=['nowplaying', 'playing'])
     async def np(self, ctx):
         if not ctx.voice_state.current:
-            await ctx.send(ctx.responses['music_notplaying'])
+            await ctx.send_response('music_notplaying')
             return
         await ctx.send(embed=ctx.voice_state.current.get_embed())
 
@@ -762,7 +762,7 @@ class MusicCog(commands.Cog):
         if len(ctx.voice_state.song_queue) <= 0:
             raise EmptyQueue("Song queue must have items in it to be shuffled.")
         ctx.voice_state.song_queue.shuffle()
-        await ctx.send(ctx.responses['music_shuffled'])
+        await ctx.send_response('music_shuffled')
         
     @commands.command()
     @musicchecks.has_music_perms()
@@ -770,33 +770,33 @@ class MusicCog(commands.Cog):
         if len(ctx.voice_state.song_queue) <= 0:
             raise EmptyQueue("Song queue must have items in it for it to be cleared.")
         ctx.voice_state.song_queue.clear()
-        await ctx.send(ctx.responses['music_cleared'])
+        await ctx.send_response('music_cleared')
 
     @commands.command()
     @checks.is_admin()
     async def djrole(self, ctx, role:discord.Role=None):
         if role:
             self.bot.datamanager.set_option(ctx.guild.id, 'dj_role', role.id)
-            await ctx.send(ctx.responses['music_djroleset'].format(role))
+            await ctx.send_response('music_djroleset', role)
         else:
             if ctx.options['dj_role'].data == "0": #The server hasn't set a DJ role.
-                await ctx.send(ctx.responses['music_nodjrole'])
+                await ctx.send_response('music_nodjrole')
                 return
             else:
                 dj_role = ctx.guild.get_role(int(ctx.options['dj_role'].data))
                 if not dj_role:
-                    await ctx.send(ctx.responses['music_ghostdjrole'])
+                    await ctx.send_response('music_ghostdjrole')
                     return
-                await ctx.send(ctx.responses['music_djrole'].format(dj_role))
+                await ctx.send_response('music_djrole', dj_role)
 
     @commands.command(aliases=['removedjrole', 'nodjrole'])
     @checks.is_admin()
     async def unsetdjrole(self, ctx):
         if ctx.options['dj_role'].data == "0":
-            await ctx.send(ctx.responses['music_nodjrole'])
+            await ctx.send_response('music_nodjrole')
             return
         self.bot.datamanager.remove_option(ctx.guild.id, 'dj_role')
-        await ctx.send(ctx.responses['music_unsetdjrole'])
+        await ctx.send_response('music_unsetdjrole')
 
     """
     Joining: Must be in any channel

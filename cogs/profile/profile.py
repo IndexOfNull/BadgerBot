@@ -52,13 +52,13 @@ class ProfileCog(commands.Cog):
             if not has_badge:
                 result = self.badger.award_badge(ctx.guild.id, user.id, badgeid)
                 if result:
-                    await ctx.send(ctx.responses['badge_awarded'].format(user, badge))
+                    await ctx.send_response('badge_awarded', user, badge)
                 else:
-                    await ctx.send(ctx.responses['badge_error'].format("awarding"))
+                    await ctx.send_response('badge_error', "awarding")
             else:
-                await ctx.send(ctx.responses['badge_hasbadge'])
+                await ctx.send_response('badge_hasbadge')
         else:
-            await ctx.send(ctx.responses['badge_notfound'])
+            await ctx.send_response('badge_notfound')
 
     @commands.command(aliases = ['awardmu', 'multiaward'])
     @commands.guild_only()
@@ -72,16 +72,16 @@ class ProfileCog(commands.Cog):
             if award_ids:
                 result = self.badger.award_badge(ctx.guild.id, award_ids, badgeid)
                 if not result:
-                    await ctx.send(ctx.responses['badge_error'].format("awarding"))
+                    await ctx.send_response('badge_error', "awarding")
                     return
             else:
-                await ctx.send(ctx.responses['badge_multihasbadge'])
+                await ctx.send_response('badge_multihasbadge')
                 return
             #We'll just say they all got the badge if they already had it to avoid confusion
             mentions = ", ".join([user.mention for user in users])
-            await ctx.send(ctx.responses['badge_multiaward'].format(mentions, badge))
+            await ctx.send_response('badge_multiaward', mentions, badge)
         else:
-            await ctx.send(ctx.responses['badge_notfound'])
+            await ctx.send_response('badge_notfound')
 
     @commands.command(aliases = ['revokemu', 'multirevoke'])
     @commands.guild_only()
@@ -95,15 +95,15 @@ class ProfileCog(commands.Cog):
             if revoke_ids:
                 result = self.badger.revoke_badge(ctx.guild.id, revoke_ids, badgeid)
                 if not result:
-                    await ctx.send(ctx.responses['badge_error'].format("revoking"))
+                    await ctx.send_response('badge_error', "revoking")
                     return
             else:
-                await ctx.send(ctx.responses['badge_multinothasbadge'])
+                await ctx.send_response('badge_multinothasbadge')
                 return
             mentions = ", ".join([user.mention for user in users])
-            await ctx.send(ctx.responses['badge_multirevoke'].format(mentions, badge))
+            await ctx.send_response('badge_multirevoke', mentions, badge)
         else:
-            await ctx.send(ctx.responses['badge_notfound'])
+            await ctx.send_response('badge_notfound')
 
     @commands.command(aliases = ['stripall'])
     @commands.guild_only()
@@ -113,9 +113,9 @@ class ProfileCog(commands.Cog):
     async def revokeall(self, ctx, user:discord.User):
         result = self.badger.revoke_all(ctx.guild.id, user.id) #result is the number of badges
         if result > 0:
-            await ctx.send(ctx.responses['badge_revokeall'].format(user, result))
+            await ctx.send_response('badge_revokeall', user, result)
         else:
-            await ctx.send(ctx.responses['badge_revokeallnone'].format(user))
+            await ctx.send_response('badge_revokeallnone', user)
 
     @commands.command(aliases = ['badgenuke'])
     @commands.guild_only()
@@ -128,11 +128,11 @@ class ProfileCog(commands.Cog):
         if badgeid:
             result = self.badger.revoke_from_all(ctx.guild.id, badgeid)
             if result > 0:
-                await ctx.send(ctx.responses['badge_badgenuke'].format(badge, result))
+                await ctx.send_response('badge_badgenuke', badge, result)
             else:
-                await ctx.send(ctx.responses['badge_badgenukenone'])
+                await ctx.send_response('badge_badgenukenone')
         else:
-            await ctx.send(ctx.responses['badge_notfound'])
+            await ctx.send_response('badge_notfound')
 
     @commands.command(aliases = ['strip'])
     @commands.guild_only()
@@ -145,13 +145,13 @@ class ProfileCog(commands.Cog):
             if has_badge:
                 result = self.badger.revoke_badge(ctx.guild.id, user.id, badgeid)
                 if result:
-                    await ctx.send(ctx.responses['badge_revoked'].format(user, badge))
+                    await ctx.send_response('badge_revoked', user, badge)
                 else:
-                    await ctx.send(ctx.responses['badge_error'].format("revoking"))
+                    await ctx.send_response('badge_error', "revoking")
             else:
-                await ctx.send(ctx.responses['badge_nothasbadge'])
+                await ctx.send_response('badge_nothasbadge')
         else:
-            await ctx.send(ctx.responses['badge_notfound'])
+            await ctx.send_response('badge_notfound')
 
     @commands.command(aliases = ["addbadge", "makebadge"])
     @commands.guild_only()
@@ -160,13 +160,13 @@ class ProfileCog(commands.Cog):
     async def createbadge(self, ctx, name:str, icon:emoji_escape, *, description:str=""):
         #Impose some limits on the parameters
         if len(name) > self.badge_limits['name']:
-            await ctx.send(ctx.responses['badge_limits'].format("name", self.badge_limits['name']))
+            await ctx.send_response('badge_limits', 'name', self.badge_limits['name'])
             return
         if len(description) > self.badge_limits['description']:
-            await ctx.send(ctx.responses['badge_limits'].format("description", self.badge_limits['description']))
+            await ctx.send_response('badge_limits', 'description', self.badge_limits['description'])
             return
         if len(icon) > self.badge_limits['icon']:
-            await ctx.send(ctx.responses['badge_limits'].format("icon", self.badge_limits['icon']))
+            await ctx.send_response('badge_limits', 'icon', self.badge_limits['icon'])
             return
         badge_exists = self.badger.name_to_id(ctx.guild.id, name)
         if not badge_exists: #This should be None if there is no row matching our criteria
@@ -174,13 +174,13 @@ class ProfileCog(commands.Cog):
             if badge_count < self.badge_limits['serverbadges']: #Limit badges
                 result = self.badger.create_badge(ctx.guild.id, name, icon, description=description)
                 if result:
-                    await ctx.send(ctx.responses['badge_created'])
+                    await ctx.send_response('badge_created')
                 else:
-                    await ctx.send(ctx.responses['badge_error'].format("creating"))
+                    await ctx.send_response('badge_error', "creating")
             else:
-                await ctx.send(ctx.responses['badge_maxbadgeslimit'])
+                await ctx.send_response('badge_maxbadgeslimit')
         else:
-            await ctx.send(ctx.responses['badge_exists'])
+            await ctx.send_response('badge_exists')
 
     @commands.command()
     @commands.guild_only()
@@ -189,7 +189,7 @@ class ProfileCog(commands.Cog):
     async def badgewizard(self, ctx):
         badge_count = self.badger.get_badge_entries(server_id=ctx.guild.id).count()
         if badge_count > self.badge_limits['serverbadges']:
-            await ctx.send(ctx.responses['badge_maxbadgeslimit'])
+            await ctx.send_response('badge_maxbadgeslimit')
             return
         strs = ctx.responses['badgewizard_strings']
         maxmsg = strs['limit']
@@ -210,7 +210,7 @@ class ProfileCog(commands.Cog):
                 name = message.content
             badge_exists = self.badger.name_to_id(ctx.guild.id, name)
             if badge_exists:
-                await ctx.send(ctx.responses['badge_exists'])
+                await ctx.send_response('badge_exists')
                 return
             msgs.append(await ctx.send(strs['icon'].format(self.badge_limits['icon'])))
             while not icon: #get the icon
@@ -244,9 +244,9 @@ class ProfileCog(commands.Cog):
             if levels:
                 self.levelingwidget.assign_levels(ctx.guild.id, result.id, levels)
             if result:
-                await ctx.send(ctx.responses['badge_created'])
+                await ctx.send_response('badge_created')
             else:
-                await ctx.send(ctx.responses['badge_error'].format("creating"))
+                await ctx.send_response('badge_error', "creating")
             await ctx.channel.delete_messages(msgs)
         except Exception as e:
             raise e
@@ -258,14 +258,14 @@ class ProfileCog(commands.Cog):
     async def updatebadge(self, ctx, name:str, newname:str, icon:str=None, *, description:str=None):
         #Impose some limits on the parameters
         if len(name) > self.badge_limits['name']:
-            await ctx.send(ctx.responses['badge_limits'].format("name", self.badge_limits['name']))
+            await ctx.send_response('badge_limits', 'name', self.badge_limits['name'])
             return
         if len(icon) > self.badge_limits['icon']:
-            await ctx.send(ctx.responses['badge_limits'].format("icon", self.badge_limits['icon']))
+            await ctx.send_response('badge_limits', 'icon', self.badge_limits['icon'])
             return
         if description:
             if len(description) > self.badge_limits['description']:
-                await ctx.send(ctx.responses['badge_limits'].format("description", self.badge_limits['description']))
+                await ctx.send_response('badge_limits', 'description', self.badge_limits['description'])
                 return
         badge_exists = self.badger.name_to_id(ctx.guild.id, name)
         if badge_exists:
@@ -276,11 +276,11 @@ class ProfileCog(commands.Cog):
                 args['description'] = ('' if description.lower() in ('none', 'nothing') else description)
             updated = self.badger.update_badge(ctx.guild.id, name, newname=newname, **args)
             if updated:
-                await ctx.send(ctx.responses['badge_updated'])
+                await ctx.send_response('badge_updated')
             else:
-                await ctx.send(ctx.responses['badge_error'].format("updating"))
+                await ctx.send_response('badge_error', "updating")
         else:
-            await ctx.send(ctx.responses['badge_notfound'])
+            await ctx.send_response('badge_notfound')
 
     @commands.command(aliases = ["removebadge", "rembadge", "delbadge", "rmbadge"])
     @commands.guild_only()
@@ -292,11 +292,11 @@ class ProfileCog(commands.Cog):
         if badgeid: #If we got a valid id
             result = self.badger.remove_badge(ctx.guild.id, badgeid)
             if result:
-                await ctx.send(ctx.responses['zapped'].format(name))
+                await ctx.send_response('zapped', name)
             else:
-                await ctx.send(ctx.responses['badge_error'].format("removing"))
+                await ctx.send_response('badge_error', "removing")
         else:
-            await ctx.send(ctx.responses['badge_notfound'])
+            await ctx.send_response('badge_notfound')
 
     @commands.command(aliases = ["listbadges", "listbadge", "badgeslist", "badgelist"])
     @commands.guild_only()
@@ -306,7 +306,7 @@ class ProfileCog(commands.Cog):
         paginator = funcs.Paginator(server_badges, items_per_page=20)
         pc = paginator.page_count
         if pc == 0:
-            await ctx.send(ctx.responses['badge_nobadges'])
+            await ctx.send_response('badge_nobadges')
             return
         page = funcs.clamp(page, 1, pc)
         page_list = paginator.get_page(page-1)
@@ -341,7 +341,7 @@ class ProfileCog(commands.Cog):
         if user is None:
             user = ctx.author
         if user.bot:
-            await ctx.send(ctx.responses['general_useronly'])
+            await ctx.send_response('general_useronly')
             return
         e = self.maintheme.get_embed(ctx, user)
         await ctx.send(embed=e)
@@ -351,17 +351,17 @@ class ProfileCog(commands.Cog):
     @commands.cooldown(1, 5, type=commands.BucketType.guild)
     async def assignlevels(self, ctx, badge:str, levels:int):
         if abs(levels) > self.badge_limits['levels']:
-            await ctx.send(ctx.responses['badgelevels_limit'].format(self.badge_limits['levels']))
+            await ctx.send_response('badgelevels_limit', self.badge_limits['levels'])
             return
         badge_id = self.badger.name_to_id(ctx.guild.id, badge)
         if not badge_id:
-            await ctx.send(ctx.responses['badge_notfound'])
+            await ctx.send_response('badge_notfound')
             return
         self.badger.set_badge_levels(ctx.guild.id, badge_id, levels)
         if levels == 0:
-            await ctx.send(ctx.responses['badgelevels_remove'].format(badge))
+            await ctx.send_response('badgelevels_remove', badge)
         else:
-            await ctx.send(ctx.responses['badgelevels_set'].format(badge, levels))
+            await ctx.send_response('badgelevels_set', badge, levels)
 
     @commands.command()
     @commands.cooldown(1, 10, type=commands.BucketType.channel)

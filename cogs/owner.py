@@ -58,16 +58,16 @@ class BotOwnerCog(commands.Cog):
     @commands.is_owner()
     async def activity(self, ctx, activity_type:str=None, *, text:str=""):
         if not activity_type:
-            await ctx.send(ctx.responses['general_valid_options'].format("playing, listening and watching"))
+            await ctx.send_response('general_valid_options', "playing, listening and watching")
             return
         activity_type = activity_type.lower()
         if not activity_type in ("playing", "listening", "watching"):
-            await ctx.send(ctx.responses['general_valid_options'].format("playing, listening and watching"))
+            await ctx.send_response('general_valid_options', "playing, listening and watching")
             return
         activity = discord.Activity(name=text, type=getattr(discord.ActivityType, activity_type))
         await self.bot.change_presence(activity=activity)
         self.set_value("activity", activity_type + ";" + text)
-        await ctx.send(ctx.responses['setactivity_success'])
+        await ctx.send_response('setactivity_success')
 
     @commands.command(hidden=True)
     @commands.is_owner()
@@ -76,10 +76,10 @@ class BotOwnerCog(commands.Cog):
         try:
             self.bot.reload_extension(module)
         except Exception as e:
-            await ctx.send(ctx.responses['module_fail'])
+            await ctx.send_response('module_fail')
             raise e
         else:
-            await ctx.send(ctx.responses['module_reloaded'].format(module))
+            await ctx.send_response('module_reloaded', module)
 
     @commands.command(hidden=True)
     @commands.is_owner()
@@ -88,10 +88,10 @@ class BotOwnerCog(commands.Cog):
         try:
             self.bot.unload_extension(module)
         except Exception as e:
-            await ctx.send(ctx.responses['module_fail'])
+            await ctx.send_response('module_fail')
             raise e
         else:
-            await ctx.send(ctx.responses['module_unloaded'].format(module))
+            await ctx.send_response('module_unloaded', module)
 
     @commands.command(hidden=True)
     @commands.is_owner()
@@ -100,10 +100,10 @@ class BotOwnerCog(commands.Cog):
         try:
             self.bot.load_extension(module)
         except Exception as e:
-            await ctx.send(ctx.responses['module_fail'])
+            await ctx.send_response('module_fail')
             raise e
         else:
-            await ctx.send(ctx.responses['module_loaded'].format(module))
+            await ctx.send_response('module_loaded', module)
 
     @commands.command(hidden=True)
     @commands.is_owner()

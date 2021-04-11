@@ -46,10 +46,10 @@ class FunCog(commands.Cog):
 	async def flip(self, ctx):
 		side = randint(0,5999) #Check if it will land on its side. Credit: https://journals.aps.org/pre/abstract/10.1103/PhysRevE.48.2547
 		if side == 0:
-			await ctx.send(ctx.responses["coin_3"])
+			await ctx.send_response("coin_3")
 			return
 		side = str(randint(1,2))
-		await ctx.send(ctx.responses["coin_" + side])
+		await ctx.send_response("coin_" + side)
 
 	@commands.command(aliases=["rockpaperscissors","saishowagujankenpon"])
 	async def rps(self, ctx, weapon:str):
@@ -62,24 +62,24 @@ class FunCog(commands.Cog):
 		elif weapon in ["scissors", "s"]:
 			w = "scissors"
 		else:
-			await ctx.send(ctx.responses["general_valid_options"].format("[r]ock, [p]aper, or [s]cissors."))
+			await ctx.send_response('general_valid_options', "[r]ock, [p]aper, or [s]cissors.")
 			return
 		botchoice = choice(["rock", "paper", "scissors"])
 		formatted = emoji[botchoice] + " " + botchoice.capitalize()
 		if botchoice == w:
-			await ctx.send(ctx.responses['rps_tie'].format(formatted))
+			await ctx.send_response('rps_tie', formatted)
 		elif ( botchoice == "rock" and w == "paper" ) or ( botchoice == "scissors" and w == "rock" ) or ( botchoice == "paper" and w == "scissors" ):
-			await ctx.send(ctx.responses['rps_win'].format(formatted))
+			await ctx.send_response('rps_win', formatted)
 		else:
-			await ctx.send(ctx.responses['rps_lose'].format(formatted))
+			await ctx.send_response('rps_lose', formatted)
 
 	@commands.command(aliases=["rollthedice","rtd","roll"])
 	async def dice(self, ctx, sides:int=6):
 		if sides > 100:
-			await ctx.send(ctx.responses['dice_limit'].format(100))
+			await ctx.send_response('dice_limit', 100)
 			return
 		if sides < 2:
-			await ctx.send(ctx.responses['dice_limit_lower'].format(2))
+			await ctx.send_response('dice_limit_lower', 2)
 			return
 		side = randint(1, sides)
 		await ctx.send(":game_die: " + str(side))
@@ -89,11 +89,11 @@ class FunCog(commands.Cog):
 		if user is None:
 			user = ctx.author
 		iq = randint(0, 200)
-		await ctx.send(ctx.responses['iq'].format(user, iq))
+		await ctx.send_response('iq', user, iq)
 
 	@commands.command(name="8ball", aliases=["eightball", "fortune"])
 	async def eball(self, ctx, *, question:str):
-		response = choice(ctx.responses['8ball_responses'])
+		response = choice(ctx.get_response('8ball_responses'))
 		await ctx.send(response)
 
 	@commands.command(name="zalgo")
@@ -114,7 +114,7 @@ class FunCog(commands.Cog):
 	async def marry(self, ctx, waifu:discord.Member, husbando:discord.Member):
 		#add restriction against marrying self
 		if waifu == husbando:
-			await ctx.send(ctx.responses['marry_notself'])
+			await ctx.send_response('marry_notself')
 			return
 		imageformat, imagesize = "png", 64 #Each image will be 64x64
 		u1icon = waifu.avatar_url_as(format = imageformat, static_format = imageformat, size = imagesize)
@@ -144,7 +144,7 @@ class FunCog(commands.Cog):
 				else:
 					finalname += ("").join(splitname[ int(len(splitname)/2): ]) + " "
 		finalname = '"' + finalname.rstrip() + '"'
-		message = ctx.responses['marry_message'].format(waifu, husbando, finalname)
+		message = ctx.get_response('marry_message').format(waifu, husbando, finalname)
 		await ctx.send(message, file=f)
 
 def setup(bot):

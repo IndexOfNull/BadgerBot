@@ -13,17 +13,17 @@ class CoreCommandsCog(commands.Cog):
 	@commands.cooldown(1, 10, type=commands.BucketType.guild)
 	async def prefix(self, ctx, prefix:str=None):
 		if not prefix:
-			await ctx.send(ctx.responses['prefix'].format(ctx.options['prefix'].data))
+			await ctx.send_response('prefix', ctx.options['prefix'].data)
 		else:
 			if not checks.is_admin(return_predicate=True)(ctx): #should error if they aren't an admin
 				return
 			if len(prefix) > 8:
-				await ctx.send(ctx.responses['prefix_limit'].format(8))
+				await ctx.send_responses('prefix_limit', 8)
 				return
 			if not prefix == ctx.options['prefix'].data: #No need to bother if it's being set to the same thing
 				self.datamanager.set_option(ctx.guild.id, "prefix", prefix)
 				self.datamanager.prefixes[str(ctx.guild.id)] = prefix
-			await ctx.send(ctx.responses['prefix_set'].format(prefix))
+			await ctx.send_responses('prefix_set', prefix)
 
 	@commands.command(aliases=['cmds', 'commands'])
 	async def help(self, ctx, command:str=""):
