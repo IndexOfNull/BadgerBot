@@ -198,11 +198,12 @@ class BadgeWidget(WidgetBase):
     def handle_embed(self, ctx, user, embed):
         ubadges = self.get_award_entries(server_id=ctx.guild.id, discord_id=user.id).all()
 
-        icons = "".join([x.BadgeEntry.icon for x in ubadges]).strip()
+        icons = " ".join([x.BadgeEntry.icon for x in ubadges]).strip()
         level = sum([x.BadgeEntry.levels for x in ubadges])
 
         icons = icons if icons else "No Badges"
-        embed.add_field(name="Badges [" + str(len(ubadges)) + "]", value="".join(icons).strip(), inline=False)
+        embed.add_field(name="Badges [" + str(len(ubadges)) + "]", value=icons, inline=False)
+        embed.color = user.top_role.color
         if level > 0:
             embed.add_field(name="Level", value=str(level), inline=True)
         return embed

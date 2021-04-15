@@ -68,6 +68,10 @@ Command List
             - The search parameter will search for names and icons (so you can put either)
         13. View a user's profile           : ;profile [user]
             - Will show your profile if no user is supplied
+        14. Get emoji info                  : ;emoji <emoji>
+            - This will give you some info about an emoji, as well as a "Non-Nitro" copy-paste
+            - You can use this copy-paste just as you would an emoji, just substitute it in (it may not work with animated emoji)
+            - Cross-server emoji works too, just make sure the bot is in both servers.
 
     Leveling Module (SO):
         1. (++) Set a badge's levels        : ;setlevel <badge> <levels>
