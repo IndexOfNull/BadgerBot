@@ -203,7 +203,7 @@ class BadgeWidget(WidgetBase):
 
         icons = icons if icons else "No Badges"
         embed.add_field(name="Badges [" + str(len(ubadges)) + "]", value=icons, inline=False)
-        embed.color = user.top_role.color
+        embed.color = user.color
         if level > 0:
             embed.add_field(name="Level", value=str(level), inline=True)
         return embed
