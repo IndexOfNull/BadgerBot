@@ -71,6 +71,7 @@ def emoji_escape(text: str):
 def emoji_format(text: str):
     return re.sub(emoji_regex, r'[;\1;\2]', text)
     
+#Maybe split this up into a baseclass, list pager, and database pager?
 class Paginator():
 
     #This is a needlessly complicated system for pagination
@@ -102,6 +103,13 @@ class Paginator():
             return math.ceil(len(self._page_obj) / self.items_per_page) #Be generous and call 1.1 pages 2 :)
         if self.type == "db":
             return math.ceil(self.page_obj.count() / self.items_per_page) #Same here
+
+    @property
+    def item_count(self):
+        if self.type == "list":
+            return len(self._page_obj)
+        if self.type == "db":
+            return self.page_obj.count()
 
     def get_pages(self, pages): #Will accept positive integers or positive slices with a step of 1
         #Making sure everything is the right type because we are nice

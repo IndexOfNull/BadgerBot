@@ -88,13 +88,13 @@ class BadgeWidget(WidgetBase):
         return results
 
     def user_has_badge(self, server_id, discord_id, badge_id):
-        result = self.db.query(BadgeWinner).filter_by(server_id=server_id, discord_id=discord_id, badge_id=badge_id).first()
+        result = self.get_award_entries(server_id=server_id, discord_id=discord_id, badge_id=badge_id).first()
         if result:
             return True
         return False
 
     def users_have_badge(self, server_id, discord_ids, badge_id): #Returns a dictionary with user ids as keys with a bool representing if they have a badge
-        result = self.db.query(BadgeWinner.discord_id).filter_by(server_id=server_id, badge_id=badge_id)\
+        result = self.get_award_entries(server_id=server_id, badge_id=badge_id)\
                     .filter(BadgeWinner.discord_id.in_(discord_ids))\
                     .all()
         extracted_ids = [row.discord_id for row in result]
@@ -134,12 +134,18 @@ class BadgeWidget(WidgetBase):
             self.db.rollback()
             raise e
 
-    def name_to_id(self, server_id, badge_name):
+    def name_to_id(self, server_id, badge_name): #TODO: get rid of this (name_to_badge makes more sense)
         rows = self.db.query(BadgeEntry).filter_by(server_id=server_id, name=badge_name).first()
         if rows:
             return rows.id
         else:
             return None
+
+    def name_to_badge(self, server_id, badge_name):
+        row = self.db.query(BadgeEntry).filter_by(server_id=server_id, name=badge_name).first()
+        if row:
+            return row
+        return None
 
     def remove_badge(self, server_id, id):
         try:

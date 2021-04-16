@@ -12,6 +12,8 @@ import re
 
 from io import BytesIO
 
+#TODO: Move this into the profile widget (modularity if possible)
+#TODO: Stop using name_to_id in favor of name_to_badge (maybe try with statements?)
 class ProfileCog(commands.Cog):
 
     def __init__(self, bot):
@@ -385,25 +387,67 @@ class ProfileCog(commands.Cog):
             await ctx.send_response('badgelevels_set', badge, levels)
 
     @commands.command()
+    @checks.is_mod()
+    @commands.cooldown(1, 3, type=commands.BucketType.channel)
+    async def hasbadge(self, ctx, user:discord.Member, *, badge:str):
+        badge_id = self.badger.name_to_id(ctx.guild.id, badge)
+        if badge_id: #If we got a valid id
+            result = self.badger.user_has_badge(ctx.guild.id, user.id, badge_id)
+            if result:
+                await ctx.send_response('badge_userhasbadge')
+            else:
+                await ctx.send_response('badge_usernohasbadge')
+        else:
+            await ctx.send_response('badge_notfound')
+
+    @commands.command()
+    @checks.is_mod()
+    @commands.cooldown(1, 3, type=commands.BucketType.guild)
+    async def usersearch(self, ctx, page_num:int, *, badge:str): #This is bad command syntax. I should fix this with stateful paging
+        badge = self.badger.name_to_badge(ctx.guild.id, badge)
+        if badge: #If we got a valid id
+            results = self.badger.get_award_entries(server_id=ctx.guild.id, badge_id=badge.id)
+            pager = funcs.Paginator(results)
+            clamped_page_num = funcs.clamp(page_num, 1, pager.page_count)
+            page = pager.get_page(clamped_page_num - 1)
+
+            header = "```md\n> {0}\n================\n".format( ctx.get_response('badgesearch.header').format(badge.name, clamped_page_num, pager.page_count, pager.item_count) )
+            footer = "\n```"
+            
+            final = ""
+            for i, winner in enumerate([x.BadgeWinner for x in page]): #Just get the BadgeWinner entries, this feels hacky
+                resolved_user = self.bot.get_user(winner.discord_id)
+                final += str(i + 1) + ": "
+                if not resolved_user:
+                    final += ctx.get_response('badgesearch.unkown_user').format(winner.discord_id) + "\n"
+                else:
+                    final += str(resolved_user) + "\n"
+
+            final = header + final + footer
+            await ctx.send(final)
+        else:
+            await ctx.send_response('badge_notfound')
+
+    @commands.command()
     @commands.cooldown(1, 10, type=commands.BucketType.channel)
     async def leaderboard(self, ctx, page:int=1):
         lbd = self.badger.get_server_leaderboard(ctx.guild.id)
         pager = funcs.Paginator(lbd, items_per_page=10)
         page = funcs.clamp(page, 1, pager.page_count) #Clamp page so that we can't pick a page past the last page
         rows = pager.get_page(page-1) #Subtract one for computer friendliness
-        header = "```md\n> {0}\n================\n".format( ctx.responses['leaderboard_strings']['leaderboard'].format(page, pager.page_count) )
+        header = "```md\n> {0}\n================\n".format( ctx.get_response('leaderboard.header').format(page, pager.page_count) )
         footer = "\n```"
         entry = "<{num}: {user}> {levels} levels\n"
         final = header
         for position, row in enumerate(rows):
             user = self.bot.get_user(row.discord_id)
             if not user:
-                u = ctx.responses['leaderboard_strings']['unknown_user'] + "#" + str(row.discord_id)
+                u = ctx.get_response('leaderboard.unknown_user').format(row.discord_id)
             else:
                 u = str(user)
             final += entry.format(num=position + (page-1)*pager.items_per_page + 1, user=u, levels=row.levels)
         if final == header:
-            final += ctx.responses['leaderboard_strings']['nothing']
+            final += ctx.get_response('nothing_here')
         final.rstrip()
         final += footer
         await ctx.send(final)

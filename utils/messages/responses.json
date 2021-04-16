@@ -28,6 +28,8 @@
             "badgelevels_limit": ":red_circle: Badges cannot award or take away more than {0} levels.",
             "badgelevels_set": ":military_medal: The levels for \"{0}\" have been set to {1}.",
             "badgelevels_remove": ":cloud_lightning: The levels for \"{0}\" have been removed.",
+            "badge_userhasbadge": ":white_check_mark: The user has that badge.",
+            "badge_usernohasbadge": ":x: The user does not have that badge.",
             "tag_lenlimits": ":red_circle: Tag {0} cannot have over {1} characters. Please shorten it.",
             "tag_notfound": ":grey_question: It doesn't look like there's a tag with that name.",
             "tag_serverlimit": ":red_circle: Servers can only have up to 15 tags.",
@@ -69,7 +71,9 @@
             "module_fail": "There was a problem while loading or unloading your module.",
             "marry_message": "{0.mention} has been shipped with {1.mention}! Their child shall be called {2}.",
             "marry_notself": "Nice try, but people can't marry themselves.",
-            "leaderboard_strings": {"unknown_user": "Unknown User", "levels": "levels", "leaderboard": "Leaderboard (Page {0}/{1})", "nothing": "Nothing to show here (yet)."},
+            "nothing_here": "Nothing to show here (yet).",
+            "leaderboard": {"unknown_user": "Unknown User#{0}", "levels": "levels", "header": "Leaderboard (Page {0}/{1})"},
+            "badgesearch": {"unknown_user": "Unknown User#{0}", "header": "Users with \"{0}\" badge (Page {1}/{2}) ({3:,} total)"},
             "page_strings": {
                 "footer": "You can switch pages by running `{0} [page]`."
             },
