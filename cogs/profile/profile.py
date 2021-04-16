@@ -404,14 +404,14 @@ class ProfileCog(commands.Cog):
     @checks.is_mod()
     @commands.cooldown(1, 3, type=commands.BucketType.guild)
     async def usersearch(self, ctx, page_num:int, *, badge:str): #This is bad command syntax. I should fix this with stateful paging
-        badge = self.badger.name_to_badge(ctx.guild.id, badge)
-        if badge: #If we got a valid id
-            results = self.badger.get_award_entries(server_id=ctx.guild.id, badge_id=badge.id)
+        resolved_badge = self.badger.name_to_badge(ctx.guild.id, badge)
+        if resolved_badge: #If we got a valid id
+            results = self.badger.get_award_entries(server_id=ctx.guild.id, badge_id=resolved_badge.id)
             pager = funcs.Paginator(results)
             clamped_page_num = funcs.clamp(page_num, 1, pager.page_count)
             page = pager.get_page(clamped_page_num - 1)
 
-            header = "```md\n> {0}\n================\n".format( ctx.get_response('badgesearch.header').format(badge.name, clamped_page_num, pager.page_count, pager.item_count) )
+            header = "```md\n> {0}\n================\n".format( ctx.get_response('badgesearch.header').format(resolved_badge.name, clamped_page_num, pager.page_count, pager.item_count) )
             footer = "\n```"
             
             final = ""
