@@ -52,7 +52,7 @@ class BuddyBot(commands.Bot):
 		self.datamanager.register_option("lang", "en")
 		self.datamanager.register_option("responses", "default")
 		self.datamanager.register_option("prefix", self.prefix)
-		self.pagination_manager = PaginationManager(self)
+		self.pagination_manager = PaginationManager(self, stale_time=300)
 		self.web_enable = kwargs.pop("web_enable", False)
 		self.web_secret = kwargs.pop("web_secret", None)
 		self.web_ip = kwargs.pop("web_ip", "0.0.0.0")
@@ -70,6 +70,11 @@ class BuddyBot(commands.Bot):
 				await asyncio.sleep(60) #Retry again in 60 seconds.
 				continue
 			await asyncio.sleep(self.database_ping_interval)
+
+	async def paginator_cleanup_task(self):
+		while True:
+			await asyncio.sleep(290)
+			self.pagination_manager.clean_paginators()
 
 	def start_webserver(self):
 		self.web_app = web.Application(middlewares=[self.web_keymiddleware])
@@ -125,8 +130,10 @@ class BuddyBot(commands.Bot):
 			self.responses = utils.messages.manager.build_responses() #Doing this later lets cogs add their own message keys
 
 	async def on_ready(self): #THIS MAY BE RUN MULTIPLE TIMES IF reconnect=True!
-		if not self.been_ready and self.database_ping_interval > 0:
-			self.loop.create_task(self.database_ping_task())
+		if not self.been_ready:
+			if self.database_ping_interval > 0:
+				self.loop.create_task(self.database_ping_task())
+			self.loop.create_task(self.paginator_cleanup_task())
 		try:
 			self.db.execute("SELECT * FROM serveropts ORDER BY RAND() LIMIT 1") #Get a random server opt row as a sanity check. This is MySQL specific, so reformatting may be needed for other DBs
 		except sa.exc.ProgrammingError:
