@@ -62,7 +62,7 @@ class ProfileCog(commands.Cog):
         else:
             await ctx.send_response('badge_notfound')
 
-    @commands.command(aliases = ['awardmu', 'multiaward'])
+    @commands.command(aliases = ['awardmu'])
     @commands.guild_only()
     @checks.is_mod()
     @commands.cooldown(1, 5, type=commands.BucketType.guild)
@@ -84,6 +84,22 @@ class ProfileCog(commands.Cog):
             await ctx.send_response('badge_multiaward', mentions, badge)
         else:
             await ctx.send_response('badge_notfound')
+
+    @commands.command(aliases = ['awardmb'])
+    @commands.guild_only()
+    @checks.is_mod()
+    @commands.cooldown(1, 5, type=commands.BucketType.guild)
+    async def awardmultibadge(self, ctx, user:discord.Member, *badges:str):
+        resolved_badges = self.badger.names_to_badges(ctx.guild.id, badges)
+        if len(resolved_badges) != len(badges):
+            await ctx.send_response("badge_awardmb.missing")
+
+        self.badger.award_multibadge(ctx.guild.id, user.id, [badge.id for badge in resolved_badges])
+
+        header = ctx.get_response('badge_awardmb.awarded').format(user)
+        badge_list = self.make_badge_list(resolved_badges, line="\\> {0.icon} **{0.name}**\n", header=header)
+        await ctx.send(badge_list)
+        return
 
     @commands.command(aliases = ['revokemu', 'multirevoke'])
     @commands.guild_only()
@@ -193,7 +209,7 @@ class ProfileCog(commands.Cog):
         if badge_count > self.badge_limits['serverbadges']:
             await ctx.send_response('badge_maxbadgeslimit')
             return
-        strs = ctx.responses['badgewizard_strings']
+        strs = ctx.get_response('badgewizard_strings')
         maxmsg = strs['limit']
         maxtime = 30 #Max time per prompt
         msgs = []
@@ -328,7 +344,7 @@ class ProfileCog(commands.Cog):
         max_results = 10
         results = self.badger.badge_search(ctx.guild.id, query=search).all()
         if not results:
-            await ctx.send_response('badgesearch_noresults')
+            await ctx.send_response('badgesearch.noresults')
             return
         results = results[:max_results] #Truncate at 10 entries
         if len(results) == 1:

@@ -47,7 +47,7 @@ class BadgeWidget(WidgetBase):
         if self.build_tables: #Unfortunately this can't be inherited due to each table being created on a different declaritive_base()
             Base.metadata.create_all(self.db.bind)
 
-    def award_badge(self, server_id, discord_ids, badge_id):
+    def award_badge(self, server_id, discord_ids, badge_id): #TODO: maybe change this to award_multiuser and make it a separate function
         single = False
         if not isinstance(discord_ids, list):
             discord_ids = [discord_ids]
@@ -64,6 +64,19 @@ class BadgeWidget(WidgetBase):
             else: #give them the whole list otherwise
                 return objects #Maybe make this return a list later
         except Exception as e: #May need to add exc.IntegrityError. I don't think that's possible with this though
+            self.db.rollback()
+            raise e
+
+    def award_multibadge(self, server_id, discord_id, badge_ids):
+        try:
+            objects = []
+            for badge_id in badge_ids:
+                winner = BadgeWinner(server_id=server_id, discord_id=discord_id, badge_id=badge_id)
+                objects.append(winner)
+                self.db.add(winner)
+            self.db.commit()
+            return objects
+        except Exception as e:
             self.db.rollback()
             raise e
 
@@ -146,6 +159,10 @@ class BadgeWidget(WidgetBase):
         if row:
             return row
         return None
+
+    def names_to_badges(self, server_id, badge_names):
+        rows = self.get_badge_entries(server_id=server_id).filter(BadgeEntry.name.in_(badge_names)).all()
+        return rows
 
     def remove_badge(self, server_id, id):
         try:
