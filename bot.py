@@ -10,6 +10,7 @@ import aiohttp
 from aiohttp import web
 
 from utils import classes, data, checks, funcs, http
+from utils.pagination import PaginationManager
 import utils.messages.manager
 import json
 
@@ -51,6 +52,7 @@ class BuddyBot(commands.Bot):
 		self.datamanager.register_option("lang", "en")
 		self.datamanager.register_option("responses", "default")
 		self.datamanager.register_option("prefix", self.prefix)
+		self.pagination_manager = PaginationManager(self)
 		self.web_enable = kwargs.pop("web_enable", False)
 		self.web_secret = kwargs.pop("web_secret", None)
 		self.web_ip = kwargs.pop("web_ip", "0.0.0.0")

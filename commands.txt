@@ -36,6 +36,8 @@ Command List
 
     Default prefix: ;
 
+    You can switch pages with ;page <page>
+
     Fun:
         1. Flip a coin                   : ;flip
         2. Play rock, paper, scissors    : ;rps <weapon>
