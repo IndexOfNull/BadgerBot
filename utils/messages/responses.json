@@ -16,7 +16,8 @@
             "badge_revokeallnone": ":mag: {0.mention} doesn't have any badges.",
             "badge_badgenukenone": ":mag: Nobody has that badge.",
             "badge_awardmb": {
-                "missing": ":warning: Some badges could not be found. They will not be awarded to the user.",
+                "skipped": ":warning: Some badges could not be found or were entered more than once. Duplicates or missing badges will not be awarded.",
+                "already_awarded": "The following badges have not been awarded because the user already had them:",
                 "awarded": "The following badges have been awarded to {0.mention}:"
             },
             "badge_badgenuke": ":boom: The \"{0}\" has been stripped from {1} members.",

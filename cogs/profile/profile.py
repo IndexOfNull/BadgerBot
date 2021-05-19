@@ -12,6 +12,8 @@ import re
 
 from io import BytesIO
 
+from cogs.profile import widgets
+
 #TODO: Move this into the profile widget (modularity if possible)
 #TODO: Stop using name_to_id in favor of name_to_badge (maybe try with statements?)
 class ProfileCog(commands.Cog):
@@ -90,15 +92,35 @@ class ProfileCog(commands.Cog):
     @checks.is_mod()
     @commands.cooldown(1, 5, type=commands.BucketType.guild)
     async def awardmultibadge(self, ctx, user:discord.Member, *badges:str):
+        #Figure out what badges we want to give and every badge we already have
         resolved_badges = self.badger.names_to_badges(ctx.guild.id, badges)
+        resolved_ids = [badge.id for badge in resolved_badges]
+        user_badges = self.badger.get_award_entries(discord_id=user.id, server_id=ctx.guild.id).all()
+        user_badges_ids = set([x.BadgeEntry.id for x in user_badges])
+
+        #Use the previous information to figure out what badges the user already has
+        #Doing it this way allows us to get a list without duplicates (e.g. the user was awarded the same badge twice; compatibility)
+        already_awarded = self.badger.get_badge_entries(server_id=ctx.guild.id).filter(widgets.BadgeEntry.id.in_(user_badges_ids)).all()
+        already_awarded_ids = [x.id for x in already_awarded]
+        ids_set = set(resolved_ids)
+        to_award = ids_set.difference(set(already_awarded_ids)) #See what they don't have
+
+        self.badger.award_multibadge(ctx.guild.id, user.id, to_award) #Give them what they don't have
+
+        awarded_badges = [x for x in resolved_badges if x.id in to_award] #Get the badge objects that we game them
+        unawarded_badges = [x for x in resolved_badges if x.id not in to_award] #The same but what we didn't give them
+        
+        #Final message formatting
+        final = ""
         if len(resolved_badges) != len(badges):
-            await ctx.send_response("badge_awardmb.missing")
-
-        self.badger.award_multibadge(ctx.guild.id, user.id, [badge.id for badge in resolved_badges])
-
-        header = ctx.get_response('badge_awardmb.awarded').format(user)
-        badge_list = self.make_badge_list(resolved_badges, line="\\> {0.icon} **{0.name}**\n", header=header)
-        await ctx.send(badge_list)
+            final += ctx.get_response("badge_awardmb.skipped") + "\n"
+        if len(awarded_badges) > 0:
+            header = ctx.get_response('badge_awardmb.awarded').format(user)
+            final = self.make_badge_list(awarded_badges, line="\\> {0.icon} **{0.name}**\n", header=header)
+        if len(already_awarded) > 0:
+            header = ctx.get_response('badge_awardmb.already_awarded')
+            final += "\n" + self.make_badge_list(unawarded_badges, line="\\> {0.icon} **{0.name}**\n", header=header)
+        await ctx.send(final.rstrip())
         return
 
     @commands.command(aliases = ['revokemu', 'multirevoke'])
@@ -341,7 +363,7 @@ class ProfileCog(commands.Cog):
         paginator.current_page = page-1 if page else 0
         await self.badges_real(ctx, paginator)
 
-        
+    #TODO: make this use the new pagination system
     @commands.command(aliases=['search'])
     @commands.guild_only()
     @commands.cooldown(1, 5, type=commands.BucketType.channel)
