@@ -3,7 +3,6 @@ import discord
 import json
 import os
 import argparse
-import binascii
 
 parser = argparse.ArgumentParser(description="Run BadgerBot")
 parser.add_argument("--generate-config", default=False, action="store_true", help="generates the config file if it doesn't exist")
@@ -17,11 +16,7 @@ settings = {
     "token": "[TOKEN HERE]",
     "db_engine_uri": "mysql+pymysql://USER:PASS@IP/DATABASE",
     "case_insensitive": True,
-    "web_secret": binascii.hexlify(os.urandom(24)).decode("utf-8"),
-    "web_ip": "0.0.0.0",
-    "web_port": "8080",
     "db_ping_interval": 14400,
-    "web_enable": False,
     "dev_mode": False,
     "privileged_intents": ["members"]
 }

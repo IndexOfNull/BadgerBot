@@ -52,22 +52,6 @@ This is your database location and credentials. It should be formatted like this
 `Default: true`
 Specifies if commands should be case insensitive or not.
 
-*  **web_enable**:
-`Default: false`
-This option enables or disables the internal webserver.
-
-*  **web_secret**:
-This is a token that authenticates requests made to the bot's internal webserver. The pre-filled value is unique to your installation, so the value filled in by default should be fine.
-
-*  **web_ip**:
-`Default: 0.0.0.0`
-The IP of the network interface you want the internal webserver to listen on. You will probably want to change this if your computer/server has multiple network controllers.
-
-*  **web_port**:
-`Default: 8080`
-The port the webserver should listen on. You may want to change this if you are running other webservers alongside the bot.
-
-
 *  **db_ping_interval**:
 `Default: 14400`
 How often should we ping the database (just running `SELECT 1`) before it kills our connection for inactivity. Set this to `0` to disable.

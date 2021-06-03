@@ -5,15 +5,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 import sqlalchemy as sa
-
-
 import asyncio
-from aiohttp import web
 
 from utils import classes, data, checks, funcs, http, config
 from utils.pagination import PaginationManager
 import utils.messages.manager
-import json
 
 modules = [
 	"cogs.core",
@@ -54,10 +50,6 @@ class BuddyBot(commands.Bot):
 		self.datamanager.register_option("responses", "default")
 		self.datamanager.register_option("prefix", self.prefix)
 		self.pagination_manager = PaginationManager(self, stale_time=300)
-		self.web_enable = kwargs.pop("web_enable", False)
-		self.web_secret = kwargs.pop("web_secret", None)
-		self.web_ip = kwargs.pop("web_ip", "0.0.0.0")
-		self.web_port = kwargs.pop("web_port", "8080")
 		self.database_ping_interval = kwargs.pop("db_ping_interval", 28800/2) #28800 is the default wait_timeout value in MySQL. This will ping every 4 hours
 		self.http_session = http.http_session
 		self.been_ready = False #This will be set to true on the first on_ready call
@@ -79,20 +71,6 @@ class BuddyBot(commands.Bot):
 		while True:
 			await asyncio.sleep(290)
 			self.pagination_manager.clean_paginators()
-
-	def start_webserver(self):
-		self.web_app = web.Application(middlewares=[self.web_keymiddleware])
-		self.web_runner = web.AppRunner(self.web_app)
-		#Register routes
-		routes = [
-			web.get('/broadcast', self.web_broadcast),
-			web.get('/event', self.web_event)
-		]
-		self.web_app.add_routes(routes)
-		#Run it
-		self.loop.run_until_complete(self.web_runner.setup())
-		web_site = web.TCPSite(self.web_runner, host=self.web_ip, port=self.web_port)
-		self.loop.run_until_complete(web_site.start())
 
 	async def on_message(self, message):
 		if message.author.bot:
@@ -154,9 +132,6 @@ class BuddyBot(commands.Bot):
 		print("---[Ready]---")
 		print("Logged in as:", self.user)
 		print("Developer mode:", ("ENABLED" if self.dev_mode else "DISABLED"))
-		print("Internal Webserver Enabled: " + str(self.web_enable))
-		if self.web_enable:
-			print("Webserver IP/Port: " + self.web_ip + ":" + self.web_port)
 		print("Database Ping Interval: " + ((str(self.database_ping_interval) + " seconds") if self.database_ping_interval > 0 else "NEVER"))
 		print("-------------")
 
@@ -224,63 +199,15 @@ class BuddyBot(commands.Bot):
 			await message.channel.send("Something went seriously wrong when processing your message. Something is probably wrong with the bot.")
 		await super().on_error(event, *args, **kwargs)
 
-	@web.middleware
-	async def web_keymiddleware(self, request, handler):
-		if self.web_secret:
-			if 'Authorization' in request.headers:
-				key = request.headers['Authorization']
-			elif 'secret' in request.query:
-				key = request.query['secret']
-			else:
-				resp = {"status": "error", "error": "No secret passed."}
-				return web.Response(status=403, text=json.dumps(resp))
-			if not key == self.web_secret:
-				resp = {"status": "error", "error": "Invalid secret."}
-				return web.Response(status=403, text=json.dumps(resp))
-		resp = await handler(request)
-		return resp
-
-	async def web_broadcast(self, request):
-		pcog = self.get_cog("ProfileCog")
-		if not pcog:
-			r = {"status": "error", "error": "The profile cog (and thus the widget manager) is not loaded."}
-			return web.Response(status=503, text=json.dumps(r))
-		if not 'event' in request.query or not 'payload' in request.query:
-			r = {"status": "error", "error": "You must pass an event and a payload"}
-			return web.Response(status=406, text=json.dumps(r))
-		else:
-			pcog.manager.broadcast(request.query['event'], request.query['payload'])
-			r = {"status": "good"}
-			return web.Response(status=200, text=json.dumps(r))
-
-	async def web_event(self, request):
-		pcog = self.get_cog("ProfileCog")
-		if not pcog:
-			r = {"status": "error", "error": "The profile cog (and thus the widget manager) is not loaded."}
-			return web.Response(status=503, text=json.dumps(r))
-		if not 'event' in request.query or not 'payload' in request.query:
-			r = {"status": "error", "error": "You must pass an event and a payload"}
-			return web.Response(status=406, text=json.dumps(r))
-		else:
-			try:
-				result = pcog.manager.fire_event(request.query['event'], **request.query) #Request params get converted to kwargs
-			except KeyError:
-				resp = {"status": "error", "error": "The specified event does not exist."}
-				return web.Response(status=406, text=json.dumps(resp))
-			r = {"status": "good", "result": result}
-			return web.Response(status=200, text=json.dumps(r))
-
 	def run(self):
 		#Load cogs
 		self.load_cogs(modules)
-		if self.web_enable: self.start_webserver()
 		super().run(self.token)
 
 	async def close(self):
 		print("Closing")
 		self.db.close()
 		self.db_engine.dispose()
-		if self.web_enable: await self.web_runner.cleanup()
 		await self.http_session.close()
 		await super().close()
 		pending = len(asyncio.Task.all_tasks())
