@@ -39,7 +39,34 @@ class ProfileCog(commands.Cog):
     @commands.guild_only()
     @commands.cooldown(1, 3, type=commands.BucketType.user)
     async def profile(self, ctx, *, user:discord.Member=None):
-        raise Exception('Not Implemented')
+        if user is None:
+            user = ctx.author
+
+        embed = discord.Embed(title=user.name + "#" + user.discriminator, type="rich", color=user.color)
+        avatar_url = user.avatar_url_as(static_format='png', size=1024)
+        embed.set_author(name="User Profile")
+        embed.set_thumbnail(url=avatar_url)
+
+        #Badges and level
+        ubadges = self.badger.get_award_entries(server_id=ctx.guild.id, discord_id=user.id).all()
+        icons = " ".join([x.BadgeEntry.icon for x in ubadges]).strip()
+        level = sum([x.BadgeEntry.levels for x in ubadges])
+        icons = icons if icons else "No Badges"
+        embed.add_field(name="Badges [" + str(len(ubadges)) + "]", value=icons, inline=False)
+        if level > 0:
+            embed.add_field(name="Level", value=str(level), inline=True)
+
+        t = user.joined_at
+        if t: #user.joined_at can sometimes return None
+            converted_time = t.strftime('%Y-%m-%d %H:%M:%S') + " UTC"
+            embed.add_field(name="Date Joined", value=converted_time)
+
+        t = user.created_at
+        if t: #user.created_at can sometimes return None
+            converted_time = t.strftime('%Y-%m-%d %H:%M:%S') + " UTC"
+            embed.add_field(name="Account Created", value=converted_time)
+
+        await ctx.send(embed=embed)
 
     @commands.command(aliases = ['givebadge', 'give'])
     @commands.guild_only()
