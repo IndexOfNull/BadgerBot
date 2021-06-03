@@ -124,5 +124,5 @@ class PaginationManager():
     def clean_paginators(self):
         current_time = time.time()
         for user_id, data in self._users.items():
-            if current_time - data[2] >= self.stale_time:
+            if current_time - data[3] >= self.stale_time:
                 self.remove_user(user_id)
