@@ -3,13 +3,14 @@ from discord.ext import commands
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
 import sqlalchemy as sa
 
+
 import asyncio
-import aiohttp
 from aiohttp import web
 
-from utils import classes, data, checks, funcs, http
+from utils import classes, data, checks, funcs, http, config
 from utils.pagination import PaginationManager
 import utils.messages.manager
 import json
@@ -17,7 +18,6 @@ import json
 modules = [
 	"cogs.profile",
 	"cogs.tags",
-	"cogs.core",
 	"cogs.fun",
 	"cogs.owner",
 	"cogs.music"
@@ -60,6 +60,9 @@ class BuddyBot(commands.Bot):
 		self.database_ping_interval = kwargs.pop("db_ping_interval", 28800/2) #28800 is the default wait_timeout value in MySQL. This will ping every 4 hours
 		self.http_session = http.http_session
 		self.been_ready = False #This will be set to true on the first on_ready call
+		#Init global config
+		config.create_tables = self.create_tables
+		config.database = self.db
 
 	async def database_ping_task(self):
 		while True:
@@ -128,6 +131,8 @@ class BuddyBot(commands.Bot):
 		#Cogs are done loading
 		if not self.been_ready:
 			self.responses = utils.messages.manager.build_responses() #Doing this later lets cogs add their own message keys
+			if self.create_tables:
+				config.declarative_base.metadata.create_all(self.db.bind) #Create the database tables if requested
 
 	async def on_ready(self): #THIS MAY BE RUN MULTIPLE TIMES IF reconnect=True!
 		if not self.been_ready:

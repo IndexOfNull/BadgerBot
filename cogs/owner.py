@@ -1,12 +1,11 @@
 import discord
 from discord.ext import commands
 
-from utils import funcs
+from utils import funcs, config
 
 from sqlalchemy import Column, String, Text
-from sqlalchemy.ext.declarative import declarative_base
 
-Base = declarative_base()
+Base = config.declarative_base
 class BotOption(Base):
     __tablename__ = "botopts"
     option = Column(String(64), nullable=False, primary_key=True)
@@ -18,8 +17,6 @@ class BotOwnerCog(commands.Cog):
         self.bot = bot
         self.keep_enabled = True
         self.db = self.bot.db
-        if self.bot.create_tables:
-            Base.metadata.create_all(self.db.bind)
 
     def set_value(self, key, value): #Updates a bot variable in the db (inserting when necessary)
         try:

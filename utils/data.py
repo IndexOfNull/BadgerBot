@@ -1,16 +1,15 @@
 #This is gonna be one large file where data related stuff gets put.
 #This will likely hold the code for localization, server options, and any other required things
 
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.types import TIMESTAMP
 from sqlalchemy import Column, Integer, BigInteger, String, Text
 
 import datetime
 
-from utils import checks
+from utils import config
 
 db = None
-Base = declarative_base()
+Base = config.declarative_base
 class OptionEntry(Base):
     __tablename__ = "serveropts"
     id = Column(Integer, primary_key=True)
@@ -26,8 +25,6 @@ class DataManager():
     def __init__(self, bot, populate=True):
         self.bot = bot
         self.db = bot.db
-        if bot.create_tables:
-            Base.metadata.create_all(bot.db.bind)
         self.server_options = {}
         self.prefixes = {} #{server_id: prefix}, so we dont have to call on the database for every on_message
         if populate: self.populate_prefix_table() #Initialize the prefix table

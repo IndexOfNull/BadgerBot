@@ -1,4 +1,3 @@
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, BigInteger, SmallInteger, String, ForeignKey, Text, TIMESTAMP
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -6,8 +5,9 @@ from datetime import datetime
 import sqlalchemy as sa
 
 from .base import WidgetBase
+from utils import config
 
-Base = declarative_base()
+Base = config.declarative_base
 
 class BadgeEntry(Base):
     __tablename__ = "badges"
@@ -44,8 +44,6 @@ class BadgeWidget(WidgetBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.build_tables: #Unfortunately this can't be inherited due to each table being created on a different declaritive_base()
-            Base.metadata.create_all(self.db.bind)
 
     def award_badge(self, server_id, discord_ids, badge_id): #TODO: maybe change this to award_multiuser and make it a separate function
         single = False
