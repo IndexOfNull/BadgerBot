@@ -107,7 +107,7 @@ class BadgeManager():
         result = self.get_award_entries(server_id=server_id, badge_id=badge_id)\
                     .filter(BadgeWinner.discord_id.in_(discord_ids))\
                     .all()
-        extracted_ids = [row.discord_id for row in result]
+        extracted_ids = [row.BadgeWinner.discord_id for row in result]
         d = {}
         for user in discord_ids:
             d[user] = user in extracted_ids

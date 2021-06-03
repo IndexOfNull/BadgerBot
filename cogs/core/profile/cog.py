@@ -140,7 +140,7 @@ class ProfileCog(commands.Cog):
         if len(awarded_badges) > 0:
             header = ctx.get_response('badge_awardmb.awarded').format(user)
             final = self.make_badge_list(awarded_badges, line="\\> {0.icon} **{0.name}**\n", header=header)
-        if len(already_awarded) > 0:
+        if len(unawarded_badges) > 0:
             header = ctx.get_response('badge_awardmb.already_awarded')
             final += "\n" + self.make_badge_list(unawarded_badges, line="\\> {0.icon} **{0.name}**\n", header=header)
         await ctx.send(final.rstrip())
