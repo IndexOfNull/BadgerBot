@@ -1,13 +1,12 @@
 from discord.ext import commands
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.types import TIMESTAMP
 from sqlalchemy import Column, Text, String, BigInteger, Integer
 
 import datetime
 
-from utils import checks
+from utils import checks, config
 
-Base = declarative_base()
+Base = config.declarative_base
 class TagEntry(Base):
     __tablename__ = "tags"
     id = Column(Integer, primary_key=True)
@@ -21,8 +20,6 @@ class TagCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.db = bot.db
-        if bot.create_tables:
-            Base.metadata.create_all(bot.db.bind)
 
     def get_tags(self, ctx, **kwargs):
         result = self.db.query(TagEntry).filter_by(server_id=ctx.guild.id, **kwargs)

@@ -1,30 +1,20 @@
 import discord
 from discord.ext import commands
 
-from .widgets import BadgeWidget, DateJoinedWidget, AccountAgeWidget
-from .renderer import RenderManager
-from .themes import BasicTheme
-
 from utils import checks, funcs, pagination
-from utils.funcs import emoji_escape, emoji_format
-
+from utils.funcs import emoji_escape
 import re
 
 from io import BytesIO
 
-from cogs.profile import widgets
+from . import data
 
-#TODO: Move this into the profile widget (modularity if possible)
 #TODO: Stop using name_to_id in favor of name_to_badge (maybe try with statements?)
 class ProfileCog(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.manager = RenderManager(self.bot.db, create_tables=bot.create_tables)
-        self.badger = self.manager.register_widget(BadgeWidget)
-        self.manager.register_widget(DateJoinedWidget)
-        self.manager.register_widget(AccountAgeWidget)
-        self.maintheme = self.manager.register_theme(BasicTheme)
+        self.badger = data.BadgeManager(self.bot.db)
         #Refactor todo: find a way to get levelingwidget setup on load
         self.badge_limits = {
             "name": 32,
@@ -44,6 +34,39 @@ class ProfileCog(commands.Cog):
             else:
                 finalstr += line.format(row, (":" if row.description else ""))
         return header + finalstr + footer
+
+    @commands.command()
+    @commands.guild_only()
+    @commands.cooldown(1, 3, type=commands.BucketType.user)
+    async def profile(self, ctx, *, user:discord.Member=None):
+        if user is None:
+            user = ctx.author
+
+        embed = discord.Embed(title=user.name + "#" + user.discriminator, type="rich", color=user.color)
+        avatar_url = user.avatar_url_as(static_format='png', size=1024)
+        embed.set_author(name="User Profile")
+        embed.set_thumbnail(url=avatar_url)
+
+        #Badges and level
+        ubadges = self.badger.get_award_entries(server_id=ctx.guild.id, discord_id=user.id).all()
+        icons = " ".join([x.BadgeEntry.icon for x in ubadges]).strip()
+        level = sum([x.BadgeEntry.levels for x in ubadges])
+        icons = icons if icons else "No Badges"
+        embed.add_field(name="Badges [" + str(len(ubadges)) + "]", value=icons, inline=False)
+        if level > 0:
+            embed.add_field(name="Level", value=str(level), inline=True)
+
+        t = user.joined_at
+        if t: #user.joined_at can sometimes return None
+            converted_time = t.strftime('%Y-%m-%d %H:%M:%S') + " UTC"
+            embed.add_field(name="Date Joined", value=converted_time)
+
+        t = user.created_at
+        if t: #user.created_at can sometimes return None
+            converted_time = t.strftime('%Y-%m-%d %H:%M:%S') + " UTC"
+            embed.add_field(name="Account Created", value=converted_time)
+
+        await ctx.send(embed=embed)
 
     @commands.command(aliases = ['givebadge', 'give'])
     @commands.guild_only()
@@ -100,7 +123,7 @@ class ProfileCog(commands.Cog):
 
         #Use the previous information to figure out what badges the user already has
         #Doing it this way allows us to get a list without duplicates (e.g. the user was awarded the same badge twice; compatibility)
-        already_awarded = self.badger.get_badge_entries(server_id=ctx.guild.id).filter(widgets.BadgeEntry.id.in_(user_badges_ids)).all()
+        already_awarded = self.badger.get_badge_entries(server_id=ctx.guild.id).filter(data.BadgeEntry.id.in_(user_badges_ids)).all()
         already_awarded_ids = [x.id for x in already_awarded]
         ids_set = set(resolved_ids)
         to_award = ids_set.difference(set(already_awarded_ids)) #See what they don't have
@@ -400,18 +423,6 @@ class ProfileCog(commands.Cog):
             finalstr = header + finalstr
             await ctx.send(finalstr)
 
-    @commands.command()
-    @commands.guild_only()
-    @commands.cooldown(1, 3, type=commands.BucketType.user)
-    async def profile(self, ctx, *, user:discord.Member=None):
-        if user is None:
-            user = ctx.author
-        if user.bot:
-            await ctx.send_response('general_useronly')
-            return
-        e = self.maintheme.get_embed(ctx, user)
-        await ctx.send(embed=e)
-
     @commands.command(aliases=["setlevel", "badgelevel", "setlevels", "badgelevels", "assignlevel"])
     @checks.is_admin()
     @commands.cooldown(1, 5, type=commands.BucketType.guild)
@@ -501,18 +512,7 @@ class ProfileCog(commands.Cog):
         lbd = self.badger.get_server_leaderboard(ctx.guild.id) #This should have little overhead as the query is built, but not executed
         paginator, _, _, _ = self.bot.pagination_manager.ensure_paginator(user_id=ctx.author.id, ctx=ctx, obj=lbd, reinvoke=self.leaderboard_real)
         paginator.current_page = page-1 if page else 0 #Set the page we want
-        await self.leaderboard_real(ctx, paginator) #Invoke the command
-
-    @commands.command()
-    async def emoji(self, ctx, *, emoji:discord.Emoji):
-        emoji_str = "<:{0}:{1}>".format(emoji.name, emoji.id)
-        title = ("Emoji Info " + emoji_str) if emoji.is_usable() else "Emoji Info"
-        embed = discord.Embed(title=title, type="Rich", color=discord.Color.blue())
-        embed.set_thumbnail(url=emoji.url)
-        embed.add_field(name="Name", value=emoji.name)
-        embed.add_field(name="ID", value=emoji.id)
-        embed.add_field(name="Non-Nitro Copy-Paste (For badge creation)", value="`" + emoji_format(emoji_str) + "`", inline=False)
-        await ctx.send(embed=embed)
+        await self.leaderboard_real(ctx, paginator) #Invoke the commands
 
 def setup(bot):
     bot.add_cog(ProfileCog(bot))
