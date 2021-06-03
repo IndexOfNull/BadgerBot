@@ -260,7 +260,7 @@ class ProfileCog(commands.Cog):
         msgs = []
         try:
             msgs.append(await ctx.send(strs['start'].format(maxtime) + "\n" + strs['name'].format(self.badge_limits['name'])))
-            name = icon = description = None
+            name = icon = description = levels = None
 
             def message_check(m):
                 return m.author == ctx.author and m.channel == ctx.channel
@@ -292,26 +292,34 @@ class ProfileCog(commands.Cog):
                     msgs.append(await ctx.send(maxmsg.format("description", self.badge_limits['description'])))
                     continue
                 description = msg.content
-            if not self.levelingwidget: #detect the leveling widget
-                self.levelingwidget = self.manager.get_widget("LevelWidget")
-            levels = None
-            if self.levelingwidget: #ask for levels if we find the leveling widget
+            while not levels:
                 msgs.append(await ctx.send(strs['levels']))
                 message = await self.bot.wait_for("message", check=message_check, timeout=maxtime)
                 if not message.content.lower() in ("0", "blank", "none"):
                     try:
-                        levels = int(message.content)
+                        parsed_levels = int(message.content)
+                        if parsed_levels > self.badge_limits['levels']:
+                            msgs.append(await ctx.send_response('badgelevels_limit', self.badge_limits['levels']))
+                            continue
+                        levels = parsed_levels
+                        break
                     except:
-                        pass
+                        msgs.append(await ctx.send(strs['invalid_levels']))
+                else:
+                    break
             result = self.badger.create_badge(ctx.guild.id, name, icon, description=description)
             if levels:
-                self.levelingwidget.assign_levels(ctx.guild.id, result.id, levels)
+                self.badger.set_badge_levels(ctx.guild.id, result.id, levels)
             if result:
                 await ctx.send_response('badge_created')
             else:
                 await ctx.send_response('badge_error', "creating")
             await ctx.channel.delete_messages(msgs)
         except Exception as e:
+            try:
+                await ctx.channel.delete_messages(msgs)
+            except:
+                pass
             raise e
 
     @commands.command(aliases=["editbadge", "modifybadge"])

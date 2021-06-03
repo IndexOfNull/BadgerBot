@@ -206,8 +206,14 @@ class BuddyBot(commands.Bot):
 		elif isinstance(e, commands.NSFWChannelRequired): #NSFW only
 			await ctx.send_response('error_nsfw')
 			return
+		elif isinstance(e, asyncio.TimeoutError):
+			await ctx.send_response('command_timeout')
+			return
 		elif hasattr(e, 'original'):
 			if isinstance(e.original, funcs.ConfirmationFailed): #We can ignore this as the decorator auto-edits the message
+				return
+			elif isinstance(e.original, asyncio.TimeoutError):
+				await ctx.send_response('command_timeout')
 				return
 		await ctx.send("`Unhandled Error: " + str(e) + "`")
 		raise e
