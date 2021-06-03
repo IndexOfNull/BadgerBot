@@ -95,6 +95,7 @@ class PaginationManager():
 
     def __init__(self, bot, *, stale_time=300):
         self.bot = bot
+        self.stale_time = stale_time
         self._users = {} # user id -> (paginator, ctx, reinvoke, updated_at)
         
     #Always returns an existing or new paginator adjusted for the current invoked command in ctx.
@@ -123,6 +124,9 @@ class PaginationManager():
 
     def clean_paginators(self):
         current_time = time.time()
+        to_remove = []
         for user_id, data in self._users.items():
             if current_time - data[3] >= self.stale_time:
-                self.remove_user(user_id)
+                to_remove.append(user_id)
+        for user_id in to_remove:
+            self.remove_user(user_id)
