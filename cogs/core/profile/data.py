@@ -4,7 +4,6 @@ from datetime import datetime
 
 import sqlalchemy as sa
 
-from .base import WidgetBase
 from utils import config
 
 Base = config.declarative_base
@@ -40,10 +39,10 @@ class BadgeWinner(Base):
     def __repr__(self):
         return "<BadgeWinner(discord_id='%s', badge_id='%s', badge='%s', timestamp='%s')>" % (self.discord_id, self.badge_id, self.badge, self.awarded)
 
-class BadgeWidget(WidgetBase):
+class BadgeManager():
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, db):
+        self.db = db
 
     def award_badge(self, server_id, discord_ids, badge_id): #TODO: maybe change this to award_multiuser and make it a separate function
         single = False
@@ -216,6 +215,7 @@ class BadgeWidget(WidgetBase):
             self.db.rollback()
             raise e
 
+    """
     def handle_embed(self, ctx, user, embed):
         ubadges = self.get_award_entries(server_id=ctx.guild.id, discord_id=user.id).all()
 
@@ -228,3 +228,4 @@ class BadgeWidget(WidgetBase):
         if level > 0:
             embed.add_field(name="Level", value=str(level), inline=True)
         return embed
+    """

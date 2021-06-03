@@ -16,7 +16,8 @@ import utils.messages.manager
 import json
 
 modules = [
-	"cogs.profile",
+	"cogs.core",
+	"cogs.util",
 	"cogs.tags",
 	"cogs.fun",
 	"cogs.owner",
