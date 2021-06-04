@@ -433,8 +433,8 @@ class ProfileCog(commands.Cog):
             finalstr = replace_re.sub(lambda x: "**" + x.group(0) + "**", finalstr)
 
             #Put back any accidentally replaced emojis (regex is a dark art...)
-            emoji_re = re.compile(r'(?<=<:)\*\*(' + re.escape(search) + r')\*\*(?=:\d*?>)', re.IGNORECASE)
-            finalstr = emoji_re.sub(lambda x: x.group(1), finalstr)
+            emoji_re = re.compile(r'(?<=<:)(.*?)\*\*(' + re.escape(search) + r')\*\*(.*?)(?=:\d*?>)', re.IGNORECASE)
+            finalstr = emoji_re.sub(lambda x: x.group(1) + x.group(2) + x.group(3), finalstr)
 
             finalstr = header + finalstr
             await ctx.send(finalstr)
