@@ -144,13 +144,6 @@ class BadgeManager():
             self.db.rollback()
             raise e
 
-    def name_to_id(self, server_id, badge_name): #TODO: get rid of this (name_to_badge makes more sense)
-        rows = self.db.query(BadgeEntry).filter_by(server_id=server_id, name=badge_name).first()
-        if rows:
-            return rows.id
-        else:
-            return None
-
     def name_to_badge(self, server_id, badge_name):
         row = self.db.query(BadgeEntry).filter_by(server_id=server_id, name=badge_name).first()
         if row:

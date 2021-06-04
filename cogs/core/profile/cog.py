@@ -9,7 +9,6 @@ from io import BytesIO
 
 from . import data
 
-#TODO: Stop using name_to_id in favor of name_to_badge (maybe try with statements?)
 class ProfileCog(commands.Cog):
 
     def __init__(self, bot):
@@ -73,8 +72,9 @@ class ProfileCog(commands.Cog):
     @checks.is_mod()
     @commands.cooldown(1, 5, type=commands.BucketType.guild)
     async def award(self, ctx, user:discord.Member, *, badge:str):
-        badgeid = self.badger.name_to_id(ctx.guild.id, badge)
-        if badgeid:
+        resolved_badge = self.badger.name_to_badge(ctx.guild.id, badge)
+        if resolved_badge:
+            badgeid = resolved_badge.id
             has_badge = self.badger.user_has_badge(ctx.guild.id, user.id, badgeid)
             if not has_badge:
                 result = self.badger.award_badge(ctx.guild.id, user.id, badgeid)
@@ -92,8 +92,9 @@ class ProfileCog(commands.Cog):
     @checks.is_mod()
     @commands.cooldown(1, 5, type=commands.BucketType.guild)
     async def awardmultiuser(self, ctx, badge:str, *users:discord.Member):
-        badgeid = self.badger.name_to_id(ctx.guild.id, badge)
-        if badgeid:
+        resolved_badge = self.badger.name_to_badge(ctx.guild.id, badge)
+        if resolved_badge:
+            badgeid = resolved_badge.id
             badge_statuses = self.badger.users_have_badge(ctx.guild.id, [user.id for user in users], badgeid)
             award_ids = [user for user in badge_statuses.keys() if badge_statuses[user] is False] #Just get the false values
             if award_ids:
@@ -151,8 +152,9 @@ class ProfileCog(commands.Cog):
     @checks.is_mod()
     @commands.cooldown(1, 5, type=commands.BucketType.guild)
     async def revokemultiuser(self, ctx, badge:str, *users:discord.Member):
-        badgeid = self.badger.name_to_id(ctx.guild.id, badge)
-        if badgeid:
+        resolved_badge = self.badger.name_to_badge(ctx.guild.id, badge)
+        if resolved_badge:
+            badgeid = resolved_badge.id
             badge_statuses = self.badger.users_have_badge(ctx.guild.id, [user.id for user in users], badgeid)
             revoke_ids = [user for user in badge_statuses.keys() if badge_statuses[user] is True]
             if revoke_ids:
@@ -187,9 +189,9 @@ class ProfileCog(commands.Cog):
     @funcs.require_confirmation(warning="All users will lose this badge! There is no easy way of undoing this!")
     @funcs.require_confirmation(warning="Are you sure? This is your last chance.") #lol
     async def revokefromall(self, ctx, badge:str):
-        badgeid = self.badger.name_to_id(ctx.guild.id, badge)
-        if badgeid:
-            result = self.badger.revoke_from_all(ctx.guild.id, badgeid)
+        resolved_badge = self.badger.name_to_badge(ctx.guild.id, badge)
+        if resolved_badge:
+            result = self.badger.revoke_from_all(ctx.guild.id, resolved_badge.id)
             if result > 0:
                 await ctx.send_response('badge_badgenuke', badge, result)
             else:
@@ -202,8 +204,9 @@ class ProfileCog(commands.Cog):
     @checks.is_mod()
     @commands.cooldown(1, 5, type=commands.BucketType.guild)
     async def revoke(self, ctx, user:discord.Member, *, badge:str):
-        badgeid = self.badger.name_to_id(ctx.guild.id, badge)
-        if badgeid:
+        resolved_badge = self.badger.name_to_badge(ctx.guild.id, badge)
+        if resolved_badge:
+            badgeid = resolved_badge.id
             has_badge = self.badger.user_has_badge(ctx.guild.id, user.id, badgeid)
             if has_badge:
                 result = self.badger.revoke_badge(ctx.guild.id, user.id, badgeid)
@@ -231,7 +234,7 @@ class ProfileCog(commands.Cog):
         if len(icon) > self.badge_limits['icon']:
             await ctx.send_response('badge_limits', 'icon', self.badge_limits['icon'])
             return
-        badge_exists = self.badger.name_to_id(ctx.guild.id, name)
+        badge_exists = self.badger.name_to_badge(ctx.guild.id, name)
         if not badge_exists: #This should be None if there is no row matching our criteria
             badge_count = self.badger.get_badge_entries(server_id=ctx.guild.id).count()
             if badge_count < self.badge_limits['serverbadges']: #Limit badges
@@ -271,7 +274,7 @@ class ProfileCog(commands.Cog):
                     msgs.append(await ctx.send(maxmsg.format("name", self.badge_limits['name'])))
                     continue
                 name = message.content
-            badge_exists = self.badger.name_to_id(ctx.guild.id, name)
+            badge_exists = self.badger.name_to_badge(ctx.guild.id, name)
             if badge_exists:
                 await ctx.send_response('badge_exists')
                 return
@@ -338,7 +341,7 @@ class ProfileCog(commands.Cog):
             if len(description) > self.badge_limits['description']:
                 await ctx.send_response('badge_limits', 'description', self.badge_limits['description'])
                 return
-        badge_exists = self.badger.name_to_id(ctx.guild.id, name)
+        badge_exists = self.badger.name_to_badge(ctx.guild.id, name)
         if badge_exists:
             args = {}
             if icon:
@@ -359,9 +362,9 @@ class ProfileCog(commands.Cog):
     @commands.cooldown(1, 10, type=commands.BucketType.guild)
     @funcs.require_confirmation(warning="All users with this badge will be stripped of it. There is no undoing this!") #Localization support would be nice here
     async def deletebadge(self, ctx, *, name:str):
-        badgeid = self.badger.name_to_id(ctx.guild.id, name)
-        if badgeid: #If we got a valid id
-            result = self.badger.remove_badge(ctx.guild.id, badgeid)
+        resolved_badge = self.badger.name_to_badge(ctx.guild.id, name)
+        if resolved_badge: #If we got a valid id
+            result = self.badger.remove_badge(ctx.guild.id, resolved_badge.id)
             if result:
                 await ctx.send_response('zapped', name)
             else:
@@ -438,11 +441,11 @@ class ProfileCog(commands.Cog):
         if abs(levels) > self.badge_limits['levels']:
             await ctx.send_response('badgelevels_limit', self.badge_limits['levels'])
             return
-        badge_id = self.badger.name_to_id(ctx.guild.id, badge)
-        if not badge_id:
+        resolved_badge = self.badger.name_to_badge(ctx.guild.id, badge)
+        if not resolved_badge:
             await ctx.send_response('badge_notfound')
             return
-        self.badger.set_badge_levels(ctx.guild.id, badge_id, levels)
+        self.badger.set_badge_levels(ctx.guild.id, resolved_badge.id, levels)
         if levels == 0:
             await ctx.send_response('badgelevels_remove', badge)
         else:
@@ -452,9 +455,9 @@ class ProfileCog(commands.Cog):
     @checks.is_mod()
     @commands.cooldown(1, 3, type=commands.BucketType.channel)
     async def hasbadge(self, ctx, user:discord.Member, *, badge:str):
-        badge_id = self.badger.name_to_id(ctx.guild.id, badge)
-        if badge_id: #If we got a valid id
-            result = self.badger.user_has_badge(ctx.guild.id, user.id, badge_id)
+        resolved_badge = self.badger.name_to_badge(ctx.guild.id, badge)
+        if resolved_badge: #If we got a valid id
+            result = self.badger.user_has_badge(ctx.guild.id, user.id, resolved_badge.id)
             if result:
                 await ctx.send_response('badge_userhasbadge')
             else:
