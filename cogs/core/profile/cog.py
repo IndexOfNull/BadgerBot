@@ -334,9 +334,10 @@ class ProfileCog(commands.Cog):
         if len(name) > self.badge_limits['name']:
             await ctx.send_response('badge_limits', 'name', self.badge_limits['name'])
             return
-        if len(icon) > self.badge_limits['icon']:
-            await ctx.send_response('badge_limits', 'icon', self.badge_limits['icon'])
-            return
+        if icon:
+            if len(icon) > self.badge_limits['icon']:
+                await ctx.send_response('badge_limits', 'icon', self.badge_limits['icon'])
+                return
         if description:
             if len(description) > self.badge_limits['description']:
                 await ctx.send_response('badge_limits', 'description', self.badge_limits['description'])
@@ -430,6 +431,10 @@ class ProfileCog(commands.Cog):
             
             replace_re = re.compile(re.escape(search), re.IGNORECASE)
             finalstr = replace_re.sub(lambda x: "**" + x.group(0) + "**", finalstr)
+
+            #Put back any accidentally replaced emojis (regex is a dark art...)
+            emoji_re = re.compile(r'(?<=<:)\*\*(' + re.escape(search) + r')\*\*(?=:\d*?>)', re.IGNORECASE)
+            finalstr = emoji_re.sub(lambda x: x.group(1), finalstr)
 
             finalstr = header + finalstr
             await ctx.send(finalstr)
