@@ -20,6 +20,11 @@
                 "already_awarded": "The following badges have not been awarded because the user already had them:",
                 "awarded": "The following badges have been awarded to {0.mention}:"
             },
+            "badge_revokemb": {
+                "skipped": ":warning: Some badges could not be found or were entered more than once. Duplicates or missing badges will not be revoked.",
+                "not_revoked": "The following badges have not been revoked because the user did not have them:",
+                "revoked": "The following badges have been revoked from {0.mention}:"
+            },
             "badge_badgenuke": ":boom: The \"{0}\" has been stripped from {1} members.",
             "badge_revoked": ":cloud_lightning: {0.mention} has been stripped of their \"{1}\" badge!",
             "badge_notfound": ":grey_question: There doesn't appear to be a badge with that name.",

@@ -56,26 +56,28 @@ Command List
         4. (+) Revoke a badge               : ;revoke <user> <badge>
         5. (+) Revoke a badge from multiple : ;revokemu <badge> <users...>
                 users
-        6. (++) Revoke all badges from a    : ;revokeall <user>
+        6. (+) Revoke multiples badges from : ;revokemb <user> <badges...>
+                a user
+        7. (++) Revoke all badges from a    : ;revokeall <user>
                 user
-        7. (++) Revoke a badge from         : ;revokefromall <badge>
+        8. (++) Revoke a badge from         : ;revokefromall <badge>
                 everyone
-        8. (++) Create a badge              : ;addbadge <name> <icon> [description]
+        9. (++) Create a badge              : ;addbadge <name> <icon> [description]
             - The 'icon' parameter works best as an emoji
-        9. (++) Badge Wizard                : ;badgewizard
+        10. (++) Badge Wizard                : ;badgewizard
             - Walks you through making a badge
-        10. (!)(++) Delete a badge           : ;delbadge <name>
-        11. (++) Update a badge             : ;updatebadge <name> <newname> [newicon] [newdescription]
+        11. (!)(++) Delete a badge           : ;delbadge <name>
+        12. (++) Update a badge             : ;updatebadge <name> <newname> [newicon] [newdescription]
             - Typing in 'none' or 'nothing' for [newdescription] will make it blank.
-        12. List the server's badges        : ;badges
-        13. Search for a badge              : ;search <search>
+        13. List the server's badges        : ;badges
+        14. Search for a badge              : ;search <search>
             - The search parameter will search for names and icons (so you can put either)
-        14. Check if a user has a badge     : ;hasbadge <user> <badge>
-        15. See who all has a badge         : ;usersearch <badge>
+        15. Check if a user has a badge     : ;hasbadge <user> <badge>
+        16. See who all has a badge         : ;usersearch <badge>
             - Also tells you how many people have the badge.
-        16. View a user's profile           : ;profile [user]
+        17. View a user's profile           : ;profile [user]
             - Will show your profile if no user is supplied
-        17. Get emoji info                  : ;emoji <emoji>
+        18. Get emoji info                  : ;emoji <emoji>
             - This will give you some info about an emoji, as well as a "Non-Nitro" copy-paste
             - You can use this copy-paste just as you would an emoji, just substitute it in (it may not work with animated emoji)
             - Cross-server emoji works too, just make sure the bot is in both servers.

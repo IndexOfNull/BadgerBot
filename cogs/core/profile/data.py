@@ -126,6 +126,17 @@ class BadgeManager():
             self.db.rollback()
             raise e
 
+    def revoke_multibadge(self, server_id, discord_id, badge_ids):
+        try:
+            result = self.db.query(BadgeWinner).filter_by(server_id=server_id, discord_id=discord_id)\
+                .filter(BadgeWinner.badge_id.in_(badge_ids))\
+                .delete(synchronize_session=False)
+            self.db.commit()
+            return result
+        except Exception as e: #Maybe add exc.IntegrityError
+            self.db.rollback()
+            raise e
+
     def revoke_all(self, server_id, discord_id):
         try:
             result = self.db.query(BadgeWinner).filter_by(server_id=server_id, discord_id=discord_id).delete(synchronize_session=False)

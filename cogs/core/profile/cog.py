@@ -145,7 +145,41 @@ class ProfileCog(commands.Cog):
             header = ctx.get_response('badge_awardmb.already_awarded')
             final += "\n" + self.make_badge_list(unawarded_badges, line="\\> {0.icon} **{0.name}**\n", header=header)
         await ctx.send(final.rstrip())
-        return
+
+    @commands.command(aliases = ['revokemb'])
+    @commands.guild_only()
+    @checks.is_mod()
+    @commands.cooldown(1, 5, type=commands.BucketType.guild)
+    async def revokemultibadge(self, ctx, user:discord.Member, *badges:str):
+        #Figure out what badges we want to take and every badge we already have
+        resolved_badges = self.badger.names_to_badges(ctx.guild.id, badges)
+        resolved_ids = [badge.id for badge in resolved_badges]
+        user_badges = self.badger.get_award_entries(discord_id=user.id, server_id=ctx.guild.id).all()
+        user_badges_ids = set([x.BadgeEntry.id for x in user_badges])
+
+        #Use the previous information to figure out what badges the user already has
+        #Doing it this way allows us to get a list without duplicates (e.g. the user was awarded the same badge twice; compatibility)
+        already_awarded = self.badger.get_badge_entries(server_id=ctx.guild.id).filter(data.BadgeEntry.id.in_(user_badges_ids)).all()
+        already_awarded_ids = [x.id for x in already_awarded]
+        ids_set = set(resolved_ids)
+        to_revoke = ids_set.intersection(set(already_awarded_ids)) #See what they don't have
+
+        self.badger.revoke_multibadge(ctx.guild.id, user.id, to_revoke) #Give them what they don't have
+
+        revoked_badges = [x for x in resolved_badges if x.id in to_revoke] #Get the badge objects that we game them
+        unrevoked_badges = [x for x in resolved_badges if x.id not in to_revoke] #The same but what we didn't give them
+        
+        #Final message formatting
+        final = ""
+        if len(resolved_badges) != len(badges):
+            final += ctx.get_response("badge_revokemb.skipped") + "\n"
+        if len(revoked_badges) > 0:
+            header = ctx.get_response('badge_revokemb.revoked').format(user)
+            final = self.make_badge_list(revoked_badges, line="\\> {0.icon} **{0.name}**\n", header=header)
+        if len(unrevoked_badges) > 0:
+            header = ctx.get_response('badge_revokemb.not_revoked')
+            final += "\n" + self.make_badge_list(unrevoked_badges, line="\\> {0.icon} **{0.name}**\n", header=header)
+        await ctx.send(final.rstrip())
 
     @commands.command(aliases = ['revokemu', 'multirevoke'])
     @commands.guild_only()
