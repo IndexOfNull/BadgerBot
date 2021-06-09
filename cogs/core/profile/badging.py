@@ -24,10 +24,10 @@ class BadgeEntry(Base):
     levels = Column(Integer, default=0, nullable=False) #Used to be in its own module, decided to move it here
 
     def __repr__(self):
-        return "<BadgeEntry(id='%s', text='%s', created_on='%s')>" % (self.id, self.icon, self.created_on)
+        return "<BadgeEntry(id='%s', icon='%s', created_on='%s')>" % (self.id, self.icon, self.created_on)
 
 class BadgeWinner(Base):
-    __tablename__ = "badgewinners"
+    __tablename__ = "badge_winners"
     id = Column(Integer, primary_key=True) # A unique index for cataloging the event
     server_id = Column(BigInteger(), nullable=False)
     discord_id = Column(BigInteger(), nullable=False) # 0 -> 2^63 - 1, to be clear, this is the users discord_id
