@@ -61,42 +61,98 @@ class ProfilePreferences(Base):
 
     __table_args__ = (UniqueConstraint(server_id, discord_id, name="_server_member_uc"), ) #Ensure one preference entry per user per server
 
-class BackgroundManager(): #maybe make some of this apart of the actual ORM class instance
+class BackgroundManager():
 
     def __init__(self, db):
         self.db = db
 
-    def award_background(self, server_id, discord_ids, background_id):
-        raise NotImplemented()
+    def award_background(self, server_id, discord_id, background_id):
+        try:
+            winner = BackgroundWinner(server_id=server_id, discord_id=discord_id, background_id=background_id)
+            self.db.add(winner)
+            self.db.commit()
+            return winner
+        except Exception as e:
+            self.db.rollback()
+            raise e
 
-    def revoke_background(self, server_id, discord_ids, background_id):
-        raise NotImplemented()
+    def revoke_background(self, server_id, discord_id, background_id):
+        try:
+            result = self.db.query(BackgroundWinner).filter_by(server_id=server_id, discord_id=discord_id, background_id=background_id).first().delete()
+            self.db.commit()
+            return result
+        except Exception as e:
+            self.db.rollback()
+            raise e
 
     def revoke_all(self, server_id, discord_id):
-        raise NotImplemented()
+        try:
+            results = self.db.query(BackgroundWinner).filter_by(server_id=server_id, discord_id=discord_id).delete()
+            self.db.commit()
+            return results
+        except Exception as e:
+            self.db.rollback()
+            raise e
 
-    def revoke_from_all(self, server_id, badge_id):
-        raise NotImplemented()
+    def revoke_from_all(self, server_id, background_id):
+        try:
+            result = self.db.query(BackgroundWinner).filter_by(server_id=server_id, background_id=background_id).delete(synchronize_session=False)
+            self.db.commit()
+            return result
+        except Exception as e:
+            self.db.rollback()
+            raise e
 
     def name_to_background(self, server_id, background_name):
-        raise NotImplemented()
+        row = self.db.query(BackgroundEntry).filter_by(server_id=server_id, name=background_name).first()
+        if row:
+            return row
+        return None
 
     def get_background_entries(self, **filters):
-        raise NotImplemented()
+        rows = self.db.query(BackgroundEntry).filter_by(**filters)
+        return rows
 
     def get_award_entries(self, **filters):
-        raise NotImplemented()
+        rows = self.db.query(BackgroundWinner, BackgroundEntry)\
+            .filter_by(**filters)\
+            .outerjoin(BackgroundEntry, BackgroundWinner.background_id == BackgroundEntry.id)
+        return rows
 
     def user_has_background(self, server_id, discord_id, background_id):
-        raise NotImplemented()
+        result = self.get_award_entries(server_id=server_id, discord_id=discord_id, background_id=background_id).first()
+        return True if result else False
 
     def create_background(self, server_id, name, image_url, *, description="", usable_by_default=False, hidden=False):
-        raise NotImplemented()
+        try:
+            background = BackgroundEntry(server_id=server_id, name=name, description=description, image_url=image_url, usable_by_default=usable_by_default, hidden=hidden)
+            self.db.add(background)
+            self.db.commit()
+            return background
+        except Exception as e:
+            self.db.rollback()
+            raise e
 
     def remove_background(self, server_id, background_id):
-        raise NotImplemented()
+        try:
+            result = self.db.query(BackgroundEntry).filter_by(server_id=server_id, id=background_id).delete()
+            self.db.commit()
+            return result
+        except Exception as e:
+            self.db.rollback()
+            raise e
 
-    def set_default(self, server_id, background_id): 
-        raise NotImplemented()
-
+    def update_background(self, server_id, background_id, **kwargs):
+        try:
+            background = self.db.query(BackgroundEntry).filter_by(server_id=server_id, id=background_id).first()
+            background.name = kwargs.pop("new_name", background.name)
+            background.image_url = kwargs.pop("image_url", background.image_url)
+            background.usable_by_default = kwargs.pop("usable_by_default", background.usable_by_default)
+            background.hidden = kwargs.pop("hidden", background.hidden)
+            background.description = kwargs.pop("description", background.description)
+            self.db.commit()
+            return background
+        except Exception as e:
+            self.db.rollback()
+            raise e
     
