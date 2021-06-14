@@ -1,14 +1,18 @@
 from sqlalchemy import Column, Boolean, ForeignKey, BigInteger, Integer, String, Text, TIMESTAMP
 from sqlalchemy.orm import relation, relationship
+from sqlalchemy.sql.expression import null
+from sqlalchemy.sql.schema import Index, UniqueConstraint
 from utils import config
 from datetime import datetime
+from . import badging
 
 Base = config.declarative_base
 
+#TODO: use proper SQL naming conventions
 class BackgroundEntry(Base):
     __tablename__ = "backgrounds"
     id = Column(Integer, primary_key=True)
-    server_id = Column(BigInteger(), nullable=False)
+    server_id = Column(BigInteger(), nullable=False, index=True)
 
     name = Column(String(255, collation="utf8mb4_unicode_ci"), nullable=False)
     description = Column(Text(collation="utf8mb4_unicode_ci"), default="")
@@ -33,8 +37,24 @@ class BackgroundWinner(Base):
 
     background = relationship("BackgroundEntry", foreign_keys="BackgroundWinner.background_id")
 
+    __table_args__ = (Index("_server_member_ix", server_id, discord_id), )
+
     def __repr__(self):
         return "<BackgroundWinner(id='%s', server_id='%s', discord_id='%s', background_id='%s')>" % (self.id, self.server_id, self.discord_id, self.background_id)
+
+class ProfilePreferences(Base):
+    __tablename__ = "profile_preferences"
+    id = Column(Integer, primary_key=True)
+    server_id = Column(BigInteger(), nullable=False)
+    
+    discord_id = Column(BigInteger(), nullable=False)
+    spotlighted_badge_id = Column(Integer, ForeignKey(badging.BadgeEntry.id))
+    background_id = Column(Integer, ForeignKey(BackgroundEntry.id))
+
+    background = relationship("BackgroundEntry", foreign_keys="ProfilePreferences.background_id")
+    spotlighted_badge = relationship("BadgeEntry", foreign_keys="ProfilePreferences.spotlighted_badge_id")
+
+    __table_args__ = (UniqueConstraint(server_id, discord_id, name="_server_member_uc"), ) #Ensure one preference entry per user per server
 
 class BackgroundManager(): #maybe make some of this apart of the actual ORM class instance
 
