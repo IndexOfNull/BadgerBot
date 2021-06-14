@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Boolean, ForeignKey, BigInteger, Integer, String, Text, TIMESTAMP
-from sqlalchemy.orm import relation, relationship
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import null
 from sqlalchemy.sql.schema import Index, UniqueConstraint
 from utils import config
@@ -12,9 +12,9 @@ Base = config.declarative_base
 class BackgroundEntry(Base):
     __tablename__ = "backgrounds"
     id = Column(Integer, primary_key=True)
-    server_id = Column(BigInteger(), nullable=False, index=True)
+    server_id = Column(BigInteger(), nullable=False)
 
-    name = Column(String(255, collation="utf8mb4_unicode_ci"), nullable=False)
+    name = Column(String(150, collation="utf8mb4_unicode_ci"), nullable=False) #must be below 191 characters or something because indexing
     description = Column(Text(collation="utf8mb4_unicode_ci"), default="")
     image_url = Column(Text(collation="utf8mb4_unicode_ci"), nullable=False)
 
@@ -22,6 +22,8 @@ class BackgroundEntry(Base):
     #default = Column(Boolean, nullable=False, default=0)
     usable_by_default = Column(Boolean, nullable=False, default=0)
     hidden = Column(Boolean, nullable=False, default=0)
+
+    __table_args__ = (UniqueConstraint(server_id, name, name="_server_bg_name_uc"), ) #Ensure unique names per server
 
     def __repr__(self):
         return "<BackgroundEntry(id='%s', server_id='%s', name='%s', image_url='%s', ...)>" % (self.id, self.server_id, self.name, self.image_url)
@@ -37,7 +39,10 @@ class BackgroundWinner(Base):
 
     background = relationship("BackgroundEntry", foreign_keys="BackgroundWinner.background_id")
 
-    __table_args__ = (Index("_server_member_ix", server_id, discord_id), )
+    __table_args__ = (
+        Index("_server_member_ix", server_id, discord_id),
+        UniqueConstraint(discord_id, background_id, name="_discord_bg_id_uc", ) #make it so users can only have one background win entry per background
+    )
 
     def __repr__(self):
         return "<BackgroundWinner(id='%s', server_id='%s', discord_id='%s', background_id='%s')>" % (self.id, self.server_id, self.discord_id, self.background_id)
