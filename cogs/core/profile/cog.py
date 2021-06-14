@@ -7,14 +7,14 @@ import re
 
 from io import BytesIO
 
-from . import badging
+from .data import badges, backgrounds
 
 class ProfileCog(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.badger = badging.BadgeManager(self.bot.db)
-        #Refactor todo: find a way to get levelingwidget setup on load
+        self.badger = badges.BadgeManager(self.bot.db)
+        self.backgrounder = backgrounds.BackgroundManager(self.bot.db)
         self.badge_limits = {
             "name": 32,
             "description": 175,

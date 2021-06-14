@@ -8,6 +8,7 @@ from utils import config
 
 Base = config.declarative_base
 
+#TODO: unique index for server_id and name
 class BadgeEntry(Base):
     __tablename__ = "badges"
     id = Column(Integer, primary_key=True) #You know why this is here

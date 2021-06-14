@@ -4,7 +4,7 @@ from sqlalchemy.sql.expression import null
 from sqlalchemy.sql.schema import Index, UniqueConstraint
 from utils import config
 from datetime import datetime
-from . import badging
+from . import badges
 
 Base = config.declarative_base
 
@@ -53,7 +53,7 @@ class ProfilePreferences(Base):
     server_id = Column(BigInteger(), nullable=False)
     
     discord_id = Column(BigInteger(), nullable=False)
-    spotlighted_badge_id = Column(Integer, ForeignKey(badging.BadgeEntry.id))
+    spotlighted_badge_id = Column(Integer, ForeignKey(badges.BadgeEntry.id))
     background_id = Column(Integer, ForeignKey(BackgroundEntry.id))
 
     background = relationship("BackgroundEntry", foreign_keys="ProfilePreferences.background_id")
@@ -65,6 +65,7 @@ class BackgroundManager():
 
     def __init__(self, db):
         self.db = db
+        print("test")
 
     def award_background(self, server_id, discord_id, background_id):
         try:
