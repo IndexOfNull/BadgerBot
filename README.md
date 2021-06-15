@@ -3,6 +3,9 @@
 Hello, this is a little project of mine called BadgerBot. It is currently ~~***unfinished***~~ in a working state where most things work as expected. It is primarily designed to be a system for giving badges to server members, but there are some other modules that add some fun things. You can check the projects tab if you want to see what's planned and where I'm going with this.
 
 **I would not clone this if you were looking for a bug free, fully-featured bot. You will not get any support; you're on your own.**
+
+**WARNING (June 15, 2021): This codebase is currently in a highly volatile state. Database schema changes are going to be happening and there is currently no migration system. Use caution when using this in production and when updating.**
+
 You are welcome to open an issue or PR so my code can be fixed :)
 
 # Requirements
