@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 
 from utils import checks, funcs, pagination, http
-from utils.funcs import emoji_escape
+from utils.funcs import emoji_escape, extract_emoji
 
 import re
 from io import BytesIO
@@ -304,7 +304,12 @@ class ProfileCog(commands.Cog):
         if len(description) > self.badge_limits['description']:
             await ctx.send_response('badge_limits', 'description', self.badge_limits['description'])
             return
-        if len(icon) > self.badge_limits['icon']:
+        extracted_emoji = funcs.extract_emoji(icon, custom_emoji=True)
+        if not len(extracted_emoji) == 1:
+            await ctx.send_response('badge_emojirequired')
+            return
+        icon = extracted_emoji[0]
+        if len(icon) > self.badge_limits['icon']: #Still check icon length anyway, just in case
             await ctx.send_response('badge_limits', 'icon', self.badge_limits['icon'])
             return
         badge_exists = self.badger.name_to_badge(ctx.guild.id, name)
@@ -719,7 +724,7 @@ class ProfileCog(commands.Cog):
     @commands.guild_only()
     @checks.is_mod()
     @commands.cooldown(1, 5, type=commands.BucketType.guild)
-    async def awardbg(self, ctx, user:discord.Member, background:str):
+    async def awardbg(self, ctx, user:discord.Member, *, background:str):
         resolved_background = self.profile_carder.name_to_background(ctx.guild.id, background)
         if resolved_background:
             has_background = self.profile_carder.user_has_background(ctx.guild.id, user.id, resolved_background.id)
@@ -738,7 +743,7 @@ class ProfileCog(commands.Cog):
     @commands.guild_only()
     @checks.is_mod()
     @commands.cooldown(1, 5, type=commands.BucketType.guild)
-    async def revokebg(self, ctx, user:discord.Member, background:str):
+    async def revokebg(self, ctx, user:discord.Member, *, background:str):
         resolved_background = self.profile_carder.name_to_background(ctx.guild.id, background)
         if resolved_background:
             has_background = self.profile_carder.user_has_background(ctx.guild.id, user.id, resolved_background.id)
@@ -772,7 +777,7 @@ class ProfileCog(commands.Cog):
     @commands.cooldown(1, 5, type=commands.BucketType.guild)
     @funcs.require_confirmation(warning="All users will lose this background! There is no easy way of undoing this!")
     @funcs.require_confirmation(warning="Are you sure? This is your last chance.") #lol
-    async def bgrevokefromall(self, ctx, background:str):
+    async def bgrevokefromall(self, ctx, *, background:str):
         resolved_background = self.profile_carder.name_to_background(ctx.guild.id, background)
         if resolved_background:
             count = self.profile_carder.revoke_from_all(ctx.guild.id, resolved_background.id)
@@ -838,7 +843,7 @@ class ProfileCog(commands.Cog):
     @commands.command(aliases=['setspotlight'])
     @commands.guild_only()
     @commands.cooldown(1, 5, type=commands.BucketType.user)
-    async def spotlight(self, ctx, badge:str):
+    async def spotlight(self, ctx, *, badge:str):
         resolved_badge = self.badger.name_to_badge(ctx.guild.id, badge)
         if resolved_badge:
             has_badge = self.badger.user_has_badge(ctx.guild.id, ctx.author.id, resolved_badge.id)
@@ -853,7 +858,7 @@ class ProfileCog(commands.Cog):
     @commands.command(aliases=['setbackground', 'setbg'])
     @commands.guild_only()
     @commands.cooldown(1, 5, type=commands.BucketType.user)
-    async def background(self, ctx, background:str):
+    async def background(self, ctx, *, background:str):
         resolved_background = self.profile_carder.name_to_background(ctx.guild.id, background)
         if resolved_background:
             has_background = self.profile_carder.user_has_background(ctx.guild.id, ctx.author.id, resolved_background.id)

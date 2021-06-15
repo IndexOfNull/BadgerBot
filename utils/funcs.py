@@ -3,6 +3,8 @@ import discord
 import functools
 from io import BytesIO
 import re
+import regex
+import emoji
 
 def clamp(n, smallest, largest):
     return max(smallest, min(n, largest))
@@ -70,6 +72,21 @@ def emoji_escape(text: str):
 
 def emoji_format(text: str):
     return re.sub(emoji_regex, r'[;\1;\2]', text)
+
+#Returns a list of emojis contained in the passed text. custom_emoji will include discord custom emoji.
+#Setting tuple to True will turn each list item into a tuple of (match, is_custom)
+def extract_emoji(text, *, custom_emoji=False, as_tuple=False):
+    emoji_or_unicode = regex.compile(r"\<:\w*?:\d*?\>|\X")
+    emoji_list = [] #Tuple (emoji, is_custom)
+    data = regex.findall(emoji_or_unicode, text)
+    for match in data:
+        if any(char in emoji.UNICODE_EMOJI['en'] for char in match):
+            ins = (match, False) if as_tuple else match
+            emoji_list.append(ins)
+        elif re.match(emoji_regex, match) and custom_emoji:
+            ins = (match, True) if as_tuple else match
+            emoji_list.append(ins)
+    return emoji_list
 
 def async_partial(f, *args):
    async def f2(*args2):

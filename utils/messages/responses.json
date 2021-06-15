@@ -33,6 +33,7 @@
             "badge_created": ":shield: Your badge has been created!",
             "badge_nobadges": ":white_sun_small_cloud: This server has no badges.",
             "badge_updated": ":pencil: Your badge has been updated.",
+            "badge_emojirequired": ":red_circle: Your badge icon must be a single emoji (custom emoji are supported).",
             "badgelist_toolarge": ":volcano: The badge list is too big to send over discord, sending a raw text version instead. Please consider making your badge names and descriptions shorter. Using fewer custom emojis also helps.",
             "badgelevels_nolevels": ":white_sun_small_cloud: This server does not have any levels associated to badges.",
             "badgelevels_limit": ":red_circle: Badges cannot award or take away more than {0} levels.",

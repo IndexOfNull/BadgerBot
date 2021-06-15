@@ -12,6 +12,8 @@ pynacl = "*"
 async-timeout = "*"
 youtube-dl = "*"
 "discord.py" = "*"
+regex = "*"
+emoji = "*"
 
 [dev-packages]
 pylint = "*"
