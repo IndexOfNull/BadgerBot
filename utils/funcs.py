@@ -1,6 +1,5 @@
 import asyncio
 import discord
-from discord.ext import commands
 import functools
 from io import BytesIO
 import re
@@ -49,6 +48,14 @@ def require_confirmation(*, warning=None):
                 return await coro(cog, ctx, *args, **kwargs)
         return wrapped
     return wrapper
+
+def sizeof_fmt(num):
+    suffix = "B"
+    for unit in ['','K','M','G','T','P','E','Z']:
+        if abs(num) < 1000.0:
+            return "%d%s%s" % (num, unit, suffix)
+        num /= 1000.0
+    return "%.1f%s%s" % (num, 'Yi', suffix)
 
 def img_to_bytesio(img, *args):
     b = BytesIO()

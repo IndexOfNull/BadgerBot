@@ -1,26 +1,38 @@
 import discord
 from discord.ext import commands
 
-from utils import checks, funcs, pagination
+from utils import checks, funcs, pagination, http
 from utils.funcs import emoji_escape
+
 import re
-
 from io import BytesIO
+from PIL import Image
+from urllib.parse import urlparse
 
-from .data import badges, backgrounds
+from .data import badges, profilecards
 
 class ProfileCog(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
         self.badger = badges.BadgeManager(self.bot.db)
-        self.backgrounder = backgrounds.BackgroundManager(self.bot.db)
+        self.profile_carder = profilecards.ProfileCardManager(self.bot.db)
         self.badge_limits = {
             "name": 32,
             "description": 175,
             "icon": 55,
             "serverbadges": 80,
             "levels": 200 #Is compared with absolute value (+ or - 200)
+        }
+        self.background_limits = {
+            "name": 32,
+            "description": 175,
+            "domains": ["i.imgur.com"], #everything after subdomain (does not support subdomains with . in them)
+            "max_backgrounds": 15,
+            "max_bytes": 2048000, #one MiB
+            "max_size": (2000, 2000),
+            "max_dl_time": 5, #how long before timing out a download (protects against bait-and-switch attacks)
+            "mimes": ["image/png", "image/jpeg"]
         }
 
     def make_badge_list(self, badge_entries, *, line="{0.icon} **{0.name}**{1} {0.description}\n", header="", footer=""):
@@ -365,7 +377,7 @@ class ProfileCog(commands.Cog):
     @commands.cooldown(1, 10, type=commands.BucketType.guild)
     async def updatebadge(self, ctx, name:str, newname:str, icon:str=None, *, description:str=None):
         #Impose some limits on the parameters
-        if len(name) > self.badge_limits['name']:
+        if len(newname) > self.badge_limits['name']:
             await ctx.send_response('badge_limits', 'name', self.badge_limits['name'])
             return
         if icon:
@@ -563,6 +575,183 @@ class ProfileCog(commands.Cog):
         paginator, _, _, _ = self.bot.pagination_manager.ensure_paginator(user_id=ctx.author.id, ctx=ctx, obj=lbd, reinvoke=self.leaderboard_real)
         paginator.current_page = page-1 if page else 0 #Set the page we want
         await self.leaderboard_real(ctx, paginator) #Invoke the commands
+
+    #Returns a boolean indicating if the given url is safe for use
+    async def get_valid_image(self, ctx, image_url):
+        limits = self.background_limits
+        url_info = urlparse(image_url)
+        if url_info.scheme == "": #fill in the protocol if none was given
+            url_info = url_info._replace(scheme="http") #was told that _replace is not private but just namespaced with an underscore ¯\_(ツ)_/¯
+        image_url = url_info.geturl() #extra safety (hopefully)
+        if url_info.scheme not in ('http', 'https') or url_info.netloc not in limits['domains']:
+            await ctx.send_response('backgrounds.invalid_url', ", ".join(limits['domains']))
+            return False
+
+        #fetch to ensure size and validity
+        try:
+            media = await http.download_media(image_url, mimes=limits['mimes'], timeout=limits['max_dl_time'])
+        except:
+            await ctx.send_response('backgrounds.fetch_failed')
+            return False
+
+        if media.getbuffer().nbytes > limits['max_bytes']:
+            await ctx.send_response('backgrounds.too_large', funcs.sizeof_fmt(limits['max_bytes']))
+            return False
+
+        img = Image.open(media)
+        if img.width > limits['max_size'][0] or img.height > limits['max_size'][1]:
+            await ctx.send_response('backgrounds.image_size', *limits['max_size'])
+            return False
+        
+        return img
+
+    @commands.command(aliases=["addbg", "makebg"])
+    @commands.guild_only()
+    @checks.is_admin()
+    @commands.cooldown(1, 20, type=commands.BucketType.guild)
+    async def createbg(self, ctx, name:str, image_url:str, *, description:str=""):
+        limits = self.background_limits
+        if len(name) > limits['name']:
+            await ctx.send_response('backgrounds.limits', 'name', limits['name'])
+            return
+        if len(description) > limits['description']:
+            await ctx.send_response('backgrounds.limits', 'description', limits['description'])
+            return
+
+        existing_bg = self.profile_carder.name_to_background(ctx.guild.id, name)
+        if not existing_bg:
+            background_count = self.profile_carder.get_background_entries(server_id=ctx.guild.id).count()
+            if background_count < limits['max_backgrounds']:
+
+                async with ctx.channel.typing(): #do image validation after everything else
+                    url_valid = await self.get_valid_image(ctx, image_url)
+                    if not url_valid: return
+
+                result = self.profile_carder.create_background(ctx.guild.id, name, image_url, description=description)
+                if result:
+                    await ctx.send_response('backgrounds.created')
+                else:
+                    await ctx.send_response('backgrounds.creation_error')
+            else:
+                await ctx.send_response('backgrounds.max_backgrounds', limits['max_backgrounds'])
+        else:
+            await ctx.send_response('backgrounds.already_exists')
+
+    @commands.command(aliases=["delbg", "rmbg", "rembg", "removebg"])
+    @commands.guild_only()
+    @checks.is_admin()
+    @commands.cooldown(1, 10, type=commands.BucketType.guild)
+    @funcs.require_confirmation(warning="All users with this background will be stripped of it. There is no easy way of undoing this!")
+    async def deletebg(self, ctx, name:str):
+        resolved_background = self.profile_carder.name_to_background(ctx.guild.id, name)
+        if resolved_background:
+            result = self.profile_carder.remove_background(ctx.guild.id, resolved_background.id)
+            if result:
+                await ctx.send_response('zapped', resolved_background.name)
+            else:
+                await ctx.send_response('backgrounds.deletion_error')
+        else:
+            await ctx.send_response('backgrounds.not_found')
+
+    @commands.command(aliases=["editbg", "modifybg"])
+    @commands.guild_only()
+    @checks.is_admin()
+    @commands.cooldown(1, 20, type=commands.BucketType.guild)
+    async def updatebg(self, ctx, name:str, newname:str, url:str=None, description=None):
+        limits = self.background_limits
+        if len(newname) > limits['name']:
+            await ctx.send_response('backgrounds.limits', 'name', limits['name'])
+            return
+        if description:
+            if len(description) > limits['description']:
+                await ctx.send_response('backgrounds.limits', 'description', limits['description'])
+                return
+        
+        existing_bg = self.profile_carder.name_to_background(ctx.guild.id, name)
+        if existing_bg:
+            args = {}
+            if url:
+                args['image_url'] = url
+                with ctx.channel.typing():
+                    valid = await self.get_valid_image(ctx, url)
+                    if not valid: return
+            if description:
+                args['description'] = ('' if description.lower() in ('none', 'nothing') else description)
+            updated = self.profile_carder.update_background(ctx.guild.id, existing_bg.id, new_name=newname, **args)
+            if updated:
+                await ctx.send_response('backgrounds.updated')
+            else:
+                await ctx.send_response('backgrounds.update_error')
+        else:
+            await ctx.send_response('backgrounds.not_found')
+
+    @commands.command(aliases=["givebg"])
+    @commands.guild_only()
+    @checks.is_mod()
+    @commands.cooldown(1, 5, type=commands.BucketType.guild)
+    async def awardbg(self, ctx, user:discord.Member, background:str):
+        resolved_background = self.profile_carder.name_to_background(ctx.guild.id, background)
+        if resolved_background:
+            has_background = self.profile_carder.user_has_background(ctx.guild.id, user.id, resolved_background.id)
+            if not has_background:
+                result = self.profile_carder.award_background(ctx.guild.id, user.id, resolved_background.id)
+                if result:
+                    await ctx.send_response('backgrounds.awarded', user, background)
+                else:
+                    await ctx.send_response('backgrounds.award_error')
+            else:
+                await ctx.send_response('backgrounds.has_background')
+        else:
+            await ctx.send_response('backgrounds.not_found')
+
+    @commands.command()
+    @commands.guild_only()
+    @checks.is_mod()
+    @commands.cooldown(1, 5, type=commands.BucketType.guild)
+    async def revokebg(self, ctx, user:discord.Member, background:str):
+        resolved_background = self.profile_carder.name_to_background(ctx.guild.id, background)
+        if resolved_background:
+            has_background = self.profile_carder.user_has_background(ctx.guild.id, user.id, resolved_background.id)
+            if has_background:
+                result = self.profile_carder.revoke_background(ctx.guild.id, user.id, resolved_background.id)
+                if result:
+                    await ctx.send_response('backgrounds.revoked', user, background)
+                else:
+                    await ctx.send_response('backgrounds.revoke_error')
+            else:
+                await ctx.send_response('backgrounds.user_missing_bg')
+        else:
+            await ctx.send_response('backgrounds.not_found')
+        
+
+    @commands.command(aliases=['bgstripall'])
+    @commands.guild_only()
+    @checks.is_admin()
+    @commands.cooldown(1, 5, type=commands.BucketType.guild)
+    @funcs.require_confirmation(warning="This will strip the user of all their backgrounds! There is no easy way of undoing this!")
+    async def bgrevokeall(self, ctx, user:discord.Member):
+        count = self.profile_carder.revoke_all(ctx.guild.id, user.id)
+        if count > 0:
+            await ctx.send_response('backgrounds.revoked_all', user, count)
+        else:
+            await ctx.send_response('backgrounds.none_revoked', user)
+
+    @commands.command(aliases=['bgnuke'])
+    @commands.guild_only()
+    @checks.is_admin()
+    @commands.cooldown(1, 5, type=commands.BucketType.guild)
+    @funcs.require_confirmation(warning="All users will lose this background! There is no easy way of undoing this!")
+    @funcs.require_confirmation(warning="Are you sure? This is your last chance.") #lol
+    async def bgrevokefromall(self, ctx, background:str):
+        resolved_background = self.profile_carder.name_to_background(ctx.guild.id, background)
+        if resolved_background:
+            count = self.profile_carder.revoke_from_all(ctx.guild.id, resolved_background.id)
+            if count > 0:
+                await ctx.send_response('backgrounds.nuked', resolved_background.name, count)
+            else:
+                await ctx.send_response('backgrounds.none_nuked')
+        else:
+            await ctx.send_response('backgrounds.not_found')
 
 def setup(bot):
     bot.add_cog(ProfileCog(bot))

@@ -9,6 +9,7 @@ from . import badges
 Base = config.declarative_base
 
 #TODO: use proper SQL naming conventions
+#TODO: maybe make a decorator for autorollback of failed transactions
 class BackgroundEntry(Base):
     __tablename__ = "backgrounds"
     id = Column(Integer, primary_key=True)
@@ -16,7 +17,7 @@ class BackgroundEntry(Base):
 
     name = Column(String(150, collation="utf8mb4_unicode_ci"), nullable=False) #must be below 191 characters or something because indexing
     description = Column(Text(collation="utf8mb4_unicode_ci"), default="")
-    image_url = Column(Text(collation="utf8mb4_unicode_ci"), nullable=False)
+    image_url = Column(Text(collation="utf8mb4_unicode_ci", length=500), nullable=False)
 
     created_on = Column(TIMESTAMP, default=datetime.now())
     #default = Column(Boolean, nullable=False, default=0)
@@ -49,19 +50,19 @@ class BackgroundWinner(Base):
 
 class ProfilePreferences(Base):
     __tablename__ = "profile_preferences"
-    id = Column(Integer, primary_key=True)
-    server_id = Column(BigInteger(), nullable=False)
+    #id = Column(Integer, primary_key=True) #oh well, not gonna use a surrogate because Session.merge() is too convenient
+    server_id = Column(BigInteger(), nullable=False, primary_key=True)
     
-    discord_id = Column(BigInteger(), nullable=False)
+    discord_id = Column(BigInteger(), nullable=False, primary_key=True)
     spotlighted_badge_id = Column(Integer, ForeignKey(badges.BadgeEntry.id))
     background_id = Column(Integer, ForeignKey(BackgroundEntry.id))
 
     background = relationship("BackgroundEntry", foreign_keys="ProfilePreferences.background_id")
     spotlighted_badge = relationship("BadgeEntry", foreign_keys="ProfilePreferences.spotlighted_badge_id")
 
-    __table_args__ = (UniqueConstraint(server_id, discord_id, name="_server_member_uc"), ) #Ensure one preference entry per user per server
+    #__table_args__ = (UniqueConstraint(server_id, discord_id, name="_server_member_uc"), ) #Ensure one preference entry per user per server
 
-class BackgroundManager():
+class ProfileCardManager():
 
     def __init__(self, db):
         self.db = db
@@ -79,7 +80,7 @@ class BackgroundManager():
 
     def revoke_background(self, server_id, discord_id, background_id):
         try:
-            result = self.db.query(BackgroundWinner).filter_by(server_id=server_id, discord_id=discord_id, background_id=background_id).first().delete()
+            result = self.db.query(BackgroundWinner).filter_by(server_id=server_id, discord_id=discord_id, background_id=background_id).delete()
             self.db.commit()
             return result
         except Exception as e:
@@ -157,3 +158,11 @@ class BackgroundManager():
             self.db.rollback()
             raise e
     
+    def update_preferences(self, server_id, discord_id, *, spotlighted_badge_id=None, background_id=None):
+        try:
+            prefs = ProfilePreferences(server_id=server_id, discord_id=discord_id, spotlighted_badge_id=spotlighted_badge_id, background_id=background_id)
+            self.db.merge(prefs)
+            self.db.commit()
+        except Exception as e:
+            self.db.rollback()
+            raise e
