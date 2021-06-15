@@ -37,13 +37,23 @@ class ProfileCog(commands.Cog):
 
     def make_badge_list(self, badge_entries, *, line="{0.icon} **{0.name}**{1} {0.description}\n", header="", footer=""):
         if len(header) > 0: header += "\n"
-        if len(footer) > 0: footer += "\n"
+        if len(footer) > 0: 
+            footer = "\n" + footer
         finalstr = "" #Could use a localization string
         for row in badge_entries:
             if row.levels > 0:
                 finalstr += line.format(row, ((" [**" + str(row.levels) + "**]") if row.levels else "") + (":" if row.description else ""))
             else:
                 finalstr += line.format(row, (":" if row.description else ""))
+        return header + finalstr + footer
+
+    def make_background_list(self, background_entries, *, line="\> **{0.name}**{1} {0.description}\n", header="", footer=""):
+        if len(header) > 0: header += "\n"
+        if len(footer) > 0: 
+            footer = "\n" + footer
+        finalstr = ""
+        for row in background_entries:
+            finalstr += line.format(row, (":" if row.description else ""))
         return header + finalstr + footer
 
     @commands.command()
@@ -427,7 +437,7 @@ class ProfileCog(commands.Cog):
         page_list = paginator.get_current_page()
         page = paginator.current_page + 1
         page_header = "> Badges `|` (Page " + str(page) + " of " + str(pc) + ")" #Could use a localization string
-        page_footer = "\n" + ctx.responses['page_strings']['footer'].format(ctx.prefix + ctx.invoked_with)
+        page_footer = ctx.responses['page_strings']['footer'].format(ctx)
         finalstr = self.make_badge_list(page_list, header=page_header, footer=page_footer)
         if len(finalstr) > 2000: #This is a bit of jank hack, I know. But it's far more elegant than erroring and it lets server administrators fix the problem.
             f = discord.File(BytesIO(finalstr.encode("utf-8")), filename="badgelist-pg" + str(page) + ".txt")
@@ -657,7 +667,7 @@ class ProfileCog(commands.Cog):
     @commands.guild_only()
     @checks.is_admin()
     @commands.cooldown(1, 20, type=commands.BucketType.guild)
-    async def updatebg(self, ctx, name:str, newname:str, url:str=None, description=None):
+    async def updatebg(self, ctx, name:str, newname:str, url:str=None, *, description=None):
         limits = self.background_limits
         if len(newname) > limits['name']:
             await ctx.send_response('backgrounds.limits', 'name', limits['name'])
@@ -666,7 +676,10 @@ class ProfileCog(commands.Cog):
             if len(description) > limits['description']:
                 await ctx.send_response('backgrounds.limits', 'description', limits['description'])
                 return
-        
+        if url:
+            if url.lower() in ('same', 'keep', ''):
+                url = None
+
         existing_bg = self.profile_carder.name_to_background(ctx.guild.id, name)
         if existing_bg:
             args = {}
@@ -752,6 +765,57 @@ class ProfileCog(commands.Cog):
                 await ctx.send_response('backgrounds.none_nuked')
         else:
             await ctx.send_response('backgrounds.not_found')
+
+    async def backgrounds_real(self, ctx, paginator):
+        pc = paginator.page_count
+        if pc == 0:
+            await ctx.send_response('backgrounds.no_backgrounds')
+            return
+        page_list = paginator.get_current_page()
+        page = paginator.current_page + 1
+        page_header = ctx.get_response('backgrounds.page_header').format(page, pc) #Could use a localization string
+        page_footer = ctx.get_response('page_strings.footer').format(ctx)
+        finalstr = self.make_background_list(page_list, header=page_header, footer=page_footer)
+        if len(finalstr) > 2000: #This is a bit of jank hack, I know. But it's far more elegant than erroring and it lets server administrators fix the problem.
+            f = discord.File(BytesIO(finalstr.encode("utf-8")), filename="bglist-pg" + str(page) + ".txt")
+            await ctx.send(ctx.get_response('backgrounds.page_too_large'), file=f)
+        else:
+            await ctx.send(finalstr)
+
+    @commands.command(aliases=['serverbgs', 'bglist', 'allbgs'])
+    @commands.guild_only()
+    @commands.cooldown(1, 3, type=commands.BucketType.channel)
+    async def serverbackgrounds(self, ctx, page:int=None):
+        server_backgrounds = self.profile_carder.get_background_entries(server_id=ctx.guild.id)
+        paginator, _, _, _ = self.bot.pagination_manager.ensure_paginator(user_id=ctx.author.id, ctx=ctx, obj=server_backgrounds, reinvoke=self.backgrounds_real)
+        paginator.current_page = page-1 if page else 0
+        await self.backgrounds_real(ctx, paginator)
+
+    async def mybackgrounds_real(self, ctx, paginator):
+        pc = paginator.page_count
+        if pc == 0:
+            await ctx.send_response('backgrounds.user_no_backgrounds')
+            return
+        page_list = paginator.get_current_page()
+        page = paginator.current_page + 1
+        page_header = ctx.get_response('backgrounds.user_page_header').format(page, pc)
+        page_footer = ctx.get_response('page_strings.footer').format(ctx)
+        finalstr = self.make_background_list(page_list, header=page_header, footer=page_footer)
+        if len(finalstr) > 2000: #This is a bit of jank hack, I know. But it's far more elegant than erroring and it lets server administrators fix the problem.
+            f = discord.File(BytesIO(finalstr.encode("utf-8")), filename="mybglist-pg" + str(page) + ".txt")
+            await ctx.send(ctx.get_response('backgrounds.page_too_large'), file=f)
+        else:
+            await ctx.send(finalstr)
+
+    #Shows the user their backgrounds
+    @commands.command(aliases=['bgs'])
+    @commands.guild_only()
+    async def backgrounds(self, ctx, page:int=None):
+        award_entries = self.profile_carder.get_award_entries(server_id=ctx.guild.id, discord_id=ctx.author.id)
+        background_entries = [x.BackgroundEntry for x in award_entries]
+        paginator, _, _, _ = self.bot.pagination_manager.ensure_paginator(user_id=ctx.author.id, ctx=ctx, obj=background_entries, reinvoke=self.mybackgrounds_real)
+        paginator.current_page = page-1 if page else 0
+        await self.mybackgrounds_real(ctx, paginator)
 
 def setup(bot):
     bot.add_cog(ProfileCog(bot))

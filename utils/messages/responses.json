@@ -63,7 +63,12 @@
                 "revoked_all": ":boom: {0.mention} had {1} backgrounds(s) revoked.",
                 "nuked": ":boom: The \"{0}\" background has been stripped from {1} members.",
                 "none_revoked": ":mag: {0.mention} doesn't have any backgrounds.",
-                "none_nuked": ":mag: Nobody has that background."
+                "none_nuked": ":mag: Nobody has that background.",
+                "no_backgrounds": ":white_sun_small_cloud: This server has no backgrounds.",
+                "user_no_backgrounds": ":white_sun_small_cloud: You don't have any backgrounds.",
+                "page_header": "> Backgrounds `|` (Page {0} of {1})",
+                "user_page_header": "> Your Backgrounds `|` (Page {0} of {1})",
+                "page_too_large": ":volcano: The background list is too big to send over discord, sending a raw text version instead. Please consider making your background descriptions shorter."
             },
             "tag_lenlimits": ":red_circle: Tag {0} cannot have over {1} characters. Please shorten it.",
             "tag_notfound": ":grey_question: It doesn't look like there's a tag with that name.",
@@ -110,7 +115,7 @@
             "leaderboard": {"unknown_user": "Unknown User#{0}", "levels": "levels", "header": "Leaderboard (Page {0}/{1})"},
             "badgesearch": {"unknown_user": "Unknown User#{0}", "header": "Users with \"{0}\" badge (Page {1}/{2}) ({3:,} total)", "noresults": ":mag: I didn't find any badges matching your search."},
             "page_strings": {
-                "footer": "You can switch pages by running `{0} [page]`."
+                "footer": "You can switch pages by running `{0.prefix}{0.invoked_with} [page]`."
             },
             "badgewizard_strings": {
                 "start": ":alarm_clock: You're now in badge creation mode! You have {0} seconds to answer each prompt.",
