@@ -70,6 +70,12 @@
                 "user_page_header": "> Your Backgrounds `|` (Page {0} of {1})",
                 "page_too_large": ":volcano: The background list is too big to send over discord, sending a raw text version instead. Please consider making your background descriptions shorter."
             },
+            "profiles": {
+                "spotlighted": ":bulb: I have placed \"{0}\" in your badge spotlight.",
+                "background_changed": ":frame_photo: Your background has been set to {0}.",
+                "missing_badge": ":mag: You do not have that badge.",
+                "missing_background": ":mag: You do not have that background."
+            },
             "tag_lenlimits": ":red_circle: Tag {0} cannot have over {1} characters. Please shorten it.",
             "tag_notfound": ":grey_question: It doesn't look like there's a tag with that name.",
             "tag_serverlimit": ":red_circle: Servers can only have up to 15 tags.",

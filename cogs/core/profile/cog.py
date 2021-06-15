@@ -10,6 +10,7 @@ from PIL import Image
 from urllib.parse import urlparse
 
 from .data import badges, profilecards
+from . import imager
 
 class ProfileCog(commands.Cog):
 
@@ -27,7 +28,7 @@ class ProfileCog(commands.Cog):
         self.background_limits = {
             "name": 32,
             "description": 175,
-            "domains": ["i.imgur.com"], #everything after subdomain (does not support subdomains with . in them)
+            "domains": ["i.imgur.com", "cdn.discordapp.com"], #everything after subdomain (does not support subdomains with . in them)
             "max_backgrounds": 15,
             "max_bytes": 2048000, #one MiB
             "max_size": (2000, 2000),
@@ -58,6 +59,17 @@ class ProfileCog(commands.Cog):
 
     @commands.command()
     @commands.guild_only()
+    @commands.cooldown(1, 5, type=commands.BucketType.user)
+    async def profile(self, ctx, *, user:discord.Member=None):
+        if user is None:
+            user = ctx.author
+        badges = self.badger.get_award_entries(server_id=ctx.guild.id, discord_id=user.id)
+        prefs = self.profile_carder.get_preferences(ctx.guild.id, )
+        img = imager.make_profile_card(user, badges=badges)
+        img.show()
+
+    """@commands.command()
+    @commands.guild_only()
     @commands.cooldown(1, 3, type=commands.BucketType.user)
     async def profile(self, ctx, *, user:discord.Member=None):
         if user is None:
@@ -87,7 +99,7 @@ class ProfileCog(commands.Cog):
             converted_time = t.strftime('%Y-%m-%d %H:%M:%S') + " UTC"
             embed.add_field(name="Account Created", value=converted_time)
 
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed)"""
 
     @commands.command(aliases = ['givebadge', 'give'])
     @commands.guild_only()
@@ -810,12 +822,43 @@ class ProfileCog(commands.Cog):
     #Shows the user their backgrounds
     @commands.command(aliases=['bgs'])
     @commands.guild_only()
+    @commands.cooldown(1, 3, type=commands.BucketType.channel)
     async def backgrounds(self, ctx, page:int=None):
         award_entries = self.profile_carder.get_award_entries(server_id=ctx.guild.id, discord_id=ctx.author.id)
         background_entries = [x.BackgroundEntry for x in award_entries]
         paginator, _, _, _ = self.bot.pagination_manager.ensure_paginator(user_id=ctx.author.id, ctx=ctx, obj=background_entries, reinvoke=self.mybackgrounds_real)
         paginator.current_page = page-1 if page else 0
         await self.mybackgrounds_real(ctx, paginator)
+
+    @commands.command(aliases=['setspotlight'])
+    @commands.guild_only()
+    @commands.cooldown(1, 5, type=commands.BucketType.user)
+    async def spotlight(self, ctx, badge:str):
+        resolved_badge = self.badger.name_to_badge(ctx.guild.id, badge)
+        if resolved_badge:
+            has_badge = self.badger.user_has_badge(ctx.guild.id, ctx.author.id, resolved_badge.id)
+            if has_badge:
+                self.profile_carder.update_preferences(ctx.guild.id, ctx.author.id, spotlighted_badge_id=resolved_badge.id)
+                await ctx.send_response('profiles.spotlighted', resolved_badge.name)
+            else:
+                await ctx.send_response('profiles.missing_badge')
+        else:
+            await ctx.send('badge_notfound')
+
+    @commands.command(aliases=['setbackground', 'setbg'])
+    @commands.guild_only()
+    @commands.cooldown(1, 5, type=commands.BucketType.user)
+    async def background(self, ctx, background:str):
+        resolved_background = self.profile_carder.name_to_background(ctx.guild.id, background)
+        if resolved_background:
+            has_background = self.profile_carder.user_has_background(ctx.guild.id, ctx.author.id, resolved_background.id)
+            if has_background:
+                self.profile_carder.update_preferences(ctx.guild.id, ctx.author.id, background_id=resolved_background.id)
+                await ctx.send_response('profiles.background_changed', resolved_background.name)
+            else:
+                await ctx.send_response('profiles.missing_background')
+        else:
+            await ctx.send_response('backgrounds.not_found')
 
 def setup(bot):
     bot.add_cog(ProfileCog(bot))

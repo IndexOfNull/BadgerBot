@@ -54,8 +54,8 @@ class ProfilePreferences(Base):
     server_id = Column(BigInteger(), nullable=False, primary_key=True)
     
     discord_id = Column(BigInteger(), nullable=False, primary_key=True)
-    spotlighted_badge_id = Column(Integer, ForeignKey(badges.BadgeEntry.id))
-    background_id = Column(Integer, ForeignKey(BackgroundEntry.id))
+    spotlighted_badge_id = Column(Integer, ForeignKey(badges.BadgeEntry.id, ondelete="SET NULL")) #TODO: evaluate ondelete validity with relationship()
+    background_id = Column(Integer, ForeignKey(BackgroundEntry.id, ondelete="SET NULL"))
 
     background = relationship("BackgroundEntry", foreign_keys="ProfilePreferences.background_id")
     spotlighted_badge = relationship("BadgeEntry", foreign_keys="ProfilePreferences.spotlighted_badge_id")
@@ -66,7 +66,6 @@ class ProfileCardManager():
 
     def __init__(self, db):
         self.db = db
-        print("test")
 
     def award_background(self, server_id, discord_id, background_id):
         try:
@@ -166,3 +165,9 @@ class ProfileCardManager():
         except Exception as e:
             self.db.rollback()
             raise e
+
+    def get_preferences(self, server_id, discord_id):
+        prefs = self.db.query(ProfilePreferences).filter_by(server_id=server_id, discord_id=discord_id).first()
+        if prefs:
+            return prefs
+        return None
