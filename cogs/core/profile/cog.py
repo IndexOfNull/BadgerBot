@@ -60,15 +60,20 @@ class ProfileCog(commands.Cog):
     @commands.command()
     @commands.guild_only()
     @commands.cooldown(1, 5, type=commands.BucketType.user)
-    async def profile(self, ctx, *, user:discord.Member=None):
+    async def profile2(self, ctx, *, user:discord.Member=None):
         if user is None:
             user = ctx.author
-        badges = self.badger.get_award_entries(server_id=ctx.guild.id, discord_id=user.id)
-        prefs = self.profile_carder.get_preferences(ctx.guild.id, )
-        img = imager.make_profile_card(user, badges=badges)
+        badges = self.badger.get_award_entries(server_id=ctx.guild.id, discord_id=user.id).all()
+        prefs = self.profile_carder.get_preferences(ctx.guild.id, user.id)
+        bg_url = None
+        spotlight = None
+        if prefs:
+            bg_url = prefs.background.image_url if prefs.background else None
+            spotlight = prefs.spotlighted_badge if prefs.spotlighted_badge else None
+        img = await imager.make_profile_card(user, badges=badges, bg_url=bg_url, spotlight=spotlight)
         img.show()
 
-    """@commands.command()
+    @commands.command()
     @commands.guild_only()
     @commands.cooldown(1, 3, type=commands.BucketType.user)
     async def profile(self, ctx, *, user:discord.Member=None):
@@ -99,7 +104,7 @@ class ProfileCog(commands.Cog):
             converted_time = t.strftime('%Y-%m-%d %H:%M:%S') + " UTC"
             embed.add_field(name="Account Created", value=converted_time)
 
-        await ctx.send(embed=embed)"""
+        await ctx.send(embed=embed)
 
     @commands.command(aliases = ['givebadge', 'give'])
     @commands.guild_only()

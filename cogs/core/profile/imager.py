@@ -1,14 +1,23 @@
-from os import stat, statvfs
-from PIL import Image, ImageDraw, ImageOps, ImageFont
+from PIL import Image, ImageDraw, ImageFont
+from utils import http
+from io import BytesIO
 
 CARD_SIZE = (1190, 700)
 OPACITY = int(0.6*255)
 
 #all of this is horrible...
-def make_profile_card(bg_img):
+async def make_profile_card(user, *, badges, bg_url, spotlight):
     card_image = Image.new("RGB", CARD_SIZE, "black")
+    user_color = user.color.to_rgb()
 
-    #actually retrieve bg_img sometime here
+    if bg_url:
+        try:
+            bg_bytes = await http.download_media(bg_url, timeout=5)
+            bg_img = Image.open(bg_bytes)
+        except:
+            bg_img = Image.open("resources/img/defaultcardbg.png") #Use a default image if fetching fails or no url is given
+    else:
+        bg_img = Image.open("resources/img/defaultcardbg.png")
     bg_img = bg_img.convert("RGBA")
     bg_img = aspect_resize(bg_img, CARD_SIZE)
     bg_img.putalpha(int(0.75*255)) #make it 75% transparent
@@ -30,7 +39,7 @@ def make_profile_card(bg_img):
     #colored part
     color_rect_h = 10
     color_rect_pos = (bg_rect_pos[0], bg_rect_pos[1]-color_rect_h, bg_rect_pos[2], bg_rect_pos[1]-1)
-    draw.rectangle(color_rect_pos, fill="yellow") #reuse the position from the last rect, but offset the vertical part so this one sits above
+    draw.rectangle(color_rect_pos, fill=user_color) #reuse the position from the last rect, but offset the vertical part so this one sits above
 
     #divider bar
     for i in range(num_divisions-1):
@@ -39,53 +48,57 @@ def make_profile_card(bg_img):
 
     #profile icon
     current_div = 1
-    profile_icon = Image.open("testicon.png")
+    profile_icon_asset = user.avatar_url_as(format="png", size=512)
+    profile_icon_bytes = await profile_icon_asset.read()
+    profile_icon = Image.open(BytesIO(profile_icon_bytes))
     prof_side_length = bg_rect_division
     profile_icon = profile_icon.resize((prof_side_length, prof_side_length))
     profile_icon_pos = (bg_rect_pos[0], bg_rect_pos[1]+bg_rect_h-prof_side_length)
     card_image.paste(profile_icon, profile_icon_pos)
 
     #Spotlight
+    
     current_div = 3
-    emoji = Image.open("testemoji.png")
     emoji_border = 7
     emoji_side_length = 128
     emoji_total_side_length = emoji_side_length + emoji_border * 2
+    """
+    plate = Image.new("RGB", (emoji_total_side_length, emoji_total_side_length), user_color)
+    emoji = Image.open("testemoji.png")
+    emoji = emoji.resize((emoji_side_length, emoji_side_length))
+    plate.paste(emoji, (emoji_border, emoji_border))
     emoji_x = int(margin + (bg_rect_division*current_div - bg_rect_division/2) - emoji_total_side_length/2)
     emoji_y = int((color_rect_pos[1] + color_rect_h//2) - emoji_total_side_length/2)
-    emoji = emoji.resize((emoji_side_length, emoji_side_length))
-    emoji = ImageOps.expand(emoji, emoji_border, fill="yellow")
-    card_image.paste(emoji, (emoji_x, emoji_y))
+    card_image.paste(plate, (emoji_x, emoji_y))
+    """
 
     #prepare scaled text
     current_div = 2
     text_margin = 20
-    username_font = ImageFont.truetype("SourceSans3-Bold.ttf", size=100)
-    username_text = "Dankazie#2828"
+    username_font = ImageFont.truetype("resources/fonts/SourceSans3-Bold.ttf", size=100)
+    username_text = user.name + "#" + user.discriminator
     scaled = scaled_text(username_font, (bg_rect_division-text_margin*2, CARD_SIZE[1]-text_margin*2), username_text)
     name_box_pos = (bg_rect_pos[0], profile_icon_pos[1]-scaled.height-text_margin*2, bg_rect_pos[0]+bg_rect_division-1, profile_icon_pos[1]-1)
     draw.rectangle(name_box_pos, fill=(0, 0, 0, OPACITY))
     card_image.paste(scaled, (bg_rect_pos[0]+(bg_rect_division//2)-(scaled.width//2), name_box_pos[1]+text_margin), scaled)
 
-    stats_lines = ('40 Badges', '25 Levels', 'Joined 2 years ago')
-    stats_font = ImageFont.truetype("SourceSans3-Regular.ttf", size=60)
+    total_levels = sum([x.BadgeEntry.levels for x in badges])
+    stats_lines = (str(len(badges)) + ' Badges', str(total_levels) + ' Levels')#, 'Joined 2 years ago')
+    stats_font = ImageFont.truetype("resources/fonts/SourceSans3-Regular.ttf", size=60)
     scaled = scaled_text(stats_font, (bg_rect_division*2//3, bg_rect_h), stats_lines)
     stats_text_pos = (bg_rect_pos[0]+bg_rect_division*(current_div-1) + text_margin, bg_rect_pos[1] + bg_rect_h//2 - scaled.height//2)
     card_image.paste(scaled, stats_text_pos, scaled)
     
     #prepare spotlight text
     current_div = 3
-    spotlight_text = "☢️ "
-    spotlight_font = ImageFont.truetype("DejaVuSans.ttf", size=70)
+    spotlight_text = "Test Badge"
+    spotlight_font = ImageFont.truetype("resources/fonts/DejaVuSans.ttf", size=70)
     scaled = scaled_text(spotlight_font, (bg_rect_division - text_margin*2, bg_rect_h - emoji_total_side_length//2 - text_margin*2), spotlight_text)
     spotlight_text_pos = (bg_rect_pos[0]+bg_rect_division*current_div - (bg_rect_division//2) - scaled.width//2, bg_rect_pos[3]-(bg_rect_h - emoji_total_side_length//2)//2 - scaled.height//2)
     card_image.paste(scaled, spotlight_text_pos, scaled)
     #draw.text(stats_text_pos, , font=stats_font)
 
-    
-
-    card_image.show()
-    card_image.save("card.jpg")
+    return card_image
 
 def multiline_get_size(font, lines):
     if isinstance(lines, str):
@@ -135,6 +148,6 @@ def aspect_resize(img, target_size):
         """
 
 if __name__ == "__main__":
-    #bg_img = Image.open("profilecard.png")
-    bg_img = Image.new("RGB", CARD_SIZE, (127, 127, 255))
+    bg_img = Image.open("defaultcardbg.png")
+    #bg_img = Image.new("RGB", CARD_SIZE, (127, 127, 255))
     make_profile_card(bg_img)
