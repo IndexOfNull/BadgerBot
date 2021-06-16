@@ -59,12 +59,6 @@ def sizeof_fmt(num):
         num /= 1000.0
     return "%.1f%s%s" % (num, 'Yi', suffix)
 
-def img_to_bytesio(img, *args):
-    b = BytesIO()
-    img.save(b, *args)
-    b.seek(0)
-    return b
-
 emoji_regex = re.compile(r'\<:(\w*?):(\d*?)\>')
 
 def emoji_escape(text: str):

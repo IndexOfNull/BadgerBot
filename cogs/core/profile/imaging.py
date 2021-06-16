@@ -1,12 +1,18 @@
 from PIL import Image, ImageDraw, ImageFont
 from utils import http
 from io import BytesIO
+from datetime import datetime
+import re
+from utils import funcs
 
 CARD_SIZE = (1190, 700)
 OPACITY = int(0.6*255)
+TWEMOJI_BASE = "https://twemoji.maxcdn.com/v/latest/72x72/{codepoint}.png"
+
 
 #all of this is horrible...
-async def make_profile_card(user, *, badges, bg_url, spotlight):
+#TODO: maybe put this somewhere that already has access to the bot and doesn't need a Context?
+async def make_profile_card(ctx, user, *, badges, bg_url, spotlight):
     card_image = Image.new("RGB", CARD_SIZE, "black")
     user_color = user.color.to_rgb()
 
@@ -24,7 +30,7 @@ async def make_profile_card(user, *, badges, bg_url, spotlight):
     card_image.paste(bg_img, (0,0))
 
     draw = ImageDraw.Draw(card_image, "RGBA")
-    margin = 25 #pixels
+    margin = 35 #pixels
 
     #transparent rectangle
     bg_rect_h = 175
@@ -57,24 +63,37 @@ async def make_profile_card(user, *, badges, bg_url, spotlight):
     card_image.paste(profile_icon, profile_icon_pos)
 
     #Spotlight
-    
+    if spotlight:
+        emoji_bytes = await get_emoji_image(ctx.bot, spotlight.icon)
+        spotlight_text = spotlight.name
+    else:
+        emoji_bytes = await get_emoji_image(ctx.bot, "🔎")
+        spotlight_text = "Nothing Spotlit"
+    emoji = Image.open(emoji_bytes).convert("RGBA")
+
     current_div = 3
-    emoji_border = 7
+    emoji_border = 14
     emoji_side_length = 128
     emoji_total_side_length = emoji_side_length + emoji_border * 2
-    """
-    plate = Image.new("RGB", (emoji_total_side_length, emoji_total_side_length), user_color)
-    emoji = Image.open("testemoji.png")
+    
+    plate = Image.new("RGBA", (emoji_total_side_length, emoji_total_side_length), (user_color[0], user_color[1], user_color[2], 255))
     emoji = emoji.resize((emoji_side_length, emoji_side_length))
-    plate.paste(emoji, (emoji_border, emoji_border))
+    plate.paste(emoji, (emoji_border, emoji_border), emoji)
     emoji_x = int(margin + (bg_rect_division*current_div - bg_rect_division/2) - emoji_total_side_length/2)
     emoji_y = int((color_rect_pos[1] + color_rect_h//2) - emoji_total_side_length/2)
     card_image.paste(plate, (emoji_x, emoji_y))
-    """
+    
+    #prepare spotlight text
+    current_div = 3
+    text_margin = 20
+    spotlight_font = ImageFont.truetype("resources/fonts/DejaVuSans.ttf", size=70)
+    scaled = scaled_text(spotlight_font, (bg_rect_division - text_margin*2, bg_rect_h - emoji_total_side_length//2 - text_margin*2), spotlight_text)
+    spotlight_text_pos = (bg_rect_pos[0]+bg_rect_division*current_div - (bg_rect_division//2) - scaled.width//2, bg_rect_pos[3]-(bg_rect_h - emoji_total_side_length//2)//2 - scaled.height//2)
+    card_image.paste(scaled, spotlight_text_pos, scaled)
 
     #prepare scaled text
     current_div = 2
-    text_margin = 20
+    
     username_font = ImageFont.truetype("resources/fonts/SourceSans3-Bold.ttf", size=100)
     username_text = user.name + "#" + user.discriminator
     scaled = scaled_text(username_font, (bg_rect_division-text_margin*2, CARD_SIZE[1]-text_margin*2), username_text)
@@ -83,19 +102,16 @@ async def make_profile_card(user, *, badges, bg_url, spotlight):
     card_image.paste(scaled, (bg_rect_pos[0]+(bg_rect_division//2)-(scaled.width//2), name_box_pos[1]+text_margin), scaled)
 
     total_levels = sum([x.BadgeEntry.levels for x in badges])
-    stats_lines = (str(len(badges)) + ' Badges', str(total_levels) + ' Levels')#, 'Joined 2 years ago')
+    stats_lines = (
+        str(len(badges)) + ' Badges',
+        str(total_levels) + ' Levels',
+        'Joined ' + shorthand_time_elapsed(user.joined_at, datetime.now()) + ' ago'
+    )
     stats_font = ImageFont.truetype("resources/fonts/SourceSans3-Regular.ttf", size=60)
-    scaled = scaled_text(stats_font, (bg_rect_division*2//3, bg_rect_h), stats_lines)
+    scaled = scaled_text(stats_font, (bg_rect_division-(text_margin*5//2), bg_rect_h), stats_lines)
     stats_text_pos = (bg_rect_pos[0]+bg_rect_division*(current_div-1) + text_margin, bg_rect_pos[1] + bg_rect_h//2 - scaled.height//2)
     card_image.paste(scaled, stats_text_pos, scaled)
-    
-    #prepare spotlight text
-    current_div = 3
-    spotlight_text = "Test Badge"
-    spotlight_font = ImageFont.truetype("resources/fonts/DejaVuSans.ttf", size=70)
-    scaled = scaled_text(spotlight_font, (bg_rect_division - text_margin*2, bg_rect_h - emoji_total_side_length//2 - text_margin*2), spotlight_text)
-    spotlight_text_pos = (bg_rect_pos[0]+bg_rect_division*current_div - (bg_rect_division//2) - scaled.width//2, bg_rect_pos[3]-(bg_rect_h - emoji_total_side_length//2)//2 - scaled.height//2)
-    card_image.paste(scaled, spotlight_text_pos, scaled)
+
     #draw.text(stats_text_pos, , font=stats_font)
 
     return card_image
@@ -111,6 +127,44 @@ def multiline_get_size(font, lines):
         x_sizes.append(size[0])
     return (max(x_sizes), y_size)
 
+#Gets the time elapsed from start to end in short format (i.e. 1y or 6m or 10d)
+def shorthand_time_elapsed(start, end, *, top_only=True):
+    delta = end - start
+    total_time = delta.total_seconds()
+    minutes, seconds = divmod(total_time, 60)
+    hours, minutes = divmod(minutes, 60)
+    days, hours = divmod(hours, 24)
+    months, days = divmod(days, 31)
+    years, months = divmod(months, 12)
+    if top_only:
+        if years > 0: return "%dy %dm" % (years, months) #Just for more granularity
+        if months > 0: return "%dm %dd" % (months, days) #Just for more granularity
+        if days > 0: return "%dd" % days
+        if hours > 0: return "%dh" % hours
+        if minutes > 0: return "%dm" % minutes
+        if seconds > 0: return "%ds" % seconds
+    return "%dy %dd %dh %dm %ds" % (years, days, hours, minutes, seconds)
+
+def codepoint(codes):
+    # See https://github.com/twitter/twemoji/issues/419#issuecomment-637360325
+    if "200d" not in codes:
+        return "-".join([c for c in codes if c != "fe0f"])
+    return "-".join(codes)
+
+#Returns an Image object of the specified emoji
+async def get_emoji_image(bot, emoji, *, format=None, static_format='png'):
+    custom_emoji = re.match(funcs.emoji_regex, emoji)
+    if custom_emoji: #its a custom discord emoji
+        emoji_id = custom_emoji.group(2)
+        resolved_emoji = bot.get_emoji(int(emoji_id))
+        asset = resolved_emoji.url_as(format=format, static_format=static_format)
+        data = await asset.read()
+        data = BytesIO(data)
+    else: #its a grapheme/unicode emoji
+        code = codepoint(["{0:x}".format(ord(c)) for c in emoji])
+        target_url = TWEMOJI_BASE.format(codepoint=code)
+        data = await http.download_media(target_url)
+    return data
 
 #Takes a font, max_size, and text and returns a bitmap of scaled text
 def scaled_text(font, max_size, text):
@@ -131,6 +185,12 @@ def aspect_resize(img, target_size):
     factor = 1/fx if fx < fy else 1/fy #if fx or fy < 1, it will pick whichever has to scale more, if either is > 1, it will scale less
     return img.resize((int(x*factor)+1, int(y*factor)+1))
 
+#Saves an image into a BytesIO buffer. Keyword arguments are passed directly to Image.save()
+def img_to_bytesio(img, file_extention, **kwargs):
+    b = BytesIO()
+    img.save(b, file_extention, **kwargs)
+    b.seek(0)
+    return b
 
 """
     def add_text(image, text, location, font, fontsize=14, fontcolor=(0, 0, 0), 
@@ -146,8 +206,3 @@ def aspect_resize(img, target_size):
         drawer.text(location, text, fontcolor, font=font_format)
         return image
         """
-
-if __name__ == "__main__":
-    bg_img = Image.open("defaultcardbg.png")
-    #bg_img = Image.new("RGB", CARD_SIZE, (127, 127, 255))
-    make_profile_card(bg_img)

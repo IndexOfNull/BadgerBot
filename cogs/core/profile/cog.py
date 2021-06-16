@@ -10,7 +10,7 @@ from PIL import Image
 from urllib.parse import urlparse
 
 from .data import badges, profilecards
-from . import imager
+from . import imaging
 
 class ProfileCog(commands.Cog):
 
@@ -58,6 +58,10 @@ class ProfileCog(commands.Cog):
         return header + finalstr + footer
 
     @commands.command()
+    async def test(self, ctx, emoji:str):
+        await imaging.get_emoji_image(self.bot, emoji)
+
+    @commands.command()
     @commands.guild_only()
     @commands.cooldown(1, 5, type=commands.BucketType.user)
     async def profile2(self, ctx, *, user:discord.Member=None):
@@ -70,8 +74,10 @@ class ProfileCog(commands.Cog):
         if prefs:
             bg_url = prefs.background.image_url if prefs.background else None
             spotlight = prefs.spotlighted_badge if prefs.spotlighted_badge else None
-        img = await imager.make_profile_card(user, badges=badges, bg_url=bg_url, spotlight=spotlight)
-        img.show()
+        img = await imaging.make_profile_card(ctx, user, badges=badges, bg_url=bg_url, spotlight=spotlight)
+        img = imaging.img_to_bytesio(img, "JPEG", subsampling=0)
+        f = discord.File(img, filename="profile.jpg")
+        await ctx.send(file=f)
 
     @commands.command()
     @commands.guild_only()
@@ -731,7 +737,7 @@ class ProfileCog(commands.Cog):
             if not has_background:
                 result = self.profile_carder.award_background(ctx.guild.id, user.id, resolved_background.id)
                 if result:
-                    await ctx.send_response('backgrounds.awarded', user, background)
+                    await ctx.send_response('backgrounds.awarded', user, resolved_background.name)
                 else:
                     await ctx.send_response('backgrounds.award_error')
             else:
@@ -750,7 +756,7 @@ class ProfileCog(commands.Cog):
             if has_background:
                 result = self.profile_carder.revoke_background(ctx.guild.id, user.id, resolved_background.id)
                 if result:
-                    await ctx.send_response('backgrounds.revoked', user, background)
+                    await ctx.send_response('backgrounds.revoked', user, resolved_background.name)
                 else:
                     await ctx.send_response('backgrounds.revoke_error')
             else:
@@ -834,7 +840,7 @@ class ProfileCog(commands.Cog):
     @commands.guild_only()
     @commands.cooldown(1, 3, type=commands.BucketType.channel)
     async def backgrounds(self, ctx, page:int=None):
-        award_entries = self.profile_carder.get_award_entries(server_id=ctx.guild.id, discord_id=ctx.author.id)
+        award_entries = self.profile_carder.get_award_entries(server_id=ctx.guild.id, discord_id=ctx.author.id).all()
         background_entries = [x.BackgroundEntry for x in award_entries]
         paginator, _, _, _ = self.bot.pagination_manager.ensure_paginator(user_id=ctx.author.id, ctx=ctx, obj=background_entries, reinvoke=self.mybackgrounds_real)
         paginator.current_page = page-1 if page else 0
@@ -853,7 +859,7 @@ class ProfileCog(commands.Cog):
             else:
                 await ctx.send_response('profiles.missing_badge')
         else:
-            await ctx.send('badge_notfound')
+            await ctx.send_response('badge_notfound')
 
     @commands.command(aliases=['setbackground', 'setbg'])
     @commands.guild_only()

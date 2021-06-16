@@ -88,7 +88,7 @@ class ProfileCardManager():
 
     def revoke_all(self, server_id, discord_id):
         try:
-            results = self.db.query(BackgroundWinner).filter_by(server_id=server_id, discord_id=discord_id).delete()
+            results = self.db.query(BackgroundWinner).filter_by(server_id=server_id, discord_id=discord_id).delete(synchronize_session=False)
             self.db.commit()
             return results
         except Exception as e:
@@ -156,10 +156,10 @@ class ProfileCardManager():
         except Exception as e:
             self.db.rollback()
             raise e
-    
-    def update_preferences(self, server_id, discord_id, *, spotlighted_badge_id=None, background_id=None):
+    #kwargs are spotlighted_badge_id and background_id
+    def update_preferences(self, server_id, discord_id, **kwargs):
         try:
-            prefs = ProfilePreferences(server_id=server_id, discord_id=discord_id, spotlighted_badge_id=spotlighted_badge_id, background_id=background_id)
+            prefs = ProfilePreferences(server_id=server_id, discord_id=discord_id, **kwargs)
             self.db.merge(prefs)
             self.db.commit()
         except Exception as e:
