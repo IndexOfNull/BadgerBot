@@ -852,9 +852,11 @@ class ProfileCog(commands.Cog):
     async def spotlight(self, ctx, *, badge:str):
         resolved_badge = self.badger.name_to_badge(ctx.guild.id, badge)
         if resolved_badge:
-            has_badge = self.badger.user_has_badge(ctx.guild.id, ctx.author.id, resolved_badge.id)
-            if has_badge:
-                self.profile_carder.update_preferences(ctx.guild.id, ctx.author.id, spotlighted_badge_id=resolved_badge.id)
+            #has_badge = self.badger.user_has_badge(ctx.guild.id, ctx.author.id, resolved_badge.id)
+            badge_award = self.badger.get_award_entries(server_id=ctx.guild.id, discord_id=ctx.author.id, badge_id=resolved_badge.id)
+            if badge_award:
+                badge_award = badge_award[0].BadgeWinner
+                self.profile_carder.update_preferences(ctx.guild.id, ctx.author.id, spotlighted_award_id=badge_award.id)
                 await ctx.send_response('profiles.spotlighted', resolved_badge.name)
             else:
                 await ctx.send_response('profiles.missing_badge')
@@ -867,9 +869,11 @@ class ProfileCog(commands.Cog):
     async def background(self, ctx, *, background:str):
         resolved_background = self.profile_carder.name_to_background(ctx.guild.id, background)
         if resolved_background:
-            has_background = self.profile_carder.user_has_background(ctx.guild.id, ctx.author.id, resolved_background.id)
-            if has_background:
-                self.profile_carder.update_preferences(ctx.guild.id, ctx.author.id, background_id=resolved_background.id)
+            #has_background = self.profile_carder.user_has_background(ctx.guild.id, ctx.author.id, resolved_background.id)
+            background_award = self.profile_carder.get_award_entries(server_id=ctx.guild.id, discord_id=ctx.author.id, background_id=resolved_background.id).first()
+            if background_award:
+                background_award = background_award[0]
+                self.profile_carder.update_preferences(ctx.guild.id, ctx.author.id, background_award_id=background_award.id)
                 await ctx.send_response('profiles.background_changed', resolved_background.name)
             else:
                 await ctx.send_response('profiles.missing_background')

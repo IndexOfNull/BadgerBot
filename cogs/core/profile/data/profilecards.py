@@ -54,11 +54,19 @@ class ProfilePreferences(Base):
     server_id = Column(BigInteger(), nullable=False, primary_key=True)
     
     discord_id = Column(BigInteger(), nullable=False, primary_key=True)
-    spotlighted_badge_id = Column(Integer, ForeignKey(badges.BadgeEntry.id, ondelete="SET NULL")) #TODO: evaluate ondelete validity with relationship()
-    background_id = Column(Integer, ForeignKey(BackgroundEntry.id, ondelete="SET NULL"))
+    spotlighted_award_id = Column(Integer, ForeignKey(badges.BadgeWinner.id, ondelete="SET NULL")) #TODO: evaluate ondelete validity with relationship()
+    background_award_id = Column(Integer, ForeignKey(BackgroundWinner.id, ondelete="SET NULL"))
 
-    background = relationship("BackgroundEntry", foreign_keys="ProfilePreferences.background_id")
-    spotlighted_badge = relationship("BadgeEntry", foreign_keys="ProfilePreferences.spotlighted_badge_id")
+    _background_award_entry = relationship("BackgroundWinner", foreign_keys="ProfilePreferences.background_award_id")
+    _spotlighted_award_entry = relationship("BadgeWinner", foreign_keys="ProfilePreferences.spotlighted_award_id")
+
+    @property
+    def background(self):
+        return None if self._background_award_entry is None else self._background_award_entry.background #Be careful about ordering here...
+
+    @property
+    def spotlighted_badge(self):
+        return None if self._spotlighted_award_entry is None else self._spotlighted_award_entry.badge
 
     #__table_args__ = (UniqueConstraint(server_id, discord_id, name="_server_member_uc"), ) #Ensure one preference entry per user per server
 
@@ -156,7 +164,9 @@ class ProfileCardManager():
         except Exception as e:
             self.db.rollback()
             raise e
-    #kwargs are spotlighted_badge_id and background_id
+
+    #kwargs are spotlighted_award_id and background_award_id
+    #You must use an award entry (cannot be a badge or background entry directly)
     def update_preferences(self, server_id, discord_id, **kwargs):
         try:
             prefs = ProfilePreferences(server_id=server_id, discord_id=discord_id, **kwargs)
