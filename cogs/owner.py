@@ -7,7 +7,7 @@ from sqlalchemy import Column, String, Text
 
 Base = config.declarative_base
 class BotOption(Base):
-    __tablename__ = "botopts"
+    __tablename__ = "bot_options"
     option = Column(String(64), nullable=False, primary_key=True)
     value = Column(Text(), nullable=True)
 

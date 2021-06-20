@@ -9,9 +9,9 @@ from utils import checks, config
 Base = config.declarative_base
 class TagEntry(Base):
     __tablename__ = "tags"
-    id = Column(Integer, primary_key=True)
-    server_id = Column(BigInteger, nullable=False)
-    name = Column(String(128, collation="utf8mb4_unicode_ci"), nullable=False)
+    #id = Column(Integer, primary_key=True)
+    server_id = Column(BigInteger, nullable=False, primary_key=True)
+    name = Column(String(128, collation="utf8mb4_unicode_ci"), nullable=False, primary_key=True)
     content = Column(Text(collation="utf8mb4_unicode_ci"), nullable=False)
     created_on = Column(TIMESTAMP, default=datetime.datetime.now()) #a timestamp to keep track of when the row was added
 

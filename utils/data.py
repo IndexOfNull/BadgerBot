@@ -11,9 +11,9 @@ from utils import config
 db = None
 Base = config.declarative_base
 class OptionEntry(Base):
-    __tablename__ = "serveropts"
+    __tablename__ = "server_options"
     id = Column(Integer, primary_key=True)
-    server_id = Column(BigInteger, nullable=False)
+    server_id = Column(BigInteger, nullable=False, index=True)
     name = Column(String(128), nullable=False) #names will be hardcoded in, so no special collation should be needed
     data = Column(Text(collation="utf8mb4_unicode_ci"), nullable=False)
     created_on = Column(TIMESTAMP, default=datetime.datetime.now()) #a timestamp to keep track of when the row was added

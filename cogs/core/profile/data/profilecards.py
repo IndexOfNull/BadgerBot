@@ -13,9 +13,9 @@ Base = config.declarative_base
 class BackgroundEntry(Base):
     __tablename__ = "backgrounds"
     id = Column(Integer, primary_key=True)
-    server_id = Column(BigInteger(), nullable=False)
+    server_id = Column(BigInteger(), nullable=False, index=True)
 
-    name = Column(String(150, collation="utf8mb4_unicode_ci"), nullable=False) #must be below 191 characters or something because indexing
+    name = Column(String(150, collation="utf8mb4_unicode_ci"), nullable=False, index=True) #must be below 191 characters or something because indexing
     description = Column(Text(collation="utf8mb4_unicode_ci"), default="")
     image_url = Column(Text(collation="utf8mb4_unicode_ci", length=500), nullable=False)
 
@@ -24,7 +24,7 @@ class BackgroundEntry(Base):
     usable_by_default = Column(Boolean, nullable=False, default=0)
     hidden = Column(Boolean, nullable=False, default=0)
 
-    __table_args__ = (UniqueConstraint(server_id, name, name="_server_bg_name_uc"), ) #Ensure unique names per server
+    __table_args__ = (UniqueConstraint(server_id, name), ) #Ensure unique names per server
 
     def __repr__(self):
         return "<BackgroundEntry(id='%s', server_id='%s', name='%s', image_url='%s', ...)>" % (self.id, self.server_id, self.name, self.image_url)
@@ -32,17 +32,16 @@ class BackgroundEntry(Base):
 class BackgroundWinner(Base):
     __tablename__ = "background_winners"
     id = Column(Integer, primary_key=True)
-    server_id = Column(BigInteger(), nullable=False)
+    server_id = Column(BigInteger(), nullable=False, index=True)
 
-    discord_id = Column(BigInteger(), nullable=False)
+    discord_id = Column(BigInteger(), nullable=False, index=True)
     background_id = Column(Integer, ForeignKey(BackgroundEntry.id, ondelete="CASCADE"), nullable=False)
     awarded = Column(TIMESTAMP, default=datetime.now())
 
     background = relationship("BackgroundEntry", foreign_keys="BackgroundWinner.background_id")
 
     __table_args__ = (
-        Index("_server_member_ix", server_id, discord_id),
-        UniqueConstraint(discord_id, background_id, name="_discord_bg_id_uc", ) #make it so users can only have one background win entry per background
+        UniqueConstraint(discord_id, background_id),  #make it so users can only have one background win entry per background
     )
 
     def __repr__(self):
@@ -54,7 +53,7 @@ class ProfilePreferences(Base):
     server_id = Column(BigInteger(), nullable=False, primary_key=True)
     
     discord_id = Column(BigInteger(), nullable=False, primary_key=True)
-    spotlighted_award_id = Column(Integer, ForeignKey(badges.BadgeWinner.id, ondelete="SET NULL")) #TODO: evaluate ondelete validity with relationship()
+    spotlighted_award_id = Column(Integer, ForeignKey(badges.BadgeWinner.id, ondelete="SET NULL")) #TODO: evaluate ondelete validity with relationship() (EDIT: looks okay, but I want an SA pro's opinion)
     background_award_id = Column(Integer, ForeignKey(BackgroundWinner.id, ondelete="SET NULL"))
 
     _background_award_entry = relationship("BackgroundWinner", foreign_keys="ProfilePreferences.background_award_id")
