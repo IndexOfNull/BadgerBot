@@ -119,7 +119,7 @@ class BuddyBot(commands.Bot):
 				self.loop.create_task(self.database_ping_task())
 			self.loop.create_task(self.paginator_cleanup_task())
 		try:
-			self.db.execute("SELECT * FROM serveropts ORDER BY RAND() LIMIT 1") #Get a random server opt row as a sanity check. This is MySQL specific, so reformatting may be needed for other DBs
+			self.db.execute("SELECT * FROM server_options ORDER BY RAND() LIMIT 1") #Get a random server opt row as a sanity check. This is MySQL specific, so reformatting may be needed for other DBs
 		except sa.exc.ProgrammingError:
 			print("It appears that the database was not initialized properly. Try rerunning with --create-tables")
 			exit()

@@ -18,7 +18,7 @@ class BadgeEntry(Base):
     #It should be okay as long as servers don't have too many badges
     name = Column(String(255, collation="utf8mb4_unicode_ci"), nullable=False, index=True)
     description = Column(Text(collation="utf8mb4_unicode_ci"), default="")
-    icon = Column(Text(collation="utf8mb4_unicode_ci"), nullable=False, index=True) #A badge icon. Use utf8mb4 for full unicode support (emojis and stuff).
+    icon = Column(String(128, collation="utf8mb4_unicode_ci"), nullable=False, index=True) #A badge icon. Use utf8mb4 for full unicode support (emojis and stuff).
     
     created_on = Column(TIMESTAMP, default=datetime.now()) #a timestamp to keep track of when the row was added
 
