@@ -88,5 +88,4 @@ def async_partial(f, *args):
        if asyncio.iscoroutinefunction(f):
            result = await result
        return result
-
    return f2

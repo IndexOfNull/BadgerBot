@@ -64,7 +64,7 @@ class ProfileCog(commands.Cog):
     @commands.command()
     @commands.guild_only()
     @commands.cooldown(1, 5, type=commands.BucketType.user)
-    async def profile2(self, ctx, *, user:discord.Member=None):
+    async def profile(self, ctx, *, user:discord.Member=None):
         if user is None:
             user = ctx.author
         badges = self.badger.get_award_entries(server_id=ctx.guild.id, discord_id=user.id).all()
@@ -82,7 +82,7 @@ class ProfileCog(commands.Cog):
     @commands.command()
     @commands.guild_only()
     @commands.cooldown(1, 3, type=commands.BucketType.user)
-    async def profile(self, ctx, *, user:discord.Member=None):
+    async def classicprofile(self, ctx, *, user:discord.Member=None):
         if user is None:
             user = ctx.author
 

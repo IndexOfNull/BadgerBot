@@ -39,7 +39,7 @@ prepend_sys_path = .
 # are written from script.py.mako
 # output_encoding = utf-8
 
-sqlalchemy.url = mysql+pymysql://tempbak@localhost/BadgerBot
+sqlalchemy.url = mysql+pymysql://user:password@localhost/BadgerBot
 
 
 [post_write_hooks]

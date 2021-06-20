@@ -32,9 +32,11 @@ You should be able to change the Python version in the Pipfile if pipenv complai
 
 5. Open the `config.json` file and fill in the necessary details like your bot token and database URI.
 
-6. Open the `alembic.ini` file and fill in the same database URI you did in `config.json`.
+6. Make a clone of the `alembic.ini.example` file and rename it to `alembic.ini` (`cp alembic.ini.example alembic.ini`)
 
-7. Run `alembic upgrade head` to run migrations.
+7. Open the newly cloned/renamed `alembic.ini` file and fill in the same database URI you did in `config.json`.
+
+8. Run `alembic upgrade head` to run migrations.
 
 - You should be good to go.
 

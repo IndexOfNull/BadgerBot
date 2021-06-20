@@ -11,7 +11,6 @@ TWEMOJI_BASE = "https://twemoji.maxcdn.com/v/latest/72x72/{codepoint}.png"
 
 
 #all of this is horrible...
-#TODO: maybe put this somewhere that already has access to the bot and doesn't need a Context?
 async def make_profile_card(ctx, user, *, badges, bg_url, spotlight):
     card_image = Image.new("RGB", CARD_SIZE, "black")
     user_color = user.color.to_rgb()

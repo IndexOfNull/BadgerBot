@@ -1,4 +1,5 @@
 test.py
+alembic.ini
 config.json
 .vscode/*
 .DS_Store
