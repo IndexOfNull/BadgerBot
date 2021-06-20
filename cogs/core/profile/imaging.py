@@ -191,18 +191,3 @@ def img_to_bytesio(img, file_extention, **kwargs):
     img.save(b, file_extention, **kwargs)
     b.seek(0)
     return b
-
-"""
-    def add_text(image, text, location, font, fontsize=14, fontcolor=(0, 0, 0), 
-                 border=0, border_color=(0, 0, 0), points=15):
-        font_format = ImageFont.truetype(font, fontsize)
-        drawer = ImageDraw.Draw(image)
-
-        if border:
-            (x, y) = location
-            for step in range(0, math.floor(border * points), 1):
-                angle = step * 2 * math.pi / math.floor(border * points)
-                drawer.text((x - border * math.cos(angle), y - border * math.sin(angle)), text, border_color, font=font_format)
-        drawer.text(location, text, fontcolor, font=font_format)
-        return image
-        """

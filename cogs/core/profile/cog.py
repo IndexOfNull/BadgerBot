@@ -184,7 +184,7 @@ class ProfileCog(commands.Cog):
         if len(resolved_badges) != len(badges):
             final += ctx.get_response("badge_awardmb.skipped") + "\n"
         if len(awarded_badges) > 0:
-            header = ctx.get_response('badge_awardmb.awarded').format(user)
+            header = ctx.get_response('badge_awardmb.awarded', user)
             final = self.make_badge_list(awarded_badges, line="\\> {0.icon} **{0.name}**\n", header=header)
         if len(unawarded_badges) > 0:
             header = ctx.get_response('badge_awardmb.already_awarded')
@@ -219,7 +219,7 @@ class ProfileCog(commands.Cog):
         if len(resolved_badges) != len(badges):
             final += ctx.get_response("badge_revokemb.skipped") + "\n"
         if len(revoked_badges) > 0:
-            header = ctx.get_response('badge_revokemb.revoked').format(user)
+            header = ctx.get_response('badge_revokemb.revoked', user)
             final = self.make_badge_list(revoked_badges, line="\\> {0.icon} **{0.name}**\n", header=header)
         if len(unrevoked_badges) > 0:
             header = ctx.get_response('badge_revokemb.not_revoked')
@@ -457,6 +457,36 @@ class ProfileCog(commands.Cog):
         else:
             await ctx.send_response('badge_notfound')
 
+    async def userbadges_real(self, ctx, paginator, user):
+        pc = paginator.page_count
+        if pc == 0:
+            await ctx.send_response('userbadges.no_badges', user=user)
+            return
+        page_list = paginator.get_current_page()
+        page = paginator.current_page + 1
+        badge_list = [x.BadgeEntry for x in page_list]
+        page_header = ctx.get_response('userbadges.page_header', user=user, currentpage=page, pagecount=pc)
+        page_footer = ctx.get_response('userbadges.page_footer', ctx)
+        finalstr = self.make_badge_list(badge_list, header=page_header, footer=page_footer)
+        if len(finalstr) > 2000: #This is a bit of jank hack, I know. But it's far more elegant than erroring and it lets server administrators fix the problem.
+            f = discord.File(BytesIO(finalstr.encode("utf-8")), filename="badgelist-pg" + str(page) + ".txt")
+            await ctx.send(ctx.responses['badgelist_toolarge'], file=f)
+        else:
+            await ctx.send(finalstr)
+
+
+    @commands.command(aliases=['mybadges'])
+    @commands.guild_only()
+    @commands.cooldown(1, 3, type=commands.BucketType.user)
+    async def userbadges(self, ctx, *, user:discord.Member=None):
+        if user is None:
+            user = ctx.author
+        user_badges = self.badger.get_award_entries(server_id=ctx.guild.id, discord_id=user.id)
+        wrapped_real = funcs.async_partial(self.userbadges_real, user)
+        paginator = pagination.Paginator(user_badges, items_per_page=1)
+        self.bot.pagination_manager.update_user(user_id=ctx.author.id, ctx=ctx, paginator=paginator, reinvoke=wrapped_real)
+        await self.userbadges_real(ctx, paginator, user)
+
     async def badges_real(self, ctx, paginator):
         pc = paginator.page_count
         if pc == 0:
@@ -557,7 +587,7 @@ class ProfileCog(commands.Cog):
     async def usersearch_real(self, ctx, paginator, resolved_badge):
         page = paginator.get_current_page()
         current_page = paginator.current_page + 1
-        header = "```md\n> {0}\n================\n".format( ctx.get_response('badgesearch.header').format(resolved_badge.name, current_page, paginator.page_count, paginator.item_count) )
+        header = "```md\n> {0}\n================\n".format( ctx.get_response('badgesearch.header', resolved_badge.name, current_page, paginator.page_count, paginator.item_count) )
         footer = "\n```"
         
         final = ""
@@ -565,7 +595,7 @@ class ProfileCog(commands.Cog):
             resolved_user = self.bot.get_user(winner.discord_id)
             final += str(i + 1) + ": "
             if not resolved_user:
-                final += ctx.get_response('badgesearch.unknown_user').format(winner.discord_id) + "\n"
+                final += ctx.get_response('badgesearch.unknown_user', winner.discord_id) + "\n"
             else:
                 final += str(resolved_user) + "\n"
 
@@ -589,14 +619,14 @@ class ProfileCog(commands.Cog):
     async def leaderboard_real(self, ctx, paginator):
         rows = paginator.get_current_page()
         page = paginator.current_page + 1
-        header = "```md\n> {0}\n================\n".format( ctx.get_response('leaderboard.header').format(page, paginator.page_count) )
+        header = "```md\n> {0}\n================\n".format( ctx.get_response('leaderboard.header', page, paginator.page_count) )
         footer = "\n```"
         entry = "<{num}: {user}> {levels} levels\n"
         final = header
         for position, row in enumerate(rows):
             user = self.bot.get_user(row.discord_id)
             if not user:
-                u = ctx.get_response('leaderboard.unknown_user').format(row.discord_id)
+                u = ctx.get_response('leaderboard.unknown_user', row.discord_id)
             else:
                 u = str(user)
             final += entry.format(num=position + (page-1)*paginator.items_per_page + 1, user=u, levels=row.levels)
@@ -801,8 +831,8 @@ class ProfileCog(commands.Cog):
             return
         page_list = paginator.get_current_page()
         page = paginator.current_page + 1
-        page_header = ctx.get_response('backgrounds.page_header').format(page, pc) #Could use a localization string
-        page_footer = ctx.get_response('page_strings.footer').format(ctx)
+        page_header = ctx.get_response('backgrounds.page_header', page, pc) #Could use a localization string
+        page_footer = ctx.get_response('page_strings.footer', ctx)
         finalstr = self.make_background_list(page_list, header=page_header, footer=page_footer)
         if len(finalstr) > 2000: #This is a bit of jank hack, I know. But it's far more elegant than erroring and it lets server administrators fix the problem.
             f = discord.File(BytesIO(finalstr.encode("utf-8")), filename="bglist-pg" + str(page) + ".txt")
@@ -810,10 +840,10 @@ class ProfileCog(commands.Cog):
         else:
             await ctx.send(finalstr)
 
-    @commands.command(aliases=['serverbgs', 'bglist', 'allbgs'])
+    @commands.command(aliases=['serverbgs', 'bglist', 'allbgs', 'bgs'])
     @commands.guild_only()
     @commands.cooldown(1, 3, type=commands.BucketType.channel)
-    async def serverbackgrounds(self, ctx, page:int=None):
+    async def backgrounds(self, ctx, page:int=None):
         server_backgrounds = self.profile_carder.get_background_entries(server_id=ctx.guild.id)
         paginator, _, _, _ = self.bot.pagination_manager.ensure_paginator(user_id=ctx.author.id, ctx=ctx, obj=server_backgrounds, reinvoke=self.backgrounds_real)
         paginator.current_page = page-1 if page else 0
@@ -826,8 +856,8 @@ class ProfileCog(commands.Cog):
             return
         page_list = paginator.get_current_page()
         page = paginator.current_page + 1
-        page_header = ctx.get_response('backgrounds.user_page_header').format(page, pc)
-        page_footer = ctx.get_response('page_strings.footer').format(ctx)
+        page_header = ctx.get_response('backgrounds.user_page_header', page, pc)
+        page_footer = ctx.get_response('page_strings.footer', ctx)
         finalstr = self.make_background_list(page_list, header=page_header, footer=page_footer)
         if len(finalstr) > 2000: #This is a bit of jank hack, I know. But it's far more elegant than erroring and it lets server administrators fix the problem.
             f = discord.File(BytesIO(finalstr.encode("utf-8")), filename="mybglist-pg" + str(page) + ".txt")
@@ -836,10 +866,10 @@ class ProfileCog(commands.Cog):
             await ctx.send(finalstr)
 
     #Shows the user their backgrounds
-    @commands.command(aliases=['bgs'])
+    @commands.command(aliases=['mybgs'])
     @commands.guild_only()
     @commands.cooldown(1, 3, type=commands.BucketType.channel)
-    async def backgrounds(self, ctx, page:int=None):
+    async def mybackgrounds(self, ctx, page:int=None):
         award_entries = self.profile_carder.get_award_entries(server_id=ctx.guild.id, discord_id=ctx.author.id).all()
         background_entries = [x.BackgroundEntry for x in award_entries]
         paginator, _, _, _ = self.bot.pagination_manager.ensure_paginator(user_id=ctx.author.id, ctx=ctx, obj=background_entries, reinvoke=self.mybackgrounds_real)

@@ -144,7 +144,7 @@ class FunCog(commands.Cog):
 				else:
 					finalname += ("").join(splitname[ int(len(splitname)/2): ]) + " "
 		finalname = '"' + finalname.rstrip() + '"'
-		message = ctx.get_response('marry_message').format(waifu, husbando, finalname)
+		message = ctx.get_response('marry_message', waifu, husbando, finalname)
 		await ctx.send(message, file=f)
 
 def setup(bot):
