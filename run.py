@@ -49,8 +49,6 @@ if args.write_updated_config is True: #Write it if the user wants to
 #command line options -> kwarg
 config['create_tables'] = args.create_tables
 
-print("\nWARNING: The database schema has changed since commit 0505a60! We currently have no proper migration system, so just run fix_database.py to get things working again. You don't need to do this more than once.\nAS ALWAYS: MAKE A BACKUP OF YOUR DB FIRST!\n\nBadge levels aren't migrated, so users will just have to deal with that.\n\n")
-
 buddy = BuddyBot(**config)
 
 if __name__ == "__main__":

@@ -12,6 +12,8 @@ If you are using an older database ***(you probably are)***, follow this mini-gu
 
 Note: if you have any local changes that you wish to keep, stash them with git first or you *will* lose them.
 
+This assumes you have already configured your alembic.ini file to point to your database (see the top README [installation section] for info on how to do this)
+
 1. Take note of your current git head with `git rev-parse HEAD`. This will be useful if you need to downgrade. **DO NOT TOUCH YOUR DATABASE YET**
 
 2. Update the local git repository, switch to the proper HEAD, and create the alembic versions folder:

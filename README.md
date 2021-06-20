@@ -2,9 +2,7 @@
 
 Hello, this is a little project of mine called BadgerBot. It is currently ~~***unfinished***~~ in a working state where most things work as expected. It is primarily designed to be a system for giving badges to server members, but there are some other modules that add some fun things. You can check the projects tab if you want to see what's planned and where I'm going with this.
 
-**I would not clone this if you were looking for a bug free, fully-featured bot. You will not get any support; you're on your own.**
-
-**WARNING (June 15, 2021): This codebase is currently in a highly volatile state. Database schema changes are going to be happening and there is currently no migration system. Use caution when using this in production and when updating.**
+**WARNING: There have been a lot of database changes recently (including the installation of Alembic). You should read the README in the alembic directory for directions on upgrading your database (if you need to, which you probably do).**
 
 You are welcome to open an issue or PR so my code can be fixed :)
 
@@ -16,9 +14,9 @@ You are welcome to open an issue or PR so my code can be fixed :)
 
 This should be all you need to run this properly.
 
-# Installing
+# Installation
 
-Installing is pretty simple, and can basically be done with these steps:
+Installation is pretty simple, and can basically be done with these steps:
 
 1. Clone the repository, `cd` into it, and setup a pipenv environment:
 
@@ -34,9 +32,9 @@ You should be able to change the Python version in the Pipfile if pipenv complai
 
 5. Open the `config.json` file and fill in the necessary details like your bot token and database URI.
 
-6. Run the bot again with `python3 run.py --create-tables` to create all the necessary tables in your database
+6. Open the `alembic.ini` file and fill in the same database URI you did in `config.json`.
 
-*Note*: You shouldn't (normally) have to include the `--create-tables` argument. You can omit it from now on.
+7. Run `alembic upgrade head` to run migrations.
 
 - You should be good to go.
 
