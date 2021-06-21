@@ -59,13 +59,13 @@ def sizeof_fmt(num):
         num /= 1000.0
     return "%.1f%s%s" % (num, 'Yi', suffix)
 
-emoji_regex = re.compile(r'\<:(\w*?):(\d*?)\>')
+emoji_regex = re.compile(r'\<(a)?:(\w*?):(\d*?)\>')
 
 def emoji_escape(text: str):
-    return re.sub(r'\[;(\w*?);(\d*?)\]', r'<:\1:\2>', text)
+    return re.sub(r'\[(a)?;(\w*?);(\d*?)\]', r'<\1:\2:\3>', text)
 
 def emoji_format(text: str):
-    return re.sub(emoji_regex, r'[;\1;\2]', text)
+    return re.sub(emoji_regex, r'[\1;\2;\3]', text)
 
 #Returns a list of emojis contained in the passed text. custom_emoji will include discord custom emoji.
 #Setting tuple to True will turn each list item into a tuple of (match, is_custom)

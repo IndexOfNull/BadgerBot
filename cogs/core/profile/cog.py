@@ -542,7 +542,7 @@ class ProfileCog(commands.Cog):
 
             custom_emoji_match = funcs.emoji_regex.match(badge.icon) #Matches the first, which is okay
             if custom_emoji_match:
-                resolved_emoji = self.bot.get_emoji(int(custom_emoji_match.groups(0)[1]))
+                resolved_emoji = self.bot.get_emoji(int(custom_emoji_match.groups(0)[2]))
                 if resolved_emoji:
                     embed.set_thumbnail(url=resolved_emoji.url)
 

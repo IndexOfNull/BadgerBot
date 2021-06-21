@@ -63,7 +63,7 @@ async def make_profile_card(ctx, user, *, badges, bg_url, spotlight):
 
     #Spotlight
     if spotlight:
-        emoji_bytes = await get_emoji_image(ctx.bot, spotlight.icon)
+        emoji_bytes = await get_emoji_image(ctx.bot, spotlight.icon, format='png')
         spotlight_text = spotlight.name
     else:
         emoji_bytes = await get_emoji_image(ctx.bot, "🔎")
@@ -154,7 +154,7 @@ def codepoint(codes):
 async def get_emoji_image(bot, emoji, *, format=None, static_format='png'):
     custom_emoji = re.match(funcs.emoji_regex, emoji)
     if custom_emoji: #its a custom discord emoji
-        emoji_id = custom_emoji.group(2)
+        emoji_id = custom_emoji.group(3)
         resolved_emoji = bot.get_emoji(int(emoji_id))
         asset = resolved_emoji.url_as(format=format, static_format=static_format)
         data = await asset.read()
