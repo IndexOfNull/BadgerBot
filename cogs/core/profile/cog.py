@@ -474,8 +474,17 @@ class ProfileCog(commands.Cog):
         else:
             await ctx.send(finalstr)
 
+    @commands.command()
+    @commands.guild_only()
+    @commands.cooldown(1, 3, type=commands.BucketType.user)
+    async def mybadges(self, ctx, page:int=None):
+        user_badges = self.badger.get_award_entries(server_id=ctx.guild.id, discord_id=ctx.author.id)
+        wrapped_real = funcs.async_partial(self.userbadges_real, ctx.author)
+        paginator, _, _, _ = self.bot.pagination_manager.ensure_paginator(user_id=ctx.author.id, ctx=ctx, obj=user_badges, reinvoke=wrapped_real)
+        paginator.current_page = page-1 if page else 0
+        await self.userbadges_real(ctx, paginator, ctx.author)
 
-    @commands.command(aliases=['mybadges'])
+    @commands.command()
     @commands.guild_only()
     @commands.cooldown(1, 3, type=commands.BucketType.user)
     async def userbadges(self, ctx, *, user:discord.Member=None):
