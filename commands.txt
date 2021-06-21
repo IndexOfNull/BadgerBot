@@ -67,20 +67,37 @@ Command List
         10. (++) Badge Wizard                : ;badgewizard
             - Walks you through making a badge
         11. (!)(++) Delete a badge           : ;delbadge <name>
-        12. (++) Update a badge             : ;updatebadge <name> <newname> [newicon] [newdescription]
+        12. (++) Update a badge              : ;updatebadge <name> <newname> [newicon] [newdescription]
             - Typing in 'none' or 'nothing' for [newdescription] will make it blank.
-        13. List the server's badges        : ;badges
-        14. Search for a badge              : ;search <search>
+        13. (++) Create a background         : ;createbg <name> <image_url> [description]
+            - Image URL must be a direct image link from Discord's CDN or Imgur
+        14. (!)(++) Delete a background      : ;delbg <name>
+        15. (++) Update a background         : ;updatebg <name> <newname> [newicon] [newdescription]
+            - You can use "keep" or "same" in [newicon] to avoid overwriting it (if you want to modify the description).
+        16. (+) Award a background           : ;awardbg <user> <background>
+        17. (+) Revoke a background          : ;revokebg <user> <background>
+        18. (++) Revoke all backgrounds from : ;revokeallbg <user>
+            a user
+        19. (!)(++) Revoke a background from : ;revokefromallbg <background>
+            everyone
+        20. List the server's badges        : ;badges
+        21. See your badges                 : ;mybadges
+        22. See someone else's badges       : ;userbadges <user>
+        23. Search for a badge              : ;search <search>
             - The search parameter will search for names and icons (so you can put either)
-        15. Check if a user has a badge     : ;hasbadge <user> <badge>
-        16. See who all has a badge         : ;usersearch <badge>
+        24. Check if a user has a badge     : ;hasbadge <user> <badge>
+        25. See who all has a badge         : ;usersearch <badge>
             - Also tells you how many people have the badge.
-        17. View a user's profile           : ;profile [user]
+        26. View a user's profile           : ;profile [user]
             - Will show your profile if no user is supplied
-        18. Get emoji info                  : ;emoji <emoji>
+        27. Get emoji info                  : ;emoji <emoji>
             - This will give you some info about an emoji, as well as a "Non-Nitro" copy-paste
             - You can use this copy-paste just as you would an emoji, just substitute it in (it may not work with animated emoji)
             - Cross-server emoji works too, just make sure the bot is in both servers.
+        28. List server backgrounds         : ;bgs
+        29. List your backgrounds           : ;mybgs
+        30. Pick a background               : ;background <background>
+        31. Spotlight a badge               : ;spotlight <badge>
 
     Leveling Module (SO):
         1. (++) Set a badge's levels        : ;setlevel <badge> <levels>

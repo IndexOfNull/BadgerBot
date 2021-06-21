@@ -75,11 +75,11 @@ class ProfileCog(commands.Cog):
             bg_url = prefs.background.image_url if prefs.background else None
             spotlight = prefs.spotlighted_badge if prefs.spotlighted_badge else None
         img = await imaging.make_profile_card(ctx, user, badges=badges, bg_url=bg_url, spotlight=spotlight)
-        img = imaging.img_to_bytesio(img, "JPEG", subsampling=0)
-        f = discord.File(img, filename="profile.jpg")
+        img = imaging.img_to_bytesio(img, "PNG")
+        f = discord.File(img, filename="profile.png")
         await ctx.send(file=f)
 
-    @commands.command()
+    @commands.command(hidden=True, aliases=['oldprofile', 'legacyprofile'])
     @commands.guild_only()
     @commands.cooldown(1, 3, type=commands.BucketType.user)
     async def classicprofile(self, ctx, *, user:discord.Member=None):
@@ -483,7 +483,7 @@ class ProfileCog(commands.Cog):
             user = ctx.author
         user_badges = self.badger.get_award_entries(server_id=ctx.guild.id, discord_id=user.id)
         wrapped_real = funcs.async_partial(self.userbadges_real, user)
-        paginator = pagination.Paginator(user_badges, items_per_page=1)
+        paginator = pagination.Paginator(user_badges)
         self.bot.pagination_manager.update_user(user_id=ctx.author.id, ctx=ctx, paginator=paginator, reinvoke=wrapped_real)
         await self.userbadges_real(ctx, paginator, user)
 
@@ -795,25 +795,25 @@ class ProfileCog(commands.Cog):
             await ctx.send_response('backgrounds.not_found')
         
 
-    @commands.command(aliases=['bgstripall'])
+    @commands.command(aliases=['stripallbg', 'stripallbgs', 'revokeallbgs'])
     @commands.guild_only()
     @checks.is_admin()
     @commands.cooldown(1, 5, type=commands.BucketType.guild)
     @funcs.require_confirmation(warning="This will strip the user of all their backgrounds! There is no easy way of undoing this!")
-    async def bgrevokeall(self, ctx, user:discord.Member):
+    async def revokeallbg(self, ctx, user:discord.Member):
         count = self.profile_carder.revoke_all(ctx.guild.id, user.id)
         if count > 0:
             await ctx.send_response('backgrounds.revoked_all', user, count)
         else:
             await ctx.send_response('backgrounds.none_revoked', user)
 
-    @commands.command(aliases=['bgnuke'])
+    @commands.command(aliases=['nukebg'])
     @commands.guild_only()
     @checks.is_admin()
     @commands.cooldown(1, 5, type=commands.BucketType.guild)
     @funcs.require_confirmation(warning="All users will lose this background! There is no easy way of undoing this!")
     @funcs.require_confirmation(warning="Are you sure? This is your last chance.") #lol
-    async def bgrevokefromall(self, ctx, *, background:str):
+    async def revokefromallbg(self, ctx, *, background:str):
         resolved_background = self.profile_carder.name_to_background(ctx.guild.id, background)
         if resolved_background:
             count = self.profile_carder.revoke_from_all(ctx.guild.id, resolved_background.id)
