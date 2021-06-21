@@ -11,7 +11,7 @@ class FunCog(commands.Cog):
 
 	@commands.command()
 	async def emoji(self, ctx, *, emoji:discord.Emoji):
-		emoji_str = "<:{0}:{1}>".format(emoji.name, emoji.id)
+		emoji_str = "<{0}:{1}:{2}>".format("a" if emoji.animated else "", emoji.name, emoji.id)
 		title = ("Emoji Info " + emoji_str) if emoji.is_usable() else "Emoji Info"
 		embed = discord.Embed(title=title, type="Rich", color=discord.Color.blue())
 		embed.set_thumbnail(url=emoji.url)

@@ -70,7 +70,7 @@ def emoji_format(text: str):
 #Returns a list of emojis contained in the passed text. custom_emoji will include discord custom emoji.
 #Setting tuple to True will turn each list item into a tuple of (match, is_custom)
 def extract_emoji(text, *, custom_emoji=False, as_tuple=False):
-    emoji_or_unicode = regex.compile(r"\<:\w*?:\d*?\>|\X")
+    emoji_or_unicode = regex.compile(r"\<a?:\w*?:\d*?\>|\X")
     emoji_list = [] #Tuple (emoji, is_custom)
     data = regex.findall(emoji_or_unicode, text)
     for match in data:
