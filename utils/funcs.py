@@ -89,3 +89,10 @@ def async_partial(f, *args):
            result = await result
        return result
    return f2
+
+#Saves an image into a BytesIO buffer. Keyword arguments are passed directly to Image.save()
+def img_to_bytesio(img, file_extention, **kwargs):
+    b = BytesIO()
+    img.save(b, file_extention, **kwargs)
+    b.seek(0)
+    return b

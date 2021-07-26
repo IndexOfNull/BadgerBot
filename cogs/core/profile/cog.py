@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands
 
 from utils import checks, funcs, pagination, http
-from utils.funcs import emoji_escape, extract_emoji
 
 import re
 from io import BytesIO
@@ -75,7 +74,7 @@ class ProfileCog(commands.Cog):
             bg_url = prefs.background.image_url if prefs.background else None
             spotlight = prefs.spotlighted_badge if prefs.spotlighted_badge else None
         img = await imaging.make_profile_card(ctx, user, badges=badges, bg_url=bg_url, spotlight=spotlight)
-        img = imaging.img_to_bytesio(img, "PNG")
+        img = funcs.img_to_bytesio(img, "PNG")
         f = discord.File(img, filename="profile.png")
         await ctx.send(file=f)
 
@@ -368,7 +367,7 @@ class ProfileCog(commands.Cog):
                 if len(message.content) > self.badge_limits['icon']:
                     msgs.append(await ctx.send(maxmsg.format("icon", self.badge_limits['icon'])))
                     continue
-                icon = emoji_escape(message.content)
+                icon = funcs.emoji_escape(message.content)
             msgs.append(await ctx.send(strs['description'].format(self.badge_limits['description'])))
             while not description: #get the description
                 msg = await self.bot.wait_for("message", check=message_check, timeout=maxtime)

@@ -183,10 +183,3 @@ def aspect_resize(img, target_size):
     fx, fy = x/tx, y/ty #difference expressed as factor
     factor = 1/fx if fx < fy else 1/fy #if fx or fy < 1, it will pick whichever has to scale more, if either is > 1, it will scale less
     return img.resize((int(x*factor)+1, int(y*factor)+1))
-
-#Saves an image into a BytesIO buffer. Keyword arguments are passed directly to Image.save()
-def img_to_bytesio(img, file_extention, **kwargs):
-    b = BytesIO()
-    img.save(b, file_extention, **kwargs)
-    b.seek(0)
-    return b
