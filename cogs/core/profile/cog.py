@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 
 from utils import checks, funcs, pagination, http
+from utils.funcs import emoji_escape, extract_emoji
 
 import re
 from io import BytesIO
@@ -309,7 +310,7 @@ class ProfileCog(commands.Cog):
         if len(description) > self.badge_limits['description']:
             await ctx.send_response('badge_limits', 'description', self.badge_limits['description'])
             return
-        extracted_emoji = funcs.extract_emoji(icon, custom_emoji=True)
+        extracted_emoji = extract_emoji(icon, custom_emoji=True)
         if not len(extracted_emoji) == 1:
             await ctx.send_response('badge_emojirequired')
             return
@@ -367,7 +368,7 @@ class ProfileCog(commands.Cog):
                 if len(message.content) > self.badge_limits['icon']:
                     msgs.append(await ctx.send(maxmsg.format("icon", self.badge_limits['icon'])))
                     continue
-                icon = funcs.emoji_escape(message.content)
+                icon = emoji_escape(message.content)
             msgs.append(await ctx.send(strs['description'].format(self.badge_limits['description'])))
             while not description: #get the description
                 msg = await self.bot.wait_for("message", check=message_check, timeout=maxtime)
