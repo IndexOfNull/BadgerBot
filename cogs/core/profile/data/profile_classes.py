@@ -4,7 +4,7 @@ from sqlalchemy.sql.expression import null
 from sqlalchemy.sql.schema import Index, UniqueConstraint
 from utils import config
 from datetime import datetime
-from . import badges
+from . import badge_classes
 
 Base = config.declarative_base
 
@@ -53,7 +53,7 @@ class ProfilePreferences(Base):
     server_id = Column(BigInteger(), nullable=False, primary_key=True)
     
     discord_id = Column(BigInteger(), nullable=False, primary_key=True)
-    spotlighted_award_id = Column(Integer, ForeignKey(badges.BadgeWinner.id, ondelete="SET NULL")) #TODO: evaluate ondelete validity with relationship() (EDIT: looks okay, but I want an SA pro's opinion)
+    spotlighted_award_id = Column(Integer, ForeignKey(badge_classes.BadgeWinner.id, ondelete="SET NULL")) #TODO: evaluate ondelete validity with relationship() (EDIT: looks okay, but I want an SA pro's opinion)
     background_award_id = Column(Integer, ForeignKey(BackgroundWinner.id, ondelete="SET NULL"))
 
     _background_award_entry = relationship("BackgroundWinner", foreign_keys="ProfilePreferences.background_award_id")

@@ -9,15 +9,15 @@ from io import BytesIO
 from PIL import Image
 from urllib.parse import urlparse
 
-from .data import badges, profilecards
+from .data import badge_classes, profile_classes
 from . import imaging
 
 class ProfileCog(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.badger = badges.BadgeManager(self.bot.db)
-        self.profile_carder = profilecards.ProfileCardManager(self.bot.db)
+        self.badger = badge_classes.BadgeManager(self.bot.db)
+        self.profile_carder = profile_classes.ProfileCardManager(self.bot.db)
         self.badge_limits = {
             "name": 32,
             "description": 175,
@@ -169,7 +169,7 @@ class ProfileCog(commands.Cog):
 
         #Use the previous information to figure out what badges the user already has
         #Doing it this way allows us to get a list without duplicates (e.g. the user was awarded the same badge twice; compatibility)
-        already_awarded = self.badger.get_badge_entries(server_id=ctx.guild.id).filter(data.BadgeEntry.id.in_(user_badges_ids)).all()
+        already_awarded = self.badger.get_badge_entries(server_id=ctx.guild.id).filter(badge_classes.BadgeEntry.id.in_(user_badges_ids)).all()
         already_awarded_ids = [x.id for x in already_awarded]
         ids_set = set(resolved_ids)
         to_award = ids_set.difference(set(already_awarded_ids)) #See what they don't have
@@ -204,7 +204,7 @@ class ProfileCog(commands.Cog):
 
         #Use the previous information to figure out what badges the user already has
         #Doing it this way allows us to get a list without duplicates (e.g. the user was awarded the same badge twice; compatibility)
-        already_awarded = self.badger.get_badge_entries(server_id=ctx.guild.id).filter(data.BadgeEntry.id.in_(user_badges_ids)).all()
+        already_awarded = self.badger.get_badge_entries(server_id=ctx.guild.id).filter(badge_classes.BadgeEntry.id.in_(user_badges_ids)).all()
         already_awarded_ids = [x.id for x in already_awarded]
         ids_set = set(resolved_ids)
         to_revoke = ids_set.intersection(set(already_awarded_ids)) #See what they don't have
